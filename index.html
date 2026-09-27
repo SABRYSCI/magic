@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منصة سحر العلوم - TIMSS 2027</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Tajawal:wght@500;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --primary-glow: #00f2fe;
+            --secondary-glow: #4facfe;
+            --math-glow: #f093fb;
+            --math-glow-2: #f5576c;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: var(--bg-color);
+            color: #fff;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* خلفية الجزيئات السحرية */
+        #magic-canvas {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1;
+        }
+
+        .container {
+            max-width: 1200px; margin: 0 auto; padding: 40px 20px;
+        }
+
+        /* الترويسة */
+        header {
+            text-align: center; margin-bottom: 60px;
+            animation: fadeInDown 1s ease;
+        }
+        
+        .school-name {
+            font-family: 'Tajawal', sans-serif;
+            font-size: 1.2rem; color: #a0aec0; margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+
+        .main-title {
+            font-size: 3.5rem; font-weight: 900;
+            background: linear-gradient(45deg, var(--primary-glow), var(--secondary-glow));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(0, 242, 254, 0.4);
+            margin-bottom: 15px;
+        }
+
+        .subtitle {
+            font-size: 1.2rem; color: #cbd5e0; max-width: 600px; margin: 0 auto; line-height: 1.6;
+        }
+
+        /* التصميم الزجاجي للأقسام */
+        .section-title {
+            font-family: 'Tajawal', sans-serif; font-size: 2rem;
+            margin: 40px 0 20px; padding-bottom: 10px;
+            border-bottom: 2px solid var(--glass-border);
+            display: inline-block;
+        }
+
+        .sci-title { color: var(--primary-glow); text-shadow: 0 0 10px var(--primary-glow); }
+        .math-title { color: var(--math-glow); text-shadow: 0 0 10px var(--math-glow); }
+
+        .grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px;
+        }
+
+        /* البطاقات السحرية */
+        .card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px; padding: 25px;
+            transition: all 0.4s ease;
+            position: relative; overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .card.sci-card:hover { border-color: var(--primary-glow); box-shadow: 0 0 20px rgba(0, 242, 254, 0.2); }
+        .card.math-card:hover { border-color: var(--math-glow); box-shadow: 0 0 20px rgba(240, 147, 251, 0.2); }
+        .card.main-card { text-align: center; border-color: #ffd700; box-shadow: 0 0 15px rgba(255, 215, 0, 0.1); }
+        .card.main-card:hover { box-shadow: 0 0 25px rgba(255, 215, 0, 0.4); }
+
+        .card h3 { font-size: 1.4rem; margin-bottom: 15px; color: #fff; }
+        .card p { font-size: 0.95rem; color: #a0aec0; margin-bottom: 20px; }
+
+        /* الأزرار */
+        .btn-group { display: flex; flex-wrap: wrap; gap: 10px; }
+
+        .btn {
+            text-decoration: none; padding: 10px 20px; border-radius: 50px;
+            font-weight: bold; font-size: 0.9rem; transition: all 0.3s ease;
+            text-align: center; flex: 1; min-width: 100px;
+        }
+
+        .btn-sci { background: linear-gradient(45deg, var(--secondary-glow), var(--primary-glow)); color: #000; }
+        .btn-sci:hover { box-shadow: 0 0 15px var(--primary-glow); transform: scale(1.05); color: #000;}
+
+        .btn-math { background: linear-gradient(45deg, var(--math-glow-2), var(--math-glow)); color: #fff; }
+        .btn-math:hover { box-shadow: 0 0 15px var(--math-glow); transform: scale(1.05); color: #fff;}
+
+        .btn-main { background: linear-gradient(45deg, #f6d365, #fda085); color: #000; font-size: 1.1rem; padding: 12px 25px;}
+        .btn-main:hover { box-shadow: 0 0 20px #f6d365; transform: scale(1.05); }
+
+        .btn-disabled {
+            background: #2d3748; color: #718096; cursor: not-allowed;
+            pointer-events: none; border: 1px dashed #4a5568;
+        }
+
+        footer {
+            text-align: center; margin-top: 80px; padding-top: 20px;
+            border-top: 1px solid var(--glass-border); color: #718096; font-size: 0.9rem;
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- خلفية الجزيئات -->
+    <canvas id="magic-canvas"></canvas>
+
+    <div class="container">
+        <!-- الترويسة -->
+        <header>
+            <div class="school-name">مدرسة البلاد القديم الابتدائية الإعدادية للبنين</div>
+            <h1 class="main-title">منصة سحر العلوم</h1>
+            <p class="subtitle">بوابتك الرقمية التفاعلية للتميز والاستعداد الأمثل لاختبارات TIMSS 2027 في مادتي العلوم والرياضيات</p>
+        </header>
+
+        <!-- المصادر الرئيسية -->
+        <div class="grid" style="margin-bottom: 60px;">
+            <div class="card main-card">
+                <h3>📚 ملزمة العلوم الشاملة</h3>
+                <p>للصف الثاني الإعدادي - الفصل الدراسي الأول</p>
+                <a href="https://drive.google.com/file/d/1vFZjenzNMjVAcaZ78gavKFAzdge8BPo4/view?usp=sharing" target="_blank" class="btn btn-main">تصفح الملزمة</a>
+            </div>
+            <div class="card main-card">
+                <h3>✨ بوابة الأنشطة الإثرائية</h3>
+                <p>تحديات تفاعلية وألعاب علمية لترسيخ المفاهيم</p>
+                <a href="https://sabrysci.github.io/Science/" target="_blank" class="btn btn-main">ابدأ التحدي الآن</a>
+            </div>
+        </div>
+
+        <!-- قسم العلوم -->
+        <h2 class="section-title sci-title">🔬 تحديات العلوم (TIMSS)</h2>
+        <div class="grid">
+            <div class="card sci-card">
+                <h3>الفصل الأول: طبيعة المادة</h3>
+                <p>نماذج تدريبية تفاعلية تحاكي اختبارات TIMSS الدولية.</p>
+                <div class="btn-group">
+                    <a href="https://edunet.bh/e_content/level_2/stage_8/subject_ID_5/Part_1/TIMSS/Sci-Ch1A-G8/Sci-Ch1A-G8/story.html" target="_blank" class="btn btn-sci">نموذج (أ)</a>
+                    <a href="https://edunet.bh/e_content/level_2/stage_8/subject_ID_5/Part_1/TIMSS/Sci-Ch1B-G8/Sci-Ch1B-G8/story.html" target="_blank" class="btn btn-sci">نموذج (ب)</a>
+                </div>
+            </div>
+
+            <div class="card sci-card">
+                <h3>الفصل الثاني: الدوران والمناعة</h3>
+                <p>نماذج تدريبية تفاعلية تحاكي اختبارات TIMSS الدولية.</p>
+                <div class="btn-group">
+                    <a href="https://www.edunet.bh/e_content/level_2/stage_8/subject_ID_5/Part_1/TIMSS/Sci-Ch2A-G8/Sci-Ch2A-G8/story.html" target="_blank" class="btn btn-sci">نموذج (أ)</a>
+                    <a href="https://www.edunet.bh/e_content/level_2/stage_8/subject_ID_5/Part_1/TIMSS/Sci-Ch2B-G8/Sci-Ch2B-G8/story.html" target="_blank" class="btn btn-sci">نموذج (ب)</a>
+                </div>
+            </div>
+
+            <div class="card sci-card">
+                <h3>الفصل الثالث: أجهزة الجسم</h3>
+                <p>الهضم، التنفس، والإخراج.</p>
+                <div class="btn-group">
+                    <a href="#" class="btn btn-disabled">نموذج (أ) - قريباً</a>
+                    <a href="#" class="btn btn-disabled">نموذج (ب) - قريباً</a>
+                </div>
+            </div>
+
+            <div class="card sci-card">
+                <h3>الفصل الرابع: استكشاف الفضاء</h3>
+                <p>الأرض والنظام الشمسي والنجوم.</p>
+                <div class="btn-group">
+                    <a href="#" class="btn btn-disabled">قريباً</a>
+                </div>
+            </div>
+
+            <div class="card sci-card">
+                <h3>الفصل الخامس: المادة</h3>
+                <p>سلوك الموائع والحرارة.</p>
+                <div class="btn-group">
+                    <a href="#" class="btn btn-disabled">قريباً</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- قسم الرياضيات -->
+        <h2 class="section-title math-title" style="margin-top: 60px;">📐 تحديات الرياضيات (TIMSS)</h2>
+        <div class="grid">
+            <div class="card math-card">
+                <h3>الفصل الثاني: الأعداد النسبية</h3>
+                <div class="btn-group">
+                    <a href="https://www.edunet.bh/e_content/level_2/stage_8/subject_ID_3/Part_1/TIMSS/Math-Ch2A-G8/Math-Ch2A-G8/story.html" target="_blank" class="btn btn-math">نموذج (أ)</a>
+                    <a href="https://www.edunet.bh/e_content/level_2/stage_8/subject_ID_3/Part_1/TIMSS/Math-Ch2B-G8/Math-Ch2B-G8/story.html" target="_blank" class="btn btn-math">نموذج (ب)</a>
+                    <a href="https://www.edunet.bh/e_content/level_2/stage_8/subject_ID_3/Part_1/TIMSS/Math-Ch2C-G8/Math-Ch2C-G8/story.html" target="_blank" class="btn btn-math">نموذج (ج)</a>
+                    <a href="https://www.edunet.bh/e_content/level_2/stage_8/subject_ID_3/Part_1/TIMSS/Math-Ch2D-G8/Math-Ch2D-G8/story.html" target="_blank" class="btn btn-math">نموذج (د)</a>
+                </div>
+            </div>
+
+            <div class="card math-card">
+                <h3>الفصل الثالث: الأعداد الحقيقية وفيثاغورس</h3>
+                <div class="btn-group">
+                    <a href="https://www.edunet.bh/e_content/level_2/stage_8/subject_ID_3/Part_1/TIMSS/Math-Ch3A-G8/Math-Ch3A-G8/story.html" target="_blank" class="btn btn-math">نموذج (أ)</a>
+                    <a href="https://www.edunet.bh/e_content/level_2/stage_8/subject_ID_3/Part_1/TIMSS/Math-Ch3B-G8/Math_Ch3B_G8/story.html" target="_blank" class="btn btn-math">نموذج (ب)</a>
+                </div>
+            </div>
+
+            <div class="card math-card">
+                <h3>الفصل الرابع: النسبة والتناسب</h3>
+                <div class="btn-group">
+                    <a href="#" class="btn btn-disabled">نموذج (أ) - قريباً</a>
+                    <a href="#" class="btn btn-disabled">نموذج (ب) - قريباً</a>
+                </div>
+            </div>
+
+            <div class="card math-card">
+                <h3>الفصل الخامس: النسبة المئوية</h3>
+                <div class="btn-group">
+                    <a href="#" class="btn btn-disabled">نموذج (أ) - قريباً</a>
+                    <a href="#" class="btn btn-disabled">نموذج (ب) - قريباً</a>
+                </div>
+            </div>
+
+            <div class="card math-card">
+                <h3>الفصل السادس: الهندسة والاستدلال</h3>
+                <div class="btn-group">
+                    <a href="#" class="btn btn-disabled">نموذج (أ) - قريباً</a>
+                    <a href="#" class="btn btn-disabled">نموذج (ب) - قريباً</a>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>جميع الحقوق محفوظة &copy; 2024 | إعداد وتنفيذ الأستاذ / صبري محمد حمد</p>
+        </footer>
+    </div>
+
+    <!-- سكريبت الخلفية السحرية (جزيئات تتحرك) -->
+    <script>
+        const canvas = document.getElementById('magic-canvas');
+        const ctx = canvas.getContext('2d');
+        let width, height, particles;
+
+        function init() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            particles = [];
+            for (let i = 0; i < 100; i++) {
+                particles.push(new Particle());
+            }
+        }
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.size = Math.random() * 2 + 0.5;
+                this.speedX = Math.random() * 1 - 0.5;
+                this.speedY = Math.random() * 1 - 0.5;
+                // ألوان نيون بين الأزرق والبنفسجي
+                const colors = ['#00f2fe', '#4facfe', '#f093fb', '#fff'];
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if (this.x > width) this.x = 0;
+                else if (this.x < 0) this.x = width;
+                if (this.y > height) this.y = 0;
+                else if (this.y < 0) this.y = height;
+            }
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('resize', init);
+        init();
+        animate();
+    </script>
+</body>
+</html>
