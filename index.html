@@ -7,19 +7,23 @@
     <meta name="keywords" content="منصة سحر العلوم, سحر العلوم, مدرسة البلاد القديم, اختبارات TIMSS, تيمز 2027, علوم, رياضيات, البحرين, صبري محمد حمد">
     <meta name="author" content="صبري محمد حمد">
     <title>منصة سحر العلوم - TIMSS 2027</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Tajawal:wght@500;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Tajawal:wght@500;800;900&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg-color: #0b0f19;
-            --primary-glow: #00f2fe;
-            --secondary-glow: #4facfe;
+            --sci-glow: #00f2fe;
+            --sci-glow-2: #4facfe;
             --math-glow: #f093fb;
             --math-glow-2: #f5576c;
+            --grade1-glow: #10b981;
+            --grade1-glow-2: #059669;
+            --grade2-glow: #f59e0b;
+            --grade2-glow-2: #d97706;
             --glass-bg: rgba(255, 255, 255, 0.05);
-            --glass-border: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.12);
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
         body {
             font-family: 'Cairo', sans-serif;
@@ -27,271 +31,1480 @@
             color: #fff;
             overflow-x: hidden;
             position: relative;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
-        /* خلفية الجزيئات السحرية */
         #magic-canvas {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
             z-index: -1;
+            pointer-events: none;
         }
 
         .container {
-            max-width: 1200px; margin: 0 auto; padding: 40px 20px;
+            max-width: 1150px;
+            margin: 0 auto;
+            padding: 25px 18px;
+            flex: 1;
+            width: 100%;
         }
 
-        /* الترويسة والصور */
         header {
-            text-align: center; margin-bottom: 60px;
-            animation: fadeInDown 1s ease;
+            text-align: center;
+            margin-bottom: 35px;
+            animation: fadeInDown 0.8s ease;
         }
         
         .main-header-img {
             width: 100%;
-            max-width: 800px;
-            border-radius: 15px;
-            margin-bottom: 25px;
+            max-width: 750px;
+            border-radius: 16px;
+            margin-bottom: 18px;
             box-shadow: 0 10px 30px rgba(0, 242, 254, 0.2);
             border: 1px solid var(--glass-border);
         }
 
         .school-name {
             font-family: 'Tajawal', sans-serif;
-            font-size: 1.2rem; color: #a0aec0; margin-bottom: 10px;
-            letter-spacing: 1px;
+            font-size: 1.2rem; color: #a0aec0; margin-bottom: 6px;
         }
 
         .main-title {
-            font-size: 3.5rem; font-weight: 900;
-            background: linear-gradient(45deg, var(--primary-glow), var(--secondary-glow));
+            font-size: 3rem; font-weight: 900;
+            background: linear-gradient(45deg, var(--sci-glow), var(--sci-glow-2));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            text-shadow: 0 0 30px rgba(0, 242, 254, 0.4);
-            margin-bottom: 15px;
+            text-shadow: 0 0 30px rgba(0, 242, 254, 0.3);
+            margin-bottom: 10px;
         }
 
         .subtitle {
-            font-size: 1.2rem; color: #cbd5e0; max-width: 600px; margin: 0 auto; line-height: 1.6;
+            font-size: 1.1rem; color: #cbd5e0; max-width: 650px; margin: 0 auto; line-height: 1.6;
         }
 
-        /* التصميم الزجاجي للأقسام */
-        .section-title {
-            font-family: 'Tajawal', sans-serif; font-size: 2rem;
-            margin: 40px 0 20px; padding-bottom: 10px;
-            border-bottom: 2px solid var(--glass-border);
-            display: inline-block;
+        .view-section {
+            display: none;
+            animation: fadeInUp 0.45s ease forwards;
         }
 
-        .sci-title { color: var(--primary-glow); text-shadow: 0 0 10px var(--primary-glow); }
-        .math-title { color: var(--math-glow); text-shadow: 0 0 10px var(--math-glow); }
-
-        .grid {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px;
+        .view-section.active {
+            display: block;
         }
 
-        /* البطاقات السحرية */
-        .card {
+        .nav-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px 22px;
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(12px);
+        }
+
+        .nav-title {
+            font-family: 'Tajawal', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn-nav {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-family: 'Cairo', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-nav:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-home {
+            background: linear-gradient(45deg, #3b82f6, #1d4ed8);
+            border: none;
+        }
+
+        .btn-home:hover {
+            background: linear-gradient(45deg, #60a5fa, #2563eb);
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+        }
+
+        .giant-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+            gap: 30px;
+            margin: 15px 0 35px;
+        }
+
+        .giant-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border: 2px solid var(--glass-border);
+            border-radius: 28px;
+            padding: 40px 25px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 300px;
+        }
+
+        .giant-card:hover {
+            transform: translateY(-10px) scale(1.015);
+            background: rgba(255, 255, 255, 0.09);
+        }
+
+        .giant-icon {
+            font-size: 5rem;
+            margin-bottom: 18px;
+            filter: drop-shadow(0 8px 15px rgba(0,0,0,0.4));
+            transition: transform 0.35s ease;
+        }
+
+        .giant-card:hover .giant-icon {
+            transform: scale(1.12) rotate(3deg);
+        }
+
+        .giant-subicons {
+            font-size: 1.9rem;
+            margin-bottom: 14px;
+            opacity: 0.85;
+            letter-spacing: 6px;
+        }
+
+        .giant-card h2 {
+            font-family: 'Tajawal', sans-serif;
+            font-size: 2.2rem;
+            font-weight: 900;
+            margin-bottom: 10px;
+        }
+
+        .giant-card p {
+            font-size: 1.1rem;
+            color: #cbd5e0;
+            line-height: 1.5;
+        }
+
+        .card-counter-badge {
+            position: absolute;
+            top: 18px;
+            left: 18px;
+            background: rgba(0, 0, 0, 0.55);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #e2e8f0;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .giant-sci { border-color: rgba(0, 242, 254, 0.4); }
+        .giant-sci:hover { border-color: var(--sci-glow); box-shadow: 0 0 35px rgba(0, 242, 254, 0.35); }
+        .giant-sci h2 { color: var(--sci-glow); text-shadow: 0 0 15px rgba(0, 242, 254, 0.4); }
+
+        .giant-math { border-color: rgba(240, 147, 251, 0.4); }
+        .giant-math:hover { border-color: var(--math-glow); box-shadow: 0 0 35px rgba(240, 147, 251, 0.35); }
+        .giant-math h2 { color: var(--math-glow); text-shadow: 0 0 15px rgba(240, 147, 251, 0.4); }
+
+        .giant-grade1 { border-color: rgba(16, 185, 129, 0.4); }
+        .giant-grade1:hover { border-color: var(--grade1-glow); box-shadow: 0 0 35px rgba(16, 185, 129, 0.35); }
+        .giant-grade1 h2 { color: #34d399; text-shadow: 0 0 15px rgba(16, 185, 129, 0.4); }
+        .badge-grade1 { background: linear-gradient(45deg, var(--grade1-glow), var(--grade1-glow-2)); color: #fff; padding: 7px 22px; border-radius: 50px; font-weight: bold; margin-top: 15px; display: inline-block; }
+
+        .giant-grade2 { border-color: rgba(245, 158, 11, 0.4); }
+        .giant-grade2:hover { border-color: var(--grade2-glow); box-shadow: 0 0 35px rgba(245, 158, 11, 0.35); }
+        .giant-grade2 h2 { color: #fbbf24; text-shadow: 0 0 15px rgba(245, 158, 11, 0.4); }
+        .badge-grade2 { background: linear-gradient(45deg, var(--grade2-glow), var(--grade2-glow-2)); color: #000; padding: 7px 22px; border-radius: 50px; font-weight: bold; margin-top: 15px; display: inline-block; }
+
+        .models-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
+            gap: 22px;
+        }
+
+        .model-card {
             background: var(--glass-bg);
             backdrop-filter: blur(10px);
             border: 1px solid var(--glass-border);
-            border-radius: 20px; padding: 25px;
-            transition: all 0.4s ease;
-            position: relative; overflow: hidden;
+            border-radius: 22px;
+            padding: 26px 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        .card:hover {
-            transform: translateY(-10px);
-            background: rgba(255, 255, 255, 0.1);
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
+        .model-card:hover {
+            transform: translateY(-6px);
+            background: rgba(255, 255, 255, 0.08);
         }
 
-        .card.sci-card:hover { border-color: var(--primary-glow); box-shadow: 0 0 20px rgba(0, 242, 254, 0.2); }
-        .card.math-card:hover { border-color: var(--math-glow); box-shadow: 0 0 20px rgba(240, 147, 251, 0.2); }
-        .card.main-card { text-align: center; border-color: #ffd700; box-shadow: 0 0 15px rgba(255, 215, 0, 0.1); }
-        .card.main-card:hover { box-shadow: 0 0 25px rgba(255, 215, 0, 0.4); }
+        .model-card.g1-card:hover { border-color: var(--grade1-glow); box-shadow: 0 0 25px rgba(16, 185, 129, 0.25); }
+        .model-card.g2-card:hover { border-color: var(--grade2-glow); box-shadow: 0 0 25px rgba(245, 158, 11, 0.25); }
 
-        .card h3 { font-size: 1.4rem; margin-bottom: 15px; color: #fff; }
-        .card p { font-size: 0.95rem; color: #a0aec0; margin-bottom: 20px; }
+        .model-icon {
+            font-size: 3rem;
+            margin-bottom: 12px;
+        }
 
-        /* الأزرار */
-        .btn-group { display: flex; flex-wrap: wrap; gap: 10px; }
+        .model-card h3 {
+            font-size: 1.3rem;
+            margin-bottom: 18px;
+            color: #fff;
+            line-height: 1.5;
+        }
+
+        .models-rows-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .model-pair-row {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+            align-items: stretch;
+        }
+
+        .btn-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            width: 100%;
+            justify-content: center;
+        }
 
         .btn {
-            text-decoration: none; padding: 10px 20px; border-radius: 50px;
-            font-weight: bold; font-size: 0.9rem; transition: all 0.3s ease;
-            text-align: center; flex: 1; min-width: 100px;
+            text-decoration: none;
+            padding: 12px 14px;
+            border-radius: 16px;
+            font-weight: 800;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            text-align: center;
+            flex: 1;
+            min-width: 115px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            position: relative;
         }
 
-        .btn-sci { background: linear-gradient(45deg, var(--secondary-glow), var(--primary-glow)); color: #000; }
-        .btn-sci:hover { box-shadow: 0 0 15px var(--primary-glow); transform: scale(1.05); color: #000;}
+        .click-count {
+            background: rgba(0, 0, 0, 0.35);
+            color: #fff;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            margin-right: 4px;
+        }
 
-        .btn-math { background: linear-gradient(45deg, var(--math-glow-2), var(--math-glow)); color: #fff; }
-        .btn-math:hover { box-shadow: 0 0 15px var(--math-glow); transform: scale(1.05); color: #fff;}
+        .btn-g2 .click-count {
+            background: rgba(0, 0, 0, 0.75);
+            color: #fbbf24;
+        }
 
-        .btn-main { background: linear-gradient(45deg, #f6d365, #fda085); color: #000; font-size: 1.1rem; padding: 12px 25px;}
-        .btn-main:hover { box-shadow: 0 0 20px #f6d365; transform: scale(1.05); }
+        .btn-g1 {
+            background: linear-gradient(45deg, var(--grade1-glow), var(--grade1-glow-2));
+            color: #fff;
+        }
+        .btn-g1:hover {
+            box-shadow: 0 0 18px var(--grade1-glow);
+            transform: scale(1.03);
+        }
+
+        .btn-g2 {
+            background: linear-gradient(45deg, #fbbf24, #f59e0b);
+            color: #000;
+        }
+        .btn-g2:hover {
+            box-shadow: 0 0 18px var(--grade2-glow);
+            transform: scale(1.03);
+        }
+
+        .btn-ans {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1.5px solid #10b981;
+        }
+        .btn-ans:hover {
+            background: linear-gradient(45deg, #10b981, #059669);
+            color: #fff;
+            box-shadow: 0 0 18px rgba(16, 185, 129, 0.5);
+            transform: scale(1.03);
+        }
 
         .btn-disabled {
-            background: #2d3748; color: #718096; cursor: not-allowed;
-            pointer-events: none; border: 1px dashed #4a5568;
+            background: rgba(45, 55, 72, 0.7);
+            color: #94a3b8;
+            cursor: not-allowed;
+            pointer-events: none;
+            border: 1px dashed #4a5568;
         }
 
-        /* التذييل */
+        .extra-section-title {
+            font-family: 'Tajawal', sans-serif;
+            font-size: 1.55rem;
+            color: #fbbf24;
+            margin: 40px 0 20px;
+            text-align: center;
+        }
+
+        /* ==================== تصميم لوحة الإحصائيات المتقدمة ==================== */
+        .dashboard-container {
+            background: rgba(17, 24, 39, 0.85);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 25px;
+            backdrop-filter: blur(15px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        /* شريط الفلاتر الزمنية */
+        .filter-panel {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 18px;
+            padding: 18px;
+            margin-bottom: 25px;
+        }
+
+        .quick-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+
+        .filter-btn {
+            background: rgba(255, 255, 255, 0.08);
+            color: #cbd5e0;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 8px 18px;
+            border-radius: 30px;
+            font-family: 'Cairo', sans-serif;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+
+        .filter-btn:hover, .filter-btn.active {
+            background: linear-gradient(45deg, var(--sci-glow-2), var(--sci-glow));
+            color: #000;
+            border-color: transparent;
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.4);
+        }
+
+        .custom-date-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            padding-top: 12px;
+            border-top: 1px dashed rgba(255, 255, 255, 0.12);
+        }
+
+        .date-input-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+            min-width: 240px;
+        }
+
+        .date-input-group label {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            white-space: nowrap;
+        }
+
+        .date-input {
+            background: #1e293b;
+            color: #fff;
+            border: 1px solid #475569;
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-family: 'Cairo', sans-serif;
+            font-size: 0.9rem;
+            width: 100%;
+            color-scheme: dark;
+        }
+
+        /* بطاقات الإجماليات الكبرى (KPIs) */
+        .kpi-grid-main {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .kpi-card {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 18px;
+            padding: 18px 15px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .kpi-card.kpi-grand {
+            background: linear-gradient(135deg, rgba(0, 242, 254, 0.15), rgba(240, 147, 251, 0.15));
+            border-color: var(--sci-glow);
+        }
+
+        .kpi-card.kpi-sci { border-color: rgba(0, 242, 254, 0.5); }
+        .kpi-card.kpi-math { border-color: rgba(240, 147, 251, 0.5); }
+        .kpi-card.kpi-g1 { border-color: rgba(16, 185, 129, 0.5); }
+        .kpi-card.kpi-g2 { border-color: rgba(245, 158, 11, 0.5); }
+
+        .kpi-title {
+            font-size: 0.95rem;
+            color: #cbd5e0;
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+
+        .kpi-value {
+            font-size: 2.2rem;
+            font-weight: 900;
+            font-family: 'Tajawal', sans-serif;
+        }
+
+        .kpi-sub {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            margin-top: 4px;
+        }
+
+        /* جداول التفصيل لكل صف ومادة */
+        .tables-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 22px;
+            margin-top: 25px;
+        }
+
+        .stat-box {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 18px;
+            overflow: hidden;
+        }
+
+        .stat-box-header {
+            padding: 14px 18px;
+            font-family: 'Tajawal', sans-serif;
+            font-weight: 800;
+            font-size: 1.15rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: right;
+            font-size: 0.92rem;
+        }
+
+        .stats-table th, .stats-table td {
+            padding: 11px 14px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .stats-table th {
+            background: rgba(255, 255, 255, 0.04);
+            color: #94a3b8;
+            font-weight: 700;
+        }
+
+        .stats-table tr:hover {
+            background: rgba(255, 255, 255, 0.04);
+        }
+
         footer {
-            text-align: center; margin-top: 80px; padding-top: 40px;
-            border-top: 1px solid var(--glass-border); color: #718096; font-size: 0.9rem;
+            text-align: center;
+            margin-top: 55px;
+            padding: 30px 15px 25px;
+            border-top: 1px solid var(--glass-border);
+            color: #cbd5e0;
         }
 
         .footer-img {
             width: 100%;
-            max-width: 1000px;
+            max-width: 850px;
             border-radius: 15px;
             margin-bottom: 20px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
             border: 1px solid var(--glass-border);
         }
 
+        .footer-actions {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-top: 8px;
+        }
+
+        .dev-credit {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(0, 242, 254, 0.3);
+            padding: 12px 28px;
+            border-radius: 50px;
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #fff;
+            box-shadow: 0 0 20px rgba(0, 242, 254, 0.12);
+        }
+
+        .dev-credit span {
+            color: var(--sci-glow);
+            font-weight: 900;
+            margin-right: 5px;
+            letter-spacing: 1px;
+        }
+
+        .btn-stats-open {
+            background: linear-gradient(45deg, #10b981, #059669);
+            border: none;
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-family: 'Cairo', sans-serif;
+            font-size: 1rem;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-stats-open:hover {
+            transform: translateY(-2px) scale(1.03);
+            box-shadow: 0 0 25px rgba(16, 185, 129, 0.6);
+        }
+
         @keyframes fadeInDown {
-            from { opacity: 0; transform: translateY(-30px); }
+            from { opacity: 0; transform: translateY(-20px); }
             to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 650px) {
+            .container { padding: 18px 12px; }
+            .main-title { font-size: 2.2rem; }
+            .subtitle { font-size: 1rem; }
+            .giant-grid { grid-template-columns: 1fr; gap: 20px; }
+            .giant-card { padding: 30px 18px; min-height: 240px; }
+            .giant-icon { font-size: 4.2rem; }
+            .giant-card h2 { font-size: 1.8rem; }
+            .nav-bar { flex-direction: column; text-align: center; padding: 15px; }
+            .nav-title { font-size: 1.3rem; justify-content: center; }
+            .nav-buttons { width: 100%; justify-content: center; }
+            .btn-nav { flex: 1; padding: 10px 14px; font-size: 0.9rem; }
+            .models-grid { grid-template-columns: 1fr; }
+            .model-pair-row { flex-direction: row; gap: 8px; }
+            .btn { padding: 12px 8px; font-size: 0.88rem; min-width: auto; }
+            .tables-grid { grid-template-columns: 1fr; }
+            .dev-credit { font-size: 0.95rem; padding: 10px 20px; width: 100%; }
+            .btn-stats-open { width: 100%; }
+        }
+
+        @media (max-width: 380px) {
+            .model-pair-row { flex-direction: column; }
         }
     </style>
 </head>
 <body>
 
-    <!-- خلفية الجزيئات -->
     <canvas id="magic-canvas"></canvas>
 
     <div class="container">
-        <!-- الترويسة -->
+        <!-- الترويسة الثابتة -->
         <header>
             <img src="https://i.postimg.cc/K88X7RLb/trwysyh-dhhbyt.png" alt="ترويسة سحر العلوم" class="main-header-img">
             <div class="school-name">مدرسة البلاد القديم الابتدائية الإعدادية للبنين</div>
             <h1 class="main-title">منصة سحر العلوم</h1>
-            <p class="subtitle">بوابتك الرقمية التفاعلية للتميز والاستعداد الأمثل لاختبارات TIMSS 2027 في مادتي العلوم والرياضيات</p>
+            <p class="subtitle">بوابتك الرقمية التفاعلية للتميز والاستعداد الأمثل لاختبارات TIMSS 2027</p>
         </header>
 
-        <!-- المصادر الرئيسية -->
-        <div class="grid" style="margin-bottom: 60px;">
-            <div class="card main-card">
-                <h3>📚 ملزمة العلوم الشاملة</h3>
-                <p>للصف الثاني الإعدادي - الفصل الدراسي الأول</p>
-                <a href="https://drive.google.com/file/d/1vFZjenzNMjVAcaZ78gavKFAzdge8BPo4/view?usp=sharing" target="_blank" class="btn btn-main">تصفح الملزمة</a>
-            </div>
-            <div class="card main-card">
-                <h3>✨ بوابة الأنشطة الإثرائية</h3>
-                <p>تحديات تفاعلية وألعاب علمية لترسيخ المفاهيم</p>
-                <a href="https://sabrysci.github.io/Science/" target="_blank" class="btn btn-main">ابدأ التحدي الآن</a>
-            </div>
-            <!-- الكارت الجديد لعلوم السادس -->
-            <div class="card main-card">
-                <h3>🧪 علوم السادس</h3>
-                <p>بوابة الأنشطة والتحديات الخاصة بالصف السادس الابتدائي</p>
-                <a href="https://sabrysci.github.io/sci6/" target="_blank" class="btn btn-main">دخول المنصة</a>
-            </div>
-        </div>
-
-        <!-- قسم العلوم -->
-        <h2 class="section-title sci-title">🔬 تحديات العلوم (TIMSS)</h2>
-        <div class="grid">
-            <div class="card sci-card">
-                <h3>الفصل الأول: طبيعة المادة</h3>
-                <p>نماذج تدريبية تفاعلية تحاكي اختبارات TIMSS الدولية.</p>
-                <div class="btn-group">
-                    <a href="https://edunet.bh/e_content/level_2/stage_8/subject_ID_5/Part_1/TIMSS/Sci-Ch1A-G8/Sci-Ch1A-G8/story.html" target="_blank" class="btn btn-sci">نموذج (أ)</a>
-                    <a href="https://edunet.bh/e_content/level_2/stage_8/subject_ID_5/Part_1/TIMSS/Sci-Ch1B-G8/Sci-Ch1B-G8/story.html" target="_blank" class="btn btn-sci">نموذج (ب)</a>
+        <!-- ================= 1. الشاشة الرئيسية: اختيار المادة ================= -->
+        <div id="view-home" class="view-section active">
+            <h2 style="text-align: center; font-family: 'Tajawal', sans-serif; font-size: 1.7rem; margin-bottom: 22px; color: #e2e8f0;">
+                👇 اختر المادة للبدء بالتدريب
+            </h2>
+            <div class="giant-grid">
+                <div class="giant-card giant-sci" data-track-id="nav_sci_main" data-track-cat="تصفح الأقسام" data-track-name="دخول قسم العلوم الرئيسي" onclick="showView('view-sci-grades')">
+                    <span class="card-counter-badge">👁️ <span class="cnt-val">0</span></span>
+                    <div class="giant-icon">🔬</div>
+                    <div class="giant-subicons">🧬 ⚗️ 🧲</div>
+                    <h2>مادة العلوم</h2>
+                    <p>النماذج التدريبية والإجابات النموذجية لمادة العلوم</p>
                 </div>
-            </div>
 
-            <div class="card sci-card">
-                <h3>الفصل الثاني: الدوران والمناعة</h3>
-                <p>نماذج تدريبية تفاعلية تحاكي اختبارات TIMSS الدولية.</p>
-                <div class="btn-group">
-                    <a href="https://www.edunet.bh/e_content/level_2/stage_8/subject_ID_5/Part_1/TIMSS/Sci-Ch2A-G8/Sci-Ch2A-G8/story.html" target="_blank" class="btn btn-sci">نموذج (أ)</a>
-                    <a href="https://www.edunet.bh/e_content/level_2/stage_8/subject_ID_5/Part_1/TIMSS/Sci-Ch2B-G8/Sci-Ch2B-G8/story.html" target="_blank" class="btn btn-sci">نموذج (ب)</a>
-                </div>
-            </div>
-
-            <div class="card sci-card">
-                <h3>الفصل الثالث: أجهزة الجسم</h3>
-                <p>الهضم، التنفس، والإخراج.</p>
-                <div class="btn-group">
-                    <a href="https://www.edunet.bh/e_content/level_2/stage_8/subject_ID_5/Part_1/TIMSS/Sci-Ch3A-G8/Sci-Ch3A-G8/story.html" target="_blank" class="btn btn-sci">نموذج (أ)</a>
-                    <a href="https://www.edunet.bh/e_content/level_2/stage_8/subject_ID_5/Part_1/TIMSS/Sci-Ch3B-G8/Sci-Ch3B-G8/story.html"  target="_blank" class="btn btn-sci">نموذج (ب)</a>
-                </div>
-            </div>
-
-            <div class="card sci-card">
-                <h3>الفصل الرابع: استكشاف الفضاء</h3>
-                <p>الأرض والنظام الشمسي والنجوم.</p>
-                <div class="btn-group">
-                    <a href="#" class="btn btn-disabled">قريباً</a>
-                </div>
-            </div>
-
-            <div class="card sci-card">
-                <h3>الفصل الخامس: المادة</h3>
-                <p>سلوك الموائع والحرارة.</p>
-                <div class="btn-group">
-                    <a href="#" class="btn btn-disabled">قريباً</a>
+                <div class="giant-card giant-math" data-track-id="nav_math_main" data-track-cat="تصفح الأقسام" data-track-name="دخول قسم الرياضيات الرئيسي" onclick="showView('view-math-grades')">
+                    <span class="card-counter-badge">👁️ <span class="cnt-val">0</span></span>
+                    <div class="giant-icon">📐</div>
+                    <div class="giant-subicons">📊 🧮 ♾️</div>
+                    <h2>مادة الرياضيات</h2>
+                    <p>النماذج التدريبية وتحديات الهندسة والجبر للرياضيات</p>
                 </div>
             </div>
         </div>
 
-        <!-- قسم الرياضيات -->
-        <h2 class="section-title math-title" style="margin-top: 60px;">📐 تحديات الرياضيات (TIMSS)</h2>
-        <div class="grid">
-            <div class="card math-card">
-                <h3>الفصل الثاني: الأعداد النسبية</h3>
-                <div class="btn-group">
-                    <a href="https://www.edunet.bh/e_content/level_2/stage_8/subject_ID_3/Part_1/TIMSS/Math-Ch2A-G8/Math-Ch2A-G8/story.html" target="_blank" class="btn btn-math">نموذج (أ)</a>
-                    <a href="https://www.edunet.bh/e_content/level_2/stage_8/subject_ID_3/Part_1/TIMSS/Math-Ch2B-G8/Math-Ch2B-G8/story.html" target="_blank" class="btn btn-math">نموذج (ب)</a>
-                    <a href="https://www.edunet.bh/e_content/level_2/stage_8/subject_ID_3/Part_1/TIMSS/Math-Ch2C-G8/Math-Ch2C-G8/story.html" target="_blank" class="btn btn-math">نموذج (ج)</a>
-                    <a href="https://www.edunet.bh/e_content/level_2/stage_8/subject_ID_3/Part_1/TIMSS/Math-Ch2D-G8/Math-Ch2D-G8/story.html" target="_blank" class="btn btn-math">نموذج (د)</a>
+        <!-- ================= 2. شاشة اختيار الصف لمادة العلوم ================= -->
+        <div id="view-sci-grades" class="view-section">
+            <div class="nav-bar">
+                <div class="nav-title" style="color: var(--sci-glow);">🔬 مادة العلوم - اختر صفك الدراسي</div>
+                <div class="nav-buttons">
+                    <button class="btn-nav btn-home" onclick="showView('view-home')">🏠 الصفحة الرئيسية</button>
                 </div>
             </div>
 
-            <div class="card math-card">
-                <h3>الفصل الثالث: الأعداد الحقيقية وفيثاغورس</h3>
-                <div class="btn-group">
-                    <a href="https://www.edunet.bh/e_content/level_2/stage_8/subject_ID_3/Part_1/TIMSS/Math-Ch3A-G8/Math-Ch3A-G8/story.html" target="_blank" class="btn btn-math">نموذج (أ)</a>
-                    <a href="https://www.edunet.bh/e_content/level_2/stage_8/subject_ID_3/Part_1/TIMSS/Math-Ch3B-G8/Math_Ch3B_G8/story.html" target="_blank" class="btn btn-math">نموذج (ب)</a>
+            <div class="giant-grid">
+                <div class="giant-card giant-grade1" data-track-id="nav_sci_g1" data-track-cat="تصفح الأقسام" data-track-name="دخول علوم - الأول الإعدادي" onclick="showView('view-sci-g1')">
+                    <span class="card-counter-badge">👁️ <span class="cnt-val">0</span></span>
+                    <div class="giant-icon">🌱</div>
+                    <h2>الصف الأول الإعدادي</h2>
+                    <p>نماذج تدريبية تفاعلية في العلوم - الأول الإعدادي</p>
+                    <span class="badge-grade1">اضغط للدخول للنماذج ⬅️</span>
                 </div>
-            </div>
 
-            <div class="card math-card">
-                <h3>الفصل الرابع: النسبة والتناسب</h3>
-                <div class="btn-group">
-                    <a href="#" class="btn btn-disabled">نموذج (أ) - قريباً</a>
-                    <a href="#" class="btn btn-disabled">نموذج (ب) - قريباً</a>
-                </div>
-            </div>
-
-            <div class="card math-card">
-                <h3>الفصل الخامس: النسبة المئوية</h3>
-                <div class="btn-group">
-                    <a href="#" class="btn btn-disabled">نموذج (أ) - قريباً</a>
-                    <a href="#" class="btn btn-disabled">نموذج (ب) - قريباً</a>
-                </div>
-            </div>
-
-            <div class="card math-card">
-                <h3>الفصل السادس: الهندسة والاستدلال</h3>
-                <div class="btn-group">
-                    <a href="#" class="btn btn-disabled">نموذج (أ) - قريباً</a>
-                    <a href="#" class="btn btn-disabled">نموذج (ب) - قريباً</a>
+                <div class="giant-card giant-grade2" data-track-id="nav_sci_g2" data-track-cat="تصفح الأقسام" data-track-name="دخول علوم - الثاني الإعدادي" onclick="showView('view-sci-g2')">
+                    <span class="card-counter-badge">👁️ <span class="cnt-val">0</span></span>
+                    <div class="giant-icon">🚀</div>
+                    <h2>الصف الثاني الإعدادي</h2>
+                    <p>النماذج التدريبية + الإجابات النموذجية - الثاني الإعدادي</p>
+                    <span class="badge-grade2">اضغط للدخول للنماذج ⬅️</span>
                 </div>
             </div>
         </div>
 
+        <!-- ================= 3. شاشة اختيار الصف لمادة الرياضيات ================= -->
+        <div id="view-math-grades" class="view-section">
+            <div class="nav-bar">
+                <div class="nav-title" style="color: var(--math-glow);">📐 مادة الرياضيات - اختر صفك الدراسي</div>
+                <div class="nav-buttons">
+                    <button class="btn-nav btn-home" onclick="showView('view-home')">🏠 الصفحة الرئيسية</button>
+                </div>
+            </div>
+
+            <div class="giant-grid">
+                <div class="giant-card giant-grade1" data-track-id="nav_math_g1" data-track-cat="تصفح الأقسام" data-track-name="دخول رياضيات - الأول الإعدادي" onclick="showView('view-math-g1')">
+                    <span class="card-counter-badge">👁️ <span class="cnt-val">0</span></span>
+                    <div class="giant-icon">📏</div>
+                    <h2>الصف الأول الإعدادي</h2>
+                    <p>نماذج تدريبية تفاعلية في الرياضيات - الأول الإعدادي</p>
+                    <span class="badge-grade1">اضغط للدخول للنماذج ⬅️</span>
+                </div>
+
+                <div class="giant-card giant-grade2" data-track-id="nav_math_g2" data-track-cat="تصفح الأقسام" data-track-name="دخول رياضيات - الثاني الإعدادي" onclick="showView('view-math-g2')">
+                    <span class="card-counter-badge">👁️ <span class="cnt-val">0</span></span>
+                    <div class="giant-icon">🏆</div>
+                    <h2>الصف الثاني الإعدادي</h2>
+                    <p>نماذج تدريبية تفاعلية في الرياضيات - الثاني الإعدادي</p>
+                    <span class="badge-grade2">اضغط للدخول للنماذج ⬅️</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= 4. نماذج العلوم - الصف الأول الإعدادي ================= -->
+        <div id="view-sci-g1" class="view-section">
+            <div class="nav-bar">
+                <div class="nav-title" style="color: #34d399;">🔬 علوم - الصف الأول الإعدادي</div>
+                <div class="nav-buttons">
+                    <button class="btn-nav" onclick="showView('view-sci-grades')">🔙 تغيير الصف</button>
+                    <button class="btn-nav btn-home" onclick="showView('view-home')">🏠 الصفحة الرئيسية</button>
+                </div>
+            </div>
+
+            <div class="models-grid">
+                <div class="model-card g1-card">
+                    <div class="model-icon">🌿</div>
+                    <h3>الفصل الأول والثالث: الخلايا لبنات الحياة والنباتات</h3>
+                    <div class="btn-group">
+                        <a href="https://www.edunet.bh/e_content/level_2/stage_7/subject_ID_5/Part_1/TIMSS/Sci-Grade-7-S1-Chapter-1-and-3/Sci%20Grade%207%20S1%20Chapter%201%20and%203/story.html" target="_blank" class="btn btn-g1" data-track-id="sci_g1_ch1_3" data-track-cat="علوم - الأول الإعدادي" data-track-name="الفصل 1 و 3: الخلايا والنباتات">
+                            🚀 ابدأ النموذج <span class="click-count">👁️ <span class="cnt-val">0</span></span>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="model-card g1-card">
+                    <div class="model-icon">⚙️</div>
+                    <h3>الفصل الثاني: الحركة والقوى والآلات البسيطة</h3>
+                    <div class="btn-group">
+                        <a href="https://www.edunet.bh/e_content/level_2/stage_7/subject_ID_5/Part_1/TIMSS/Chapter-2/Chapter%202/story.html" target="_blank" class="btn btn-g1" data-track-id="sci_g1_ch2" data-track-cat="علوم - الأول الإعدادي" data-track-name="الفصل 2: الحركة والقوى والآلات">
+                            🚀 ابدأ النموذج <span class="click-count">👁️ <span class="cnt-val">0</span></span>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="model-card g1-card">
+                    <div class="model-icon">💎</div>
+                    <h3>الفصل الرابع والخامس: الصخور والمعادن والذرات والعناصر والمركبات</h3>
+                    <div class="btn-group">
+                        <a href="https://www.edunet.bh/e_content/level_2/stage_7/subject_ID_5/Part_1/TIMSS/Chapters-4-and-5/Chapters%204%20and%205/story.html" target="_blank" class="btn btn-g1" data-track-id="sci_g1_ch4_5" data-track-cat="علوم - الأول الإعدادي" data-track-name="الفصل 4 و 5: الصخور والذرات">
+                            🚀 ابدأ النموذج <span class="click-count">👁️ <span class="cnt-val">0</span></span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= 5. نماذج العلوم - الصف الثاني الإعدادي (مع الإجابات) ================= -->
+        <div id="view-sci-g2" class="view-section">
+            <div class="nav-bar">
+                <div class="nav-title" style="color: #fbbf24;">🔬 علوم - الصف الثاني الإعدادي</div>
+                <div class="nav-buttons">
+                    <button class="btn-nav" onclick="showView('view-sci-grades')">🔙 تغيير الصف</button>
+                    <button class="btn-nav btn-home" onclick="showView('view-home')">🏠 الصفحة الرئيسية</button>
+                </div>
+            </div>
+
+            <div class="models-grid">
+                <div class="model-card g2-card">
+                    <div class="model-icon">🧪</div>
+                    <h3>الفصل الأول: طبيعة المادة</h3>
+                    <div class="models-rows-container">
+                        <div class="model-pair-row">
+                            <a href="https://edunet.bh/e_content/level_2/stage_8/subject_ID_5/Part_1/TIMSS/Sci-Ch1A-G8/Sci-Ch1A-G8/story.html" target="_blank" class="btn btn-g2" data-track-id="sci_g2_ch1_a" data-track-cat="علوم - الثاني الإعدادي" data-track-name="الفصل 1: طبيعة المادة - نموذج (أ)">
+                                🚀 نموذج (أ) <span class="click-count">👁️ <span class="cnt-val">0</span></span>
+                            </a>
+                            <a href="https://drive.google.com/file/d/1cT1k9jt3F0S8at9agVYq_MX0Inlud0Mq/view?usp=sharing" target="_blank" class="btn btn-ans" data-track-id="sci_g2_ch1_a_ans" data-track-cat="إجابات علوم - الثاني الإعدادي" data-track-name="إجابة الفصل 1 - نموذج (أ)">
+                                💡 إجابة (أ) <span class="click-count">👁️ <span class="cnt-val">0</span></span>
+                            </a>
+                        </div>
+                        <div class="model-pair-row">
+                            <a href="https://edunet.bh/e_content/level_2/stage_8/subject_ID_5/Part_1/TIMSS/Sci-Ch1B-G8/Sci-Ch1B-G8/story.html" target="_blank" class="btn btn-g2" data-track-id="sci_g2_ch1_b" data-track-cat="علوم - الثاني الإعدادي" data-track-name="الفصل 1: طبيعة المادة - نموذج (ب)">
+                                🚀 نموذج (ب) <span class="click-count">👁️ <span class="cnt-val">0</span></span>
+                            </a>
+                            <a href="https://drive.google.com/file/d/16Pc1FtBxYDxKTYOPTpRzJsn6EDnR6lMo/view?usp=sharing" target="_blank" class="btn btn-ans" data-track-id="sci_g2_ch1_b_ans" data-track-cat="إجابات علوم - الثاني الإعدادي" data-track-name="إجابة الفصل 1 - نموذج (ب)">
+                                💡 إجابة (ب) <span class="click-count">👁️ <span class="cnt-val">0</span></span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="model-card g2-card">
+                    <div class="model-icon">🩸</div>
+                    <h3>الفصل الثاني: الدوران والمناعة</h3>
+                    <div class="models-rows-container">
+                        <div class="model-pair-row">
+                            <a href="https://www.edunet.bh/e_content/level_2/stage_8/subject_ID_5/Part_1/TIMSS/Sci-Ch2A-G8/Sci-Ch2A-G8/story.html" target="_blank" class="btn btn-g2" data-track-id="sci_g2_ch2_a" data-track-cat="علوم - الثاني الإعدادي" data-track-name="الفصل 2: الدوران والمناعة - نموذج (أ)">
+                                🚀 نموذج (أ) <span class="click-count">👁️ <span class="cnt-val">0</span></span>
+                            </a>
+                            <a href="https://drive.google.com/file/d/17YaCQc03WimMtPvlX0s9tKbQggDEJUnZ/view?usp=drive_link" target="_blank" class="btn btn-ans" data-track-id="sci_g2_ch2_a_ans" data-track-cat="إجابات علوم - الثاني الإعدادي" data-track-name="إجابة الفصل 2 - نموذج (أ)">
+                                💡 إجابة (أ) <span class="click-count">👁️ <span class="cnt-val">0</span></span>
+                            </a>
+                        </div>
+                        <div class="model-pair-row">
+                            <a href="https://www.edunet.bh/e_content/level_2/stage_8/subject_ID_5/Part_1/TIMSS/Sci-Ch2B-G8/Sci-Ch2B-G8/story.html" target="_blank" class="btn btn-g2" data-track-id="sci_g2_ch2_b" data-track-cat="علوم - الثاني الإعدادي" data-track-name="الفصل 2: الدوران والمناعة - نموذج (ب)">
+                                🚀 نموذج (ب) <span class="click-count">👁️ <span class="cnt-val">0</span></span>
+                            </a>
+                            <a href="https://drive.google.com/file/d/1ibkweKz_FVUXSBWYzB-Bvd3HZk2MJAaE/view?usp=drive_link" target="_blank" class="btn btn-ans" data-track-id="sci_g2_ch2_b_ans" data-track-cat="إجابات علوم - الثاني الإعدادي" data-track-name="إجابة الفصل 2 - نموذج (ب)">
+                                💡 إجابة (ب) <span class="click-count">👁️ <span class="cnt-val">0</span></span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="model-card g2-card">
+                    <div class="model-icon">🫁</div>
+                    <h3>الفصل الثالث: أجهزة الجسم (الهضم، التنفس، الإخراج)</h3>
+                    <div class="models-rows-container">
+                        <div class="model-pair-row">
+                            <a href="https://www.edunet.bh/e_content/level_2/stage_8/subject_ID_5/Part_1/TIMSS/Sci-Ch3A-G8/Sci-Ch3A-G8/story.html" target="_blank" class="btn btn-g2" data-track-id="sci_g2_ch3_a" data-track-cat="علوم - الثاني الإعدادي" data-track-name="الفصل 3: أجهزة الجسم - نموذج (أ)">
+                                🚀 نموذج (أ) <span class="click-count">👁️ <span class="cnt-val">0</span></span>
+                            </a>
+                            <a href="https://drive.google.com/file/d/1aELVeMJzWay7tr9080deyWzEd24y7TqW/view?usp=drive_link" target="_blank" class="btn btn-ans" data-track-id="sci_g2_ch3_a_ans" data-track-cat="إجابات علوم - الثاني الإعدادي" data-track-name="إجابة الفصل 3 - نموذج (أ)">
+                                💡 إجابة (أ) <span class="click-count">👁️ <span class="cnt-val">0</span></span>
+                            </a>
+                        </div>
+                        <div class="model-pair-row">
+                            <a href="https://www.edunet.bh/e_content/level_2/stage_8/subject_ID_5/Part_1/TIMSS/Sci-Ch3B-G8/Sci-Ch3B-G8/story.html" target="_blank" class="btn btn-g2" data-track-id="sci_g2_ch3_b" data-track-cat="علوم - الثاني الإعدادي" data-track-name="الفصل 3: أجهزة الجسم - نموذج (ب)">
+                                🚀 نموذج (ب) <span class="click-count">👁️ <span class="cnt-val">0</span></span>
+                            </a>
+                            <a href="https://drive.google.com/file/d/1AB2FUNEAsZ4OsSUU3jXl2cttAq7lxnTi/view?usp=drive_link" target="_blank" class="btn btn-ans" data-track-id="sci_g2_ch3_b_ans" data-track-cat="إجابات علوم - الثاني الإعدادي" data-track-name="إجابة الفصل 3 - نموذج (ب)">
+                                💡 إجابة (ب) <span class="click-count">👁️ <span class="cnt-val">0</span></span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="model-card g2-card">
+                    <div class="model-icon">🪐</div>
+                    <h3>الفصل الرابع: استكشاف الفضاء</h3>
+                    <div class="models-rows-container">
+                        <div class="model-pair-row">
+                            <a href="#" class="btn btn-disabled">⏳ النموذج (قريباً)</a>
+                            <a href="https://drive.google.com/file/d/1yNyUPc_eOdly-_hM2OwvIuXvws5orCwU/view?usp=drive_link" target="_blank" class="btn btn-ans" data-track-id="sci_g2_ch4_ans" data-track-cat="إجابات علوم - الثاني الإعدادي" data-track-name="إجابة الفصل 4: استكشاف الفضاء">
+                                💡 إجابة النموذج <span class="click-count">👁️ <span class="cnt-val">0</span></span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="model-card g2-card">
+                    <div class="model-icon">🌡️</div>
+                    <h3>الفصل الخامس: المادة (سلوك الموائع والحرارة)</h3>
+                    <div class="models-rows-container">
+                        <div class="model-pair-row">
+                            <a href="#" class="btn btn-disabled">⏳ النموذج (قريباً)</a>
+                            <a href="https://drive.google.com/file/d/17yAdCwMQRN_RrfNDA-BjTglyh4Gr4D6d/view?usp=drive_link" target="_blank" class="btn btn-ans" data-track-id="sci_g2_ch5_ans" data-track-cat="إجابات علوم - الثاني الإعدادي" data-track-name="إجابة الفصل 5: المادة والموائع">
+                                💡 إجابة النموذج <span class="click-count">👁️ <span class="cnt-val">0</span></span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h3 class="extra-section-title">✨ مصادر إثرائية وملازم (الثاني الإعدادي)</h3>
+            <div class="models-grid">
+                <div class="model-card g2-card">
+                    <div class="model-icon">📚</div>
+                    <h3>ملزمة العلوم الشاملة - الفصل الأول</h3>
+                    <div class="btn-group">
+                        <a href="https://drive.google.com/file/d/1vFZjenzNMjVAcaZ78gavKFAzdge8BPo4/view?usp=sharing" target="_blank" class="btn btn-g2" data-track-id="sci_g2_booklet" data-track-cat="مصادر إثرائية - الثاني الإعدادي" data-track-name="ملزمة العلوم الشاملة">
+                            📖 تصفح الملزمة <span class="click-count">👁️ <span class="cnt-val">0</span></span>
+                        </a>
+                    </div>
+                </div>
+                <div class="model-card g2-card">
+                    <div class="model-icon">🎮</div>
+                    <h3>بوابة الأنشطة الإثرائية والألعاب العلمية</h3>
+                    <div class="btn-group">
+                        <a href="https://sabrysci.github.io/Science/" target="_blank" class="btn btn-g2" data-track-id="sci_g2_activities" data-track-cat="مصادر إثرائية - الثاني الإعدادي" data-track-name="بوابة الأنشطة الإثرائية">
+                            ✨ ابدأ التحدي الآن <span class="click-count">👁️ <span class="cnt-val">0</span></span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= 6. نماذج الرياضيات - الصف الأول الإعدادي ================= -->
+        <div id="view-math-g1" class="view-section">
+            <div class="nav-bar">
+                <div class="nav-title" style="color: #34d399;">📐 رياضيات - الصف الأول الإعدادي</div>
+                <div class="nav-buttons">
+                    <button class="btn-nav" onclick="showView('view-math-grades')">🔙 تغيير الصف</button>
+                    <button class="btn-nav btn-home" onclick="showView('view-home')">🏠 الصفحة الرئيسية</button>
+                </div>
+            </div>
+
+            <div class="models-grid">
+                <div class="model-card g1-card">
+                    <div class="model-icon">⭕</div>
+                    <h3>الفصل الأول: المجموعات</h3>
+                    <div class="btn-group">
+                        <a href="https://www.edunet.bh/e_content/level_2/stage_7/subject_ID_3/Part_1/TIMSS/G7-S1-Ch1/G7-S1-Ch1/story.html" target="_blank" class="btn btn-g1" data-track-id="math_g1_ch1" data-track-cat="رياضيات - الأول الإعدادي" data-track-name="الفصل 1: المجموعات">
+                            🚀 ابدأ النموذج <span class="click-count">👁️ <span class="cnt-val">0</span></span>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="model-card g1-card">
+                    <div class="model-icon">🧮</div>
+                    <h3>الفصل الثاني: الجبر والدوال</h3>
+                    <div class="btn-group">
+                        <a href="https://www.edunet.bh/e_content/level_2/stage_7/subject_ID_3/Part_1/TIMSS/G7-Unite-1%281%29/G7-Unite%201/story.html" target="_blank" class="btn btn-g1" data-track-id="math_g1_ch2" data-track-cat="رياضيات - الأول الإعدادي" data-track-name="الفصل 2: الجبر والدوال">
+                            🚀 ابدأ النموذج <span class="click-count">👁️ <span class="cnt-val">0</span></span>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="model-card g1-card">
+                    <div class="model-icon">🔢</div>
+                    <h3>الفصل الثالث: الأعداد الصحيحة</h3>
+                    <div class="btn-group">
+                        <a href="https://www.edunet.bh/e_content/level_2/stage_7/subject_ID_3/Part_1/TIMSS/G7-Unite-2%281%29/G7-Unite%202/story.html" target="_blank" class="btn btn-g1" data-track-id="math_g1_ch3" data-track-cat="رياضيات - الأول الإعدادي" data-track-name="الفصل 3: الأعداد الصحيحة">
+                            🚀 ابدأ النموذج <span class="click-count">👁️ <span class="cnt-val">0</span></span>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="model-card g1-card">
+                    <div class="model-icon">📈</div>
+                    <h3>الفصل الرابع: المعادلات الخطية والدوال</h3>
+                    <div class="btn-group">
+                        <a href="https://www.edunet.bh/e_content/level_2/stage_7/subject_ID_3/Part_1/TIMSS/G7-Unite-3/G7-Unite%203/story.html" target="_blank" class="btn btn-g1" data-track-id="math_g1_ch4" data-track-cat="رياضيات - الأول الإعدادي" data-track-name="الفصل 4: المعادلات الخطية والدوال">
+                            🚀 ابدأ النموذج <span class="click-count">👁️ <span class="cnt-val">0</span></span>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="model-card g1-card">
+                    <div class="model-icon">⚖️</div>
+                    <h3>الفصل الخامس: النسبة والتناسب</h3>
+                    <div class="btn-group">
+                        <a href="https://www.edunet.bh/e_content/level_2/stage_7/subject_ID_3/Part_1/TIMSS/G7-Unite-4/G7-Unite%204/story.html" target="_blank" class="btn btn-g1" data-track-id="math_g1_ch5" data-track-cat="رياضيات - الأول الإعدادي" data-track-name="الفصل 5: النسبة والتناسب">
+                            🚀 ابدأ النموذج <span class="click-count">👁️ <span class="cnt-val">0</span></span>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="model-card g1-card">
+                    <div class="model-icon">💯</div>
+                    <h3>الفصل السادس: تطبيقات النسبة المئوية</h3>
+                    <div class="btn-group">
+                        <a href="https://www.edunet.bh/e_content/level_2/stage_7/subject_ID_3/Part_1/TIMSS/G7-Unite-5/G7-Unite%205/story.html" target="_blank" class="btn btn-g1" data-track-id="math_g1_ch6" data-track-cat="رياضيات - الأول الإعدادي" data-track-name="الفصل 6: تطبيقات النسبة المئوية">
+                            🚀 ابدأ النموذج <span class="click-count">👁️ <span class="cnt-val">0</span></span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= 7. نماذج الرياضيات - الصف الثاني الإعدادي ================= -->
+        <div id="view-math-g2" class="view-section">
+            <div class="nav-bar">
+                <div class="nav-title" style="color: #fbbf24;">📐 رياضيات - الصف الثاني الإعدادي</div>
+                <div class="nav-buttons">
+                    <button class="btn-nav" onclick="showView('view-math-grades')">🔙 تغيير الصف</button>
+                    <button class="btn-nav btn-home" onclick="showView('view-home')">🏠 الصفحة الرئيسية</button>
+                </div>
+            </div>
+
+            <div class="models-grid">
+                <div class="model-card g2-card">
+                    <div class="model-icon">➗</div>
+                    <h3>الفصل الثاني: الأعداد النسبية</h3>
+                    <div class="btn-group">
+                        <a href="https://www.edunet.bh/e_content/level_2/stage_8/subject_ID_3/Part_1/TIMSS/Math-Ch2A-G8/Math-Ch2A-G8/story.html" target="_blank" class="btn btn-g2" data-track-id="math_g2_ch2_a" data-track-cat="رياضيات - الثاني الإعدادي" data-track-name="الفصل 2: الأعداد النسبية - نموذج (أ)">
+                            نموذج (أ) <span class="click-count">👁️ <span class="cnt-val">0</span></span>
+                        </a>
+                        <a href="https://www.edunet.bh/e_content/level_2/stage_8/subject_ID_3/Part_1/TIMSS/Math-Ch2B-G8/Math-Ch2B-G8/story.html" target="_blank" class="btn btn-g2" data-track-id="math_g2_ch2_b" data-track-cat="رياضيات - الثاني الإعدادي" data-track-name="الفصل 2: الأعداد النسبية - نموذج (ب)">
+                            نموذج (ب) <span class="click-count">👁️ <span class="cnt-val">0</span></span>
+                        </a>
+                        <a href="https://www.edunet.bh/e_content/level_2/stage_8/subject_ID_3/Part_1/TIMSS/Math-Ch2C-G8/Math-Ch2C-G8/story.html" target="_blank" class="btn btn-g2" data-track-id="math_g2_ch2_c" data-track-cat="رياضيات - الثاني الإعدادي" data-track-name="الفصل 2: الأعداد النسبية - نموذج (ج)">
+                            نموذج (ج) <span class="click-count">👁️ <span class="cnt-val">0</span></span>
+                        </a>
+                        <a href="https://www.edunet.bh/e_content/level_2/stage_8/subject_ID_3/Part_1/TIMSS/Math-Ch2D-G8/Math-Ch2D-G8/story.html" target="_blank" class="btn btn-g2" data-track-id="math_g2_ch2_d" data-track-cat="رياضيات - الثاني الإعدادي" data-track-name="الفصل 2: الأعداد النسبية - نموذج (د)">
+                            نموذج (د) <span class="click-count">👁️ <span class="cnt-val">0</span></span>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="model-card g2-card">
+                    <div class="model-icon">📐</div>
+                    <h3>الفصل الثالث: الأعداد الحقيقية وفيثاغورس</h3>
+                    <div class="btn-group">
+                        <a href="https://www.edunet.bh/e_content/level_2/stage_8/subject_ID_3/Part_1/TIMSS/Math-Ch3A-G8/Math-Ch3A-G8/story.html" target="_blank" class="btn btn-g2" data-track-id="math_g2_ch3_a" data-track-cat="رياضيات - الثاني الإعدادي" data-track-name="الفصل 3: فيثاغورس - نموذج (أ)">
+                            نموذج (أ) <span class="click-count">👁️ <span class="cnt-val">0</span></span>
+                        </a>
+                        <a href="https://www.edunet.bh/e_content/level_2/stage_8/subject_ID_3/Part_1/TIMSS/Math-Ch3B-G8/Math_Ch3B_G8/story.html" target="_blank" class="btn btn-g2" data-track-id="math_g2_ch3_b" data-track-cat="رياضيات - الثاني الإعدادي" data-track-name="الفصل 3: فيثاغورس - نموذج (ب)">
+                            نموذج (ب) <span class="click-count">👁️ <span class="cnt-val">0</span></span>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="model-card g2-card">
+                    <div class="model-icon">⚖️</div>
+                    <h3>الفصل الرابع: النسبة والتناسب</h3>
+                    <div class="btn-group">
+                        <a href="#" class="btn btn-disabled">قريباً</a>
+                    </div>
+                </div>
+
+                <div class="model-card g2-card">
+                    <div class="model-icon">💯</div>
+                    <h3>الفصل الخامس: النسبة المئوية</h3>
+                    <div class="btn-group">
+                        <a href="#" class="btn btn-disabled">قريباً</a>
+                    </div>
+                </div>
+
+                <div class="model-card g2-card">
+                    <div class="model-icon">📏</div>
+                    <h3>الفصل السادس: الهندسة والاستدلال</h3>
+                    <div class="btn-group">
+                        <a href="#" class="btn btn-disabled">قريباً</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= 8. شاشة لوحة الإحصائيات الشاملة للمعلم ================= -->
+        <div id="view-analytics" class="view-section">
+            <div class="nav-bar">
+                <div class="nav-title" style="color: var(--sci-glow);">📊 لوحة الإحصائيات والتقارير التفصيلية</div>
+                <div class="nav-buttons">
+                    <button class="btn-nav" onclick="fetchFullAnalytics()">🔄 تحديث البيانات الآن</button>
+                    <button class="btn-nav btn-home" onclick="showView('view-home')">🏠 العودة للمنصة</button>
+                </div>
+            </div>
+
+            <div class="dashboard-container">
+                <p id="analyticsStatus" style="color: #fbbf24; margin-bottom: 15px; font-weight: bold;">⏳ جاري الاتصال بملف Google Sheets وجلب البيانات...</p>
+
+                <!-- فلاتر الوقت والتاريخ -->
+                <div class="filter-panel">
+                    <div class="quick-filters">
+                        <span style="font-weight: 800; color: #fff; margin-left: 8px;">📅 تصفية حسب الفترة:</span>
+                        <button class="filter-btn active" id="f-all" onclick="setQuickFilter('all')">كل الأوقات</button>
+                        <button class="filter-btn" id="f-today" onclick="setQuickFilter('today')">اليوم فقط</button>
+                        <button class="filter-btn" id="f-yesterday" onclick="setQuickFilter('yesterday')">أمس</button>
+                        <button class="filter-btn" id="f-week" onclick="setQuickFilter('week')">آخر 7 أيام</button>
+                    </div>
+                    <div class="custom-date-filters">
+                        <div class="date-input-group">
+                            <label>من وقت:</label>
+                            <input type="datetime-local" id="filterFrom" class="date-input" onchange="applyCustomDateFilter()">
+                        </div>
+                        <div class="date-input-group">
+                            <label>إلى وقت:</label>
+                            <input type="datetime-local" id="filterTo" class="date-input" onchange="applyCustomDateFilter()">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- الصف الأول من البطاقات: الإجماليات الكبرى والمشتركة -->
+                <div class="kpi-grid-main">
+                    <div class="kpi-card kpi-grand">
+                        <div class="kpi-title">🌐 الإجمالي العام للنماذج (الكل)</div>
+                        <div class="kpi-value" id="kpi-all-total" style="color: #fff;">0</div>
+                        <div class="kpi-sub">علوم + رياضيات (الأول والثاني معاً)</div>
+                    </div>
+                    <div class="kpi-card kpi-sci">
+                        <div class="kpi-title">🔬 إجمالي العلوم (أول + ثاني)</div>
+                        <div class="kpi-value" id="kpi-sci-both" style="color: var(--sci-glow);">0</div>
+                        <div class="kpi-sub">مجموع نماذج العلوم للصفين معاً</div>
+                    </div>
+                    <div class="kpi-card kpi-math">
+                        <div class="kpi-title">📐 إجمالي الرياضيات (أول + ثاني)</div>
+                        <div class="kpi-value" id="kpi-math-both" style="color: var(--math-glow);">0</div>
+                        <div class="kpi-sub">مجموع نماذج الرياضيات للصفين معاً</div>
+                    </div>
+                    <div class="kpi-card kpi-g1">
+                        <div class="kpi-title">🌱 إجمالي الأول الإعدادي (الكل)</div>
+                        <div class="kpi-value" id="kpi-g1-both" style="color: #34d399;">0</div>
+                        <div class="kpi-sub">علوم + رياضيات (الأول الإعدادي)</div>
+                    </div>
+                    <div class="kpi-card kpi-g2">
+                        <div class="kpi-title">🚀 إجمالي الثاني الإعدادي (الكل)</div>
+                        <div class="kpi-value" id="kpi-g2-both" style="color: #fbbf24;">0</div>
+                        <div class="kpi-sub">علوم + رياضيات (الثاني الإعدادي)</div>
+                    </div>
+                </div>
+
+                <!-- الصف الثاني من البطاقات: إجماليات كل صف ومادة منفردة -->
+                <div class="kpi-grid-main">
+                    <div class="kpi-card">
+                        <div class="kpi-title">🔬 علوم - الأول الإعدادي</div>
+                        <div class="kpi-value" id="kpi-sci-g1" style="color: #34d399;">0</div>
+                        <div class="kpi-sub">نماذج العلوم للأول الإعدادي</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-title">🔬 علوم - الثاني الإعدادي</div>
+                        <div class="kpi-value" id="kpi-sci-g2" style="color: #fbbf24;">0</div>
+                        <div class="kpi-sub">نماذج العلوم للثاني الإعدادي</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-title">📐 رياضيات - الأول الإعدادي</div>
+                        <div class="kpi-value" id="kpi-math-g1" style="color: #34d399;">0</div>
+                        <div class="kpi-sub">نماذج الرياضيات للأول الإعدادي</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-title">📐 رياضيات - الثاني الإعدادي</div>
+                        <div class="kpi-value" id="kpi-math-g2" style="color: #fbbf24;">0</div>
+                        <div class="kpi-sub">نماذج الرياضيات للثاني الإعدادي</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-title">💡 الإجابات والمصادر الإثرائية</div>
+                        <div class="kpi-value" id="kpi-answers-extra" style="color: #38bdf8;">0</div>
+                        <div class="kpi-sub">نموذج الإجابات + الملزمة والأنشطة</div>
+                    </div>
+                </div>
+
+                <!-- الجداول التفصيلية لكل قسم -->
+                <div class="tables-grid">
+                    <!-- جدول علوم أول إعدادي -->
+                    <div class="stat-box">
+                        <div class="stat-box-header" style="background: rgba(16, 185, 129, 0.12); color: #34d399;">
+                            <span>🔬 تفصيل نماذج العلوم - الأول الإعدادي</span>
+                        </div>
+                        <table class="stats-table">
+                            <thead><tr><th>اسم النموذج</th><th>مرات الدخول</th></tr></thead>
+                            <tbody id="tb-sci-g1"></tbody>
+                        </table>
+                    </div>
+
+                    <!-- جدول رياضيات أول إعدادي -->
+                    <div class="stat-box">
+                        <div class="stat-box-header" style="background: rgba(16, 185, 129, 0.12); color: #34d399;">
+                            <span>📐 تفصيل نماذج الرياضيات - الأول الإعدادي</span>
+                        </div>
+                        <table class="stats-table">
+                            <thead><tr><th>اسم النموذج</th><th>مرات الدخول</th></tr></thead>
+                            <tbody id="tb-math-g1"></tbody>
+                        </table>
+                    </div>
+
+                    <!-- جدول علوم ثاني إعدادي -->
+                    <div class="stat-box">
+                        <div class="stat-box-header" style="background: rgba(245, 158, 11, 0.12); color: #fbbf24;">
+                            <span>🔬 تفصيل نماذج العلوم - الثاني الإعدادي</span>
+                        </div>
+                        <table class="stats-table">
+                            <thead><tr><th>اسم النموذج</th><th>مرات الدخول</th></tr></thead>
+                            <tbody id="tb-sci-g2"></tbody>
+                        </table>
+                    </div>
+
+                    <!-- جدول رياضيات ثاني إعدادي -->
+                    <div class="stat-box">
+                        <div class="stat-box-header" style="background: rgba(245, 158, 11, 0.12); color: #fbbf24;">
+                            <span>📐 تفصيل نماذج الرياضيات - الثاني الإعدادي</span>
+                        </div>
+                        <table class="stats-table">
+                            <thead><tr><th>اسم النموذج</th><th>مرات الدخول</th></tr></thead>
+                            <tbody id="tb-math-g2"></tbody>
+                        </table>
+                    </div>
+
+                    <!-- جدول الإجابات والمصادر الإثرائية -->
+                    <div class="stat-box" style="grid-column: 1 / -1;">
+                        <div class="stat-box-header" style="background: rgba(0, 242, 254, 0.1); color: var(--sci-glow);">
+                            <span>💡 تفصيل إجابات النماذج والمصادر الإثرائية (الثاني الإعدادي)</span>
+                        </div>
+                        <table class="stats-table">
+                            <thead><tr><th>اسم الملف / المصدر</th><th>مرات الدخول</th></tr></thead>
+                            <tbody id="tb-extra"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- التذييل الثابت -->
         <footer>
             <img src="https://i.postimg.cc/BvB49Nw7/alswrt-aljdydt.jpg" alt="TIMSS 2027" class="footer-img">
-            <p>جميع الحقوق محفوظة &copy; 2026 | إعداد وتنفيذ الأستاذ / صبري محمد حمد</p>
+            <div class="footer-actions">
+                <div class="dev-credit">
+                    💻 برمجة الأستاذ / صبري محمد حمد <span>36864227</span>
+                </div>
+                <button class="btn-stats-open" onclick="openAnalyticsView()">📊 لوحة الإحصائيات الشاملة والفلاتر</button>
+            </div>
         </footer>
     </div>
 
-    <!-- سكريبت الخلفية السحرية (جزيئات تتحرك) -->
     <script>
+        // ✅ تم وضع رابط تطبيق الويب الخاص بك هنا:
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz_RZ_RFSzE8OH4yZJNDHhptdhQ_fBTubu8hJUZLjutbMJ6S4QmSkIXO7P8RLyum3qm/exec";
+
+        // قاعدة البيانات التعريفية لجميع النماذج والأيقونات لضمان ظهورها في الإحصائيات حتى لو كانت 0
+        const ITEMS_CATALOG = [
+            // علوم أول إعدادي
+            { id: 'sci_g1_ch1_3', group: 'sci_g1', name: 'الفصل 1 و 3: الخلايا لبنات الحياة والنباتات' },
+            { id: 'sci_g1_ch2',   group: 'sci_g1', name: 'الفصل 2: الحركة والقوى والآلات البسيطة' },
+            { id: 'sci_g1_ch4_5', group: 'sci_g1', name: 'الفصل 4 و 5: الصخور والمعادن والذرات' },
+
+            // رياضيات أول إعدادي
+            { id: 'math_g1_ch1', group: 'math_g1', name: 'الفصل 1: المجموعات' },
+            { id: 'math_g1_ch2', group: 'math_g1', name: 'الفصل 2: الجبر والدوال' },
+            { id: 'math_g1_ch3', group: 'math_g1', name: 'الفصل 3: الأعداد الصحيحة' },
+            { id: 'math_g1_ch4', group: 'math_g1', name: 'الفصل 4: المعادلات الخطية والدوال' },
+            { id: 'math_g1_ch5', group: 'math_g1', name: 'الفصل 5: النسبة والتناسب' },
+            { id: 'math_g1_ch6', group: 'math_g1', name: 'الفصل 6: تطبيقات النسبة المئوية' },
+
+            // علوم ثاني إعدادي (النماذج)
+            { id: 'sci_g2_ch1_a', group: 'sci_g2', name: 'الفصل 1: طبيعة المادة - نموذج (أ)' },
+            { id: 'sci_g2_ch1_b', group: 'sci_g2', name: 'الفصل 1: طبيعة المادة - نموذج (ب)' },
+            { id: 'sci_g2_ch2_a', group: 'sci_g2', name: 'الفصل 2: الدوران والمناعة - نموذج (أ)' },
+            { id: 'sci_g2_ch2_b', group: 'sci_g2', name: 'الفصل 2: الدوران والمناعة - نموذج (ب)' },
+            { id: 'sci_g2_ch3_a', group: 'sci_g2', name: 'الفصل 3: أجهزة الجسم - نموذج (أ)' },
+            { id: 'sci_g2_ch3_b', group: 'sci_g2', name: 'الفصل 3: أجهزة الجسم - نموذج (ب)' },
+
+            // رياضيات ثاني إعدادي (النماذج)
+            { id: 'math_g2_ch2_a', group: 'math_g2', name: 'الفصل 2: الأعداد النسبية - نموذج (أ)' },
+            { id: 'math_g2_ch2_b', group: 'math_g2', name: 'الفصل 2: الأعداد النسبية - نموذج (ب)' },
+            { id: 'math_g2_ch2_c', group: 'math_g2', name: 'الفصل 2: الأعداد النسبية - نموذج (ج)' },
+            { id: 'math_g2_ch2_d', group: 'math_g2', name: 'الفصل 2: الأعداد النسبية - نموذج (د)' },
+            { id: 'math_g2_ch3_a', group: 'math_g2', name: 'الفصل 3: فيثاغورس - نموذج (أ)' },
+            { id: 'math_g2_ch3_b', group: 'math_g2', name: 'الفصل 3: فيثاغورس - نموذج (ب)' },
+
+            // إجابات ومصادر الثاني الإعدادي
+            { id: 'sci_g2_ch1_a_ans', group: 'extra', name: 'إجابة علوم ثانية - الفصل 1 نموذج (أ)' },
+            { id: 'sci_g2_ch1_b_ans', group: 'extra', name: 'إجابة علوم ثانية - الفصل 1 نموذج (ب)' },
+            { id: 'sci_g2_ch2_a_ans', group: 'extra', name: 'إجابة علوم ثانية - الفصل 2 نموذج (أ)' },
+            { id: 'sci_g2_ch2_b_ans', group: 'extra', name: 'إجابة علوم ثانية - الفصل 2 نموذج (ب)' },
+            { id: 'sci_g2_ch3_a_ans', group: 'extra', name: 'إجابة علوم ثانية - الفصل 3 نموذج (أ)' },
+            { id: 'sci_g2_ch3_b_ans', group: 'extra', name: 'إجابة علوم ثانية - الفصل 3 نموذج (ب)' },
+            { id: 'sci_g2_ch4_ans',   group: 'extra', name: 'إجابة علوم ثانية - الفصل 4 (الفضاء)' },
+            { id: 'sci_g2_ch5_ans',   group: 'extra', name: 'إجابة علوم ثانية - الفصل 5 (المادة)' },
+            { id: 'sci_g2_booklet',   group: 'extra', name: 'ملزمة العلوم الشاملة (الثاني الإعدادي)' },
+            { id: 'sci_g2_activities',group: 'extra', name: 'بوابة الأنشطة الإثرائية والألعاب العلمية' }
+        ];
+
+        let serverSummaryStats = {};
+        let serverLogs = [];
+        let activeFilterMode = 'all';
+
+        // دالة التنقل بين الشاشات
+        function showView(viewId) {
+            const views = document.querySelectorAll('.view-section');
+            views.forEach(view => view.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+            
+            const headerHeight = document.querySelector('header').offsetHeight;
+            window.scrollTo({ top: Math.min(headerHeight, 160), behavior: 'smooth' });
+        }
+
+        function openAnalyticsView() {
+            showView('view-analytics');
+            fetchFullAnalytics();
+        }
+
+        // جلب البيانات من الشيت عند فتح الصفحة
+        function loadInitialBadges() {
+            fetch(GOOGLE_SCRIPT_URL)
+                .then(res => res.json())
+                .then(data => {
+                    if (data && data.stats) {
+                        serverSummaryStats = data.stats;
+                        serverLogs = data.logs || [];
+                        updatePageBadges(serverSummaryStats);
+                    }
+                })
+                .catch(err => console.warn("تعذر جلب الإحصائيات المبدئية:", err));
+        }
+
+        function updatePageBadges(statsObj) {
+            document.querySelectorAll('[data-track-id]').forEach(el => {
+                const id = el.getAttribute('data-track-id');
+                const countSpan = el.querySelector('.cnt-val');
+                if (countSpan && statsObj[id] !== undefined) {
+                    countSpan.textContent = statsObj[id];
+                }
+            });
+        }
+
+        // تسجيل الضغطة وإرسالها إلى Google Sheets
+        document.addEventListener('click', function(e) {
+            const trackEl = e.target.closest('[data-track-id]');
+            if (!trackEl) return;
+
+            const id = trackEl.getAttribute('data-track-id');
+            const category = trackEl.getAttribute('data-track-cat') || 'عام';
+            const name = trackEl.getAttribute('data-track-name') || id;
+
+            const countSpan = trackEl.querySelector('.cnt-val');
+            if (countSpan) {
+                countSpan.textContent = (parseInt(countSpan.textContent) || 0) + 1;
+            }
+
+            // تحديث البيانات المحلية مؤقتاً
+            serverSummaryStats[id] = (serverSummaryStats[id] || 0) + 1;
+            const nowIso = new Date().toISOString().slice(0, 19).replace('T', ' ');
+            serverLogs.push({ timestamp: nowIso, category: category, name: name, id: id });
+
+            const url = `${GOOGLE_SCRIPT_URL}?action=click&id=${encodeURIComponent(id)}&category=${encodeURIComponent(category)}&name=${encodeURIComponent(name)}`;
+            fetch(url, { mode: 'no-cors', keepalive: true });
+        });
+
+        // جلب البيانات الكاملة للوحة الإحصائيات
+        function fetchFullAnalytics() {
+            const statusEl = document.getElementById('analyticsStatus');
+            statusEl.textContent = "⏳ جاري تحديث البيانات مباشرة من Google Sheets...";
+            statusEl.style.color = "#fbbf24";
+
+            fetch(GOOGLE_SCRIPT_URL)
+                .then(res => res.json())
+                .then(data => {
+                    serverSummaryStats = data.stats || {};
+                    serverLogs = data.logs || [];
+                    updatePageBadges(serverSummaryStats);
+
+                    if (data.logs) {
+                        statusEl.textContent = `✅ تم التحديث بنجاح! (إجمالي العمليات المسجلة في السجل الزمني: ${serverLogs.length} عملية)`;
+                        statusEl.style.color = "#34d399";
+                    } else {
+                        statusEl.textContent = "⚠️ تم جلب الإحصائيات العامة. (لتفعيل فلتر التاريخ/الوقت، يرجى تحديث كود Apps Script في الشيت كما هو موضح بالشرح).";
+                        statusEl.style.color = "#fbbf24";
+                    }
+                    renderDashboard();
+                })
+                .catch(() => {
+                    statusEl.textContent = "❌ تعذر الاتصال بملف Google Sheets. تأكد من اتصال الإنترنت.";
+                    statusEl.style.color = "#ef4444";
+                });
+        }
+
+        // التحكم في الفلاتر السريعة
+        function setQuickFilter(mode) {
+            activeFilterMode = mode;
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('f-' + mode).classList.add('active');
+            document.getElementById('filterFrom').value = '';
+            document.getElementById('filterTo').value = '';
+            renderDashboard();
+        }
+
+        // التحكم في الفلتر المخصص (من تاريخ/وقت إلى تاريخ/وقت)
+        function applyCustomDateFilter() {
+            activeFilterMode = 'custom';
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            renderDashboard();
+        }
+
+        // تحويل نص التاريخ من الشيت إلى كائن Date
+        function parseSheetDate(str) {
+            if (!str) return null;
+            const clean = str.trim().replace(' ', 'T');
+            const d = new Date(clean);
+            return isNaN(d.getTime()) ? new Date(str) : d;
+        }
+
+        // حساب وعرض الإحصائيات بناءً على الفلتر المختار
+        function renderDashboard() {
+            let countsById = {};
+
+            // إذا كان الخيار "كل الأوقات" ولا يوجد سجل زمني، نستخدم الملخص المباشر
+            if (activeFilterMode === 'all' && serverLogs.length === 0) {
+                countsById = { ...serverSummaryStats };
+            } else if (activeFilterMode === 'all') {
+                // نأخذ الأكبر بين الملخص والسجل لضمان الدقة الكاملة
+                ITEMS_CATALOG.forEach(item => {
+                    countsById[item.id] = serverSummaryStats[item.id] || 0;
+                });
+            } else {
+                // حساب الفترة الزمنية المطلوبة من السجل الزمني
+                const now = new Date();
+                let startDate = null;
+                let endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+
+                if (activeFilterMode === 'today') {
+                    startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+                } else if (activeFilterMode === 'yesterday') {
+                    startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 0, 0, 0, 0);
+                    endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 23, 59, 59, 999);
+                } else if (activeFilterMode === 'week') {
+                    startDate = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
+                } else if (activeFilterMode === 'custom') {
+                    const fromVal = document.getElementById('filterFrom').value;
+                    const toVal = document.getElementById('filterTo').value;
+                    startDate = fromVal ? new Date(fromVal) : new Date(2020, 0, 1);
+                    endDate = toVal ? new Date(toVal) : new Date(2035, 0, 1);
+                }
+
+                serverLogs.forEach(log => {
+                    const logDate = parseSheetDate(log.timestamp);
+                    if (logDate && logDate >= startDate && logDate <= endDate) {
+                        countsById[log.id] = (countsById[log.id] || 0) + 1;
+                    }
+                });
+            }
+
+            // حساب المجاميع لكل قسم
+            let sumSciG1 = 0, sumMathG1 = 0, sumSciG2 = 0, sumMathG2 = 0, sumExtra = 0;
+
+            const tbSciG1 = document.getElementById('tb-sci-g1');
+            const tbMathG1 = document.getElementById('tb-math-g1');
+            const tbSciG2 = document.getElementById('tb-sci-g2');
+            const tbMathG2 = document.getElementById('tb-math-g2');
+            const tbExtra = document.getElementById('tb-extra');
+
+            tbSciG1.innerHTML = ''; tbMathG1.innerHTML = '';
+            tbSciG2.innerHTML = ''; tbMathG2.innerHTML = '';
+            tbExtra.innerHTML = '';
+
+            ITEMS_CATALOG.forEach(item => {
+                const c = countsById[item.id] || 0;
+                const rowHtml = `<tr>
+                    <td style="font-weight: 600; color: #e2e8f0;">${item.name}</td>
+                    <td style="font-weight: 900; font-size: 1.05rem; color: ${c > 0 ? '#00f2fe' : '#64748b'};">${c}</td>
+                </tr>`;
+
+                if (item.group === 'sci_g1') {
+                    sumSciG1 += c;
+                    tbSciG1.innerHTML += rowHtml;
+                } else if (item.group === 'math_g1') {
+                    sumMathG1 += c;
+                    tbMathG1.innerHTML += rowHtml;
+                } else if (item.group === 'sci_g2') {
+                    sumSciG2 += c;
+                    tbSciG2.innerHTML += rowHtml;
+                } else if (item.group === 'math_g2') {
+                    sumMathG2 += c;
+                    tbMathG2.innerHTML += rowHtml;
+                } else if (item.group === 'extra') {
+                    sumExtra += c;
+                    tbExtra.innerHTML += rowHtml;
+                }
+            });
+
+            // حساب المجاميع المشتركة والكلية
+            const totalSciBoth = sumSciG1 + sumSciG2;
+            const totalMathBoth = sumMathG1 + sumMathG2;
+            const totalG1Both = sumSciG1 + sumMathG1;
+            const totalG2Both = sumSciG2 + sumMathG2;
+            const grandTotalModels = totalSciBoth + totalMathBoth;
+
+            // تحديث البطاقات الرقمية
+            document.getElementById('kpi-sci-g1').textContent = sumSciG1;
+            document.getElementById('kpi-math-g1').textContent = sumMathG1;
+            document.getElementById('kpi-sci-g2').textContent = sumSciG2;
+            document.getElementById('kpi-math-g2').textContent = sumMathG2;
+            document.getElementById('kpi-answers-extra').textContent = sumExtra;
+
+            document.getElementById('kpi-sci-both').textContent = totalSciBoth;
+            document.getElementById('kpi-math-both').textContent = totalMathBoth;
+            document.getElementById('kpi-g1-both').textContent = totalG1Both;
+            document.getElementById('kpi-g2-both').textContent = totalG2Both;
+            document.getElementById('kpi-all-total').textContent = grandTotalModels;
+        }
+
+        // سكريبت الخلفية السحرية
         const canvas = document.getElementById('magic-canvas');
         const ctx = canvas.getContext('2d');
         let width, height, particles;
@@ -300,7 +1513,8 @@
             width = canvas.width = window.innerWidth;
             height = canvas.height = window.innerHeight;
             particles = [];
-            for (let i = 0; i < 100; i++) {
+            const particleCount = width < 650 ? 45 : 90;
+            for (let i = 0; i < particleCount; i++) {
                 particles.push(new Particle());
             }
         }
@@ -310,9 +1524,9 @@
                 this.x = Math.random() * width;
                 this.y = Math.random() * height;
                 this.size = Math.random() * 2 + 0.5;
-                this.speedX = Math.random() * 1 - 0.5;
-                this.speedY = Math.random() * 1 - 0.5;
-                const colors = ['#00f2fe', '#4facfe', '#f093fb', '#fff'];
+                this.speedX = Math.random() * 0.8 - 0.4;
+                this.speedY = Math.random() * 0.8 - 0.4;
+                const colors = ['#00f2fe', '#4facfe', '#f093fb', '#10b981', '#fbbf24', '#fff'];
                 this.color = colors[Math.floor(Math.random() * colors.length)];
             }
             update() {
@@ -343,6 +1557,7 @@
         window.addEventListener('resize', init);
         init();
         animate();
+        loadInitialBadges();
     </script>
 </body>
 </html>
