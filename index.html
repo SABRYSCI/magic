@@ -101,6 +101,14 @@ footer{text-align:center;margin-top:50px;padding:28px 12px;border-top:1px solid 
 .dev span{color:var(--c1);font-weight:900}
 .btn-stats{font:900 1rem 'Cairo';color:#fff;border:0;padding:12px 24px;border-radius:50px;cursor:pointer;background:linear-gradient(45deg,#10b981,#059669);box-shadow:0 0 16px rgba(16,185,129,.35);transition:.25s}
 .btn-stats:hover{transform:translateY(-2px) scale(1.03)}
+.btn-lock{font-size:1.1rem;background:rgba(255,255,255,.06);border:1px solid var(--bd);color:#fff;width:46px;height:46px;border-radius:50%;cursor:pointer;opacity:.35;transition:.25s}
+.btn-lock:hover{opacity:1}
+#adminModal{display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:16px}
+#adminModal.show{display:flex}
+#adminBox{background:#0f1626;border:1px solid var(--bd);border-radius:24px;padding:26px;width:100%;max-width:380px;text-align:center;display:grid;gap:12px}
+#adminBox input{font:700 1rem 'Cairo';text-align:center;background:#1e293b;color:#fff;border:1px solid #475569;border-radius:12px;padding:10px}
+.am-btns{display:flex;flex-direction:column;gap:10px}
+@media print{#adminModal,.btn-lock{display:none!important}}
 @media(max-width:650px){.grid{grid-template-columns:1fr;gap:18px}.giant{min-height:230px}.giant h2{font-size:1.8rem}.nav{flex-direction:column;text-align:center}.nav-btns{width:100%}.btn-nav{flex:1}.models{grid-template-columns:1fr}.dev,.btn-stats{width:100%}.blob{filter:blur(60px)}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.card{opacity:1}}
 @media print{
@@ -173,8 +181,10 @@ footer{text-align:center;margin-top:50px;padding:28px 12px;border-top:1px solid 
  <div class="fa">
   <div class="dev">💻 برمجة الأستاذ / صبري محمد حمد <span>36864227</span></div>
   <button class="btn-stats" onclick="openAnalytics()">📊 لوحة الإحصائيات والتقارير</button>
+  <button class="btn-lock" onclick="openAdmin()" title="التحكم" aria-label="التحكم">🔒</button>
  </div>
 </footer>
+<div id="adminModal" onclick="if(event.target===this)closeAdmin()"><div id="adminBox"></div></div>
 </div>
 
 <script>
@@ -211,7 +221,7 @@ const CH={
  "math2":[
   {i:"➗",t:"الفصل 2: الأعداد النسبية",b:[M("math_g2_ch2_a","نموذج (أ)",M2+"Math-Ch2A-G8/Math-Ch2A-G8/story.html"),M("math_g2_ch2_b","نموذج (ب)",M2+"Math-Ch2B-G8/Math-Ch2B-G8/story.html"),M("math_g2_ch2_c","نموذج (ج)",M2+"Math-Ch2C-G8/Math-Ch2C-G8/story.html"),M("math_g2_ch2_d","نموذج (د)",M2+"Math-Ch2D-G8/Math-Ch2D-G8/story.html")]},
   {i:"📐",t:"الفصل 3: الأعداد الحقيقية وفيثاغورس",b:[M("math_g2_ch3_a","نموذج (أ)",M2+"Math-Ch3A-G8/Math-Ch3A-G8/story.html"),M("math_g2_ch3_b","نموذج (ب)",M2+"Math-Ch3B-G8/Math_Ch3B_G8/story.html")]},
-  {i:"⚖️",t:"الفصل 4: النسبة والتناسب",b:[M("","قريباً",null)]},
+  {i:"⚖️",t:"الفصل 4: النسبة والتناسب",b:[M("math_g2_ch4_a","نموذج (أ)",M2+"Math-Ch4A-G8/Math-Ch4A-G8/story.html"),M("math_g2_ch4_b","نموذج (ب)",M2+"Math-Ch4B-G8/Math-Ch4B-G8/story.html")]},
   {i:"💯",t:"الفصل 5: النسبة المئوية",b:[M("","قريباً",null)]},
   {i:"📏",t:"الفصل 6: الهندسة والاستدلال",b:[M("","قريباً",null)]}]
 };
@@ -242,9 +252,58 @@ function renderGrades(s){
  <span class="cbadge">👁️ <span class="cnt" data-c="${id}">${stats[id]||0}</span></span>
  <div class="ic">${GR[g].i[s]}</div><h2>الصف ${GR[g].n}</h2><p>نماذج تدريبية تفاعلية في ${SUB[s].n} - ${GR[g].n}</p><span class="pill">اضغط للدخول ⬅️</span></div>`}).join("")+`</div>`;
 }
+// إخفاء/إظهار نماذج الإجابة (PDF) الخاصة بالعلوم - الحالة مشتركة لكل الأجهزة عبر Google Sheets
+// الافتراضي: مخفية. الحالة = (عدد مرات "إظهار") أكبر من (عدد مرات "إخفاء")
+const CFG_SHOW="cfg_ans_show",CFG_HIDE="cfg_ans_hide";
+let hideAns=true;
+let curS=null,curG=null;
+function calcHide(){return !((stats[CFG_SHOW]||0)>(stats[CFG_HIDE]||0))}
+function applyHide(){
+ const h=calcHide();if(h===hideAns)return;hideAns=h;
+ if(curS&&$("view-list").classList.contains("active"))renderList(curS,curG);
+}
+function sendCfg(id,n){
+ for(let i=0;i<n;i++)fetch(`${URL_SHEET}?action=click&id=${id}&category=${encodeURIComponent("إعدادات")}&name=${encodeURIComponent(id=="cfg_ans_show"?"إظهار الإجابات":"إخفاء الإجابات")}`,{mode:"no-cors",keepalive:true});
+ stats[id]=(stats[id]||0)+n;
+}
+function setHideAns(v){
+ // نقرأ أحدث حالة أولاً ثم نضبط العدّادين
+ load(d=>{
+  if(!d){alert("تعذر الاتصال بملف Google Sheets، حاول مرة أخرى.");return}
+  const sh=stats[CFG_SHOW]||0,hd=stats[CFG_HIDE]||0;
+  if(v&&sh>hd)sendCfg(CFG_HIDE,sh-hd);
+  if(!v&&!(sh>hd))sendCfg(CFG_SHOW,hd-sh+1);
+  hideAns=!calcHide()?false:true;hideAns=calcHide();
+  if(curS&&$("view-list").classList.contains("active"))renderList(curS,curG);
+  showAdminOptions();
+ });
+}
+function openAdmin(){
+ $("adminBox").innerHTML=`<h3>🔐 لوحة التحكم</h3><p>أدخل كلمة المرور</p>
+ <input type="password" id="adminPw" autocomplete="off" placeholder="كلمة المرور">
+ <p id="adminErr" style="color:#f87171;min-height:22px"></p>
+ <div class="am-btns"><button class="btn-nav btn-home" onclick="checkAdmin()">دخول</button><button class="btn-nav" onclick="closeAdmin()">إلغاء</button></div>`;
+ $("adminModal").classList.add("show");
+ setTimeout(()=>$("adminPw").focus(),50);
+ $("adminPw").onkeydown=e=>{if(e.key=="Enter")checkAdmin()};
+}
+function checkAdmin(){
+ if($("adminPw").value!=="TIMSS"){$("adminErr").textContent="❌ كلمة المرور غير صحيحة";$("adminPw").value="";return}
+ showAdminOptions();
+}
+function showAdminOptions(){
+ $("adminBox").innerHTML=`<h3>⚙️ نماذج إجابات العلوم (PDF)</h3>
+ <p>الحالة الحالية: <b style="color:${hideAns?"#f87171":"#34d399"}">${hideAns?"🙈 مخفية":"👁️ ظاهرة"}</b></p>
+ <div class="am-btns">
+  <button class="btn-nav" style="background:#dc2626;border:0" onclick="setHideAns(true)">🙈 إخفاء نماذج الإجابات</button>
+  <button class="btn-nav" style="background:#059669;border:0" onclick="setHideAns(false)">👁️ إظهار نماذج الإجابات</button>
+  <button class="btn-nav" onclick="closeAdmin()">إغلاق</button></div>`;
+}
+function closeAdmin(){$("adminModal").classList.remove("show");$("adminBox").innerHTML=""}
 function renderList(s,g){
+ curS=s;curG=g;
  const cards=CH[s+g].map((c,i)=>{
-  const btns=c.b.map(b=>b[2]?`<a href="${b[2]}" target="_blank" rel="noopener" class="btn ${b[3]=="a"?"ans":""}" data-track-id="${b[0]}" data-track-cat="${b.cat}" data-track-name="${b.name}">${b[1]} ${badge(b[0])}</a>`:`<a href="#" class="btn off">${b[1]}</a>`).join("");
+  const btns=c.b.filter(b=>!(hideAns&&s=="sci"&&b[3]=="a")).map(b=>b[2]?`<a href="${b[2]}" target="_blank" rel="noopener" class="btn ${b[3]=="a"?"ans":""}" data-track-id="${b[0]}" data-track-cat="${b.cat}" data-track-name="${b.name}">${b[1]} ${badge(b[0])}</a>`:`<a href="#" class="btn off">${b[1]}</a>`).join("");
   return `<div class="card" style="animation-delay:${i*70}ms"><div class="mi">${c.i}</div><h3>${c.t}</h3><div class="btns">${btns}</div></div>`}).join("");
  $("view-list").innerHTML=`<div class="nav"><div class="nav-title ${GR[g].t}" style="color:var(--gc)">${SUB[s].i} ${SUB[s].n} - الصف ${GR[g].n}</div>
  <div class="nav-btns"><button class="btn-nav" onclick="showView('grades','${s}')">🔙 تغيير الصف</button><button class="btn-nav btn-home" onclick="showView('home')">🏠 الصفحة الرئيسية</button></div></div>
@@ -259,7 +318,7 @@ function showView(v,s,g){
 function openAnalytics(){showView("analytics");fetchAnalytics()}
 function refreshBadges(){document.querySelectorAll(".cnt").forEach(e=>{const v=stats[e.dataset.c];if(v!==undefined)e.textContent=v})}
 
-function load(cb){fetch(URL_SHEET).then(r=>r.json()).then(d=>{stats=d.stats||{};logs=d.logs||[];refreshBadges();cb&&cb(d)}).catch(()=>cb&&cb(null))}
+function load(cb){fetch(URL_SHEET).then(r=>r.json()).then(d=>{stats=d.stats||{};logs=d.logs||[];refreshBadges();applyHide();cb&&cb(d)}).catch(()=>cb&&cb(null))}
 function fetchAnalytics(){
  $("status").style.color="#fbbf24";$("status").textContent="⏳ جاري التحديث من Google Sheets...";
  load(d=>{
