@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>مختبر الأرض والكون الافتراضي – منصة سحر العلوم</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--gold:#ffcc00;--bd:#243360;--mut:#9bb0dc}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:#02040a;color:#f4f7ff;font-family:Cairo,system-ui,sans-serif;overflow-x:hidden}
+#bg{position:fixed;inset:0;width:100%;height:100%;z-index:0}
+.neb{position:fixed;inset:0;z-index:0;background:radial-gradient(ellipse at 20% 15%,#1b2f7a55,transparent 55%),radial-gradient(ellipse at 85% 80%,#7a1b6a40,transparent 55%),radial-gradient(ellipse at 60% 40%,#0b5a7a30,transparent 60%);animation:neb 14s ease-in-out infinite alternate}
+@keyframes neb{to{transform:scale(1.12) rotate(2deg)}}
+.view{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 16px;text-align:center;transition:transform .8s cubic-bezier(.7,0,.2,1),opacity .8s}
+#menu{display:none;opacity:0;transform:translateY(40px)}
+body.in #landing{transform:translateY(-100%);opacity:0;position:absolute;inset:0;pointer-events:none}
+body.in #menu{display:flex;opacity:1;transform:none}
+.org{display:flex;flex-direction:column;align-items:center;gap:2px;animation:fd 1s .1s both}
+.flag{width:74px;height:50px;filter:drop-shadow(0 4px 12px #000a);animation:wave 3s ease-in-out infinite;transform-origin:right center}
+@keyframes wave{50%{transform:skewY(-3deg) scaleX(.97)}}
+.org b{font-size:clamp(1.1rem,3.6vw,1.6rem);font-weight:900}
+.org span{color:#cfe0ff;font-weight:700;font-size:clamp(.85rem,2.8vw,1.1rem)}
+.org .sch{margin-top:6px;padding:4px 18px;border:1px solid #ffcc0066;border-radius:30px;background:#ffcc0012;color:var(--gold);font-weight:900}
+h1{margin:22px 0 4px;font-size:clamp(2rem,8vw,4.2rem);font-weight:900;line-height:1.25;background:linear-gradient(90deg,#ffe27a,#fff,#7fd8ff,#ffe27a);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:sh 6s linear infinite,fd 1s .3s both}
+@keyframes sh{to{background-position:-300% 0}}
+.sub{margin:0 0 20px;color:var(--mut);font-size:clamp(.95rem,3vw,1.25rem);font-weight:700;animation:fd 1s .5s both}
+.by{max-width:640px;padding:14px 22px;border-radius:18px;background:#0b1124cc;border:1px solid var(--bd);backdrop-filter:blur(8px);animation:fd 1s .7s both;line-height:1.9}
+.by small{display:block;color:var(--mut);font-weight:700}
+.by b{color:var(--gold);font-weight:900;font-size:1.15rem}
+.row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:28px}
+#enter{font:900 1.5rem Cairo,sans-serif;padding:12px 56px;border:0;border-radius:40px;cursor:pointer;color:#120e00;background:linear-gradient(135deg,#ffe27a,#ffb300);box-shadow:0 0 0 0 #ffcc0099,0 8px 30px #0009;animation:pulse 2s infinite,fd 1s .9s both;transition:transform .2s}
+#enter:hover{transform:scale(1.08)}
+.plat{display:inline-flex;align-items:center;gap:6px;font:800 1rem Cairo,sans-serif;padding:12px 26px;border-radius:40px;text-decoration:none;color:#fff;background:#ffffff14;border:1px solid #ffffff44;animation:fd 1s 1s both;transition:.2s}
+.plat:hover{background:#00f2fe33;border-color:#00f2fe;transform:scale(1.05)}
+@keyframes pulse{70%{box-shadow:0 0 0 22px #ffcc0000,0 8px 30px #0009}}
+@keyframes fd{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
+#menu h2{margin:0 0 6px;font-size:clamp(1.6rem,5vw,2.6rem);font-weight:900;color:var(--gold)}
+#menu p{margin:0 0 26px;color:var(--mut);font-weight:700}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:20px;width:min(1180px,100%)}
+.card{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;padding:16px 12px 18px;border-radius:24px;text-decoration:none;color:#fff;background:linear-gradient(160deg,#0f1a3ee6,#070c1ee6);border:2px solid var(--bd);overflow:hidden;opacity:0;animation:fd .8s forwards;transition:transform .3s,border-color .3s,box-shadow .3s}
+.card:nth-child(1){animation-delay:.15s}.card:nth-child(2){animation-delay:.3s}.card:nth-child(3){animation-delay:.45s}.card:nth-child(4){animation-delay:.6s}.card:nth-child(5){animation-delay:.75s}.card:nth-child(6){animation-delay:.9s}.hl{animation:hl 2.4s ease-in-out infinite}@keyframes hl{0%,100%{transform:translate(-38px,-38px);opacity:1}25%{transform:translate(38px,-38px)}50%{transform:translate(38px,38px)}75%{transform:translate(-38px,38px)}}
+.card::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 30%,var(--c),transparent 65%);opacity:.18;transition:opacity .3s}
+.card:hover{transform:translateY(-10px) scale(1.04);border-color:var(--c);box-shadow:0 18px 44px #000a,0 0 34px var(--c)}
+.card:hover::before{opacity:.45}
+.card svg{width:170px;height:170px;position:relative}
+.card h3{margin:0;font-size:1.7rem;font-weight:900;position:relative}
+.card span{font-size:.88rem;color:var(--mut);font-weight:700;position:relative;min-height:2.6em}
+.go{position:relative;margin-top:4px;padding:4px 20px;border-radius:20px;background:var(--c);color:#06101e;font-weight:900;font-size:.95rem}
+.back{background:none;border:1px solid var(--bd);color:var(--mut);font:700 .9rem Cairo,sans-serif;padding:8px 18px;border-radius:20px;cursor:pointer;text-decoration:none}
+.back:hover{color:#fff;border-color:var(--gold)}
+body.leave .view{opacity:0;transform:scale(1.08);filter:blur(6px)}
+.sp{transform-box:fill-box;transform-origin:center}
+.rot{animation:rt 12s linear infinite}.rot2{animation:rt 7s linear infinite}.rot3{animation:rt 18s linear infinite reverse}
+@keyframes rt{to{transform:rotate(360deg)}}
+.pl{animation:pl 3s ease-in-out infinite}@keyframes pl{50%{transform:scale(1.15)}}
+.wv{animation:wv 3s linear infinite}@keyframes wv{to{transform:translateX(-60px)}}
+.wv2{animation:wv 4.5s linear infinite reverse}
+.lvl{animation:lv 4s ease-in-out infinite}@keyframes lv{50%{transform:translateY(-12px)}}
+.mv{animation:mv 5s ease-in-out infinite alternate}@keyframes mv{from{transform:translateX(-62px)}to{transform:translateX(10px)}}
+.dr{animation:dr 2.4s ease-in infinite}@keyframes dr{0%{transform:translateY(-30px);opacity:0}25%{opacity:1}80%{transform:translateY(52px);opacity:1}100%{transform:translateY(58px);opacity:0}}
+.rp{animation:rp 2.4s ease-out infinite;opacity:0}@keyframes rp{70%{opacity:0}75%{opacity:.9;transform:scale(.3)}100%{opacity:0;transform:scale(1.6)}}
+.cor{animation:cr 3s ease-in-out infinite alternate}@keyframes cr{to{opacity:.35;transform:scale(1.12)}}
+</style></head><body>
+<canvas id="bg"></canvas><div class="neb"></div>
+
+<section class="view" id="landing">
+ <div class="org">
+  <svg class="flag" viewBox="0 0 74 50"><rect width="74" height="50" fill="#ce1126"/><path d="M0 0H22L32 5 22 10 32 15 22 20 32 25 22 30 32 35 22 40 32 45 22 50H0Z" fill="#fff"/></svg>
+  <b>مملكة البحرين</b>
+  <span>وزارة التربية والتعليم</span>
+  <span class="sch">مدرسة البلاد القديم الابتدائية الإعدادية للبنين</span>
+  <span>قسم العلوم</span>
+ </div>
+ <h1>مختبر الأرض والكون<br>الافتراضي</h1>
+ <p class="sub">ست تجارب تفاعلية تأخذك من عالم الذرات إلى باطن الأرض وأطراف المجموعة الشمسية</p>
+ <div class="by"><small>إعداد</small><b>الفريق الإلكتروني بالمدرسة</b><small>تحت إشراف معلم العلوم</small><b>الأستاذ / صبري محمد حمد</b></div>
+ <div class="row"><button id="enter">دخول ▶</button><a class="plat" href="../">🏠 العودة لمنصة سحر العلوم</a></div>
+</section>
+
+<section class="view" id="menu">
+ <h2>اختر التجربة العلمية</h2><p>اضغط على أي أيقونة للدخول إلى الموقع</p>
+ <div class="grid">
+
+  <a class="card" href="solar-system.html" style="--c:#ffb73b"><svg viewBox="0 0 200 200">
+   <circle cx="100" cy="100" r="90" fill="none" stroke="#ffffff22"/><circle cx="100" cy="100" r="62" fill="none" stroke="#ffffff22"/><circle cx="100" cy="100" r="38" fill="none" stroke="#ffffff22"/>
+   <circle class="sp pl" cx="100" cy="100" r="22" fill="#ffcc33"/><circle class="sp pl" cx="100" cy="100" r="30" fill="#ffaa0033"/>
+   <g class="sp rot2"><circle cx="138" cy="100" r="5" fill="#c9a27a"/></g>
+   <g class="sp rot"><circle cx="162" cy="100" r="8" fill="#4da3ff"/><circle cx="170" cy="96" r="2.5" fill="#ddd"/></g>
+   <g class="sp rot3"><circle cx="190" cy="100" r="9" fill="#e6b873"/></g></svg>
+   <h3>النظام الشمسي</h3><span>الشمس والكواكب والمدارات</span><b class="go">دخول</b></a>
+
+  <a class="card" href="earth-layers.html" style="--c:#ff7a3b"><svg viewBox="0 0 200 200">
+   <g class="sp rot3"><circle cx="100" cy="100" r="86" fill="#7a4a2a"/><circle cx="100" cy="100" r="80" fill="#c0541a"/><circle cx="100" cy="100" r="58" fill="#ff8a1f"/><circle cx="100" cy="100" r="36" fill="#ffd23a"/>
+   <path d="M100 100 L186 100 A86 86 0 0 0 100 14Z" fill="#02040a" opacity=".85"/></g>
+   <circle class="sp pl" cx="100" cy="100" r="20" fill="#fff6c8"/><circle class="sp pl" cx="100" cy="100" r="28" fill="#fff6c840"/></svg>
+   <h3>طبقات الأرض</h3><span>القشرة والوشاح واللب</span><b class="go">دخول</b></a>
+
+  <a class="card" href="tides.html" style="--c:#36c4ff"><svg viewBox="0 0 200 200">
+   <circle cx="150" cy="42" r="20" fill="#f1f1e6"/><circle cx="143" cy="37" r="4" fill="#cfcfc0"/><circle cx="156" cy="48" r="3" fill="#cfcfc0"/><circle class="sp pl" cx="150" cy="42" r="30" fill="#ffffff22"/>
+   <clipPath id="cp"><rect x="14" y="70" width="172" height="110" rx="16"/></clipPath>
+   <g clip-path="url(#cp)"><rect x="14" y="70" width="172" height="110" fill="#06223f"/>
+   <g class="lvl"><path class="wv" d="M-10 100 q15 -14 30 0 t30 0 t30 0 t30 0 t30 0 t30 0 t30 0 t30 0 t30 0 V190H-10Z" fill="#1d8fe0"/>
+   <path class="wv2" d="M-10 112 q15 -12 30 0 t30 0 t30 0 t30 0 t30 0 t30 0 t30 0 t30 0 t30 0 V190H-10Z" fill="#36c4ff" opacity=".75"/></g></g></svg>
+   <h3>المد والجزر</h3><span>جاذبية القمر وتوليد الكهرباء</span><b class="go">دخول</b></a>
+
+  <a class="card" href="eclipse.html" style="--c:#ffd23a"><svg viewBox="0 0 200 200">
+   <g class="sp rot"><g stroke="#ffb300" stroke-width="5" stroke-linecap="round"><path d="M100 10v16M100 174v16M10 100h16M174 100h16M36 36l11 11M153 153l11 11M164 36l-11 11M47 153l-11 11"/></g></g>
+   <circle class="sp cor" cx="100" cy="100" r="62" fill="#ffcc3340"/><circle cx="100" cy="100" r="48" fill="#ffd23a"/>
+   <g class="mv"><circle cx="100" cy="100" r="46" fill="#080a14" stroke="#ffffff33" stroke-width="2"/></g></svg>
+   <h3>الكسوف والخسوف</h3><span>ظل القمر والأرض والشمس</span><b class="go">دخول</b></a>
+
+  <a class="card" href="water.html" style="--c:#4de0c0"><svg viewBox="0 0 200 200">
+   <circle cx="100" cy="112" r="62" fill="#1d7fd6"/><circle cx="100" cy="112" r="62" fill="none" stroke="#7fd8ff" stroke-width="2"/>
+   <g class="sp rot"><path d="M70 90q14-10 24 2t-6 22-22 6-8-18zM112 116q16-6 22 8t-8 22-16-8z" fill="#3fbf6a"/></g>
+   <g class="dr"><path d="M100 30c10 16 16 24 16 34a16 16 0 0 1-32 0c0-10 6-18 16-34z" fill="#9fe8ff" stroke="#fff" stroke-width="2"/></g>
+   <ellipse class="sp rp" cx="100" cy="176" rx="38" ry="9" fill="none" stroke="#9fe8ff" stroke-width="3"/></svg>
+   <h3>المياه على الأرض</h3><span>توزيع المياه العذبة والمالحة</span><b class="go">دخول</b></a>
+
+  <a class="card" href="periodic-table.html" style="--c:#c084fc"><svg viewBox="0 0 200 200">
+   <g class="cells"><rect x="22" y="40" width="34" height="34" rx="6" fill="#f7b3a7"/><rect x="60" y="40" width="34" height="34" rx="6" fill="#f9d38a"/><rect x="98" y="40" width="34" height="34" rx="6" fill="#c9d7f2"/><rect x="136" y="40" width="34" height="34" rx="6" fill="#b5dfd0"/>
+   <rect x="22" y="78" width="34" height="34" rx="6" fill="#bfe3a8"/><rect x="60" y="78" width="34" height="34" rx="6" fill="#f5ee9a"/><rect x="98" y="78" width="34" height="34" rx="6" fill="#f2b8dc"/><rect x="136" y="78" width="34" height="34" rx="6" fill="#d8c8ef"/>
+   <rect x="22" y="116" width="34" height="34" rx="6" fill="#b9e6ee"/><rect x="60" y="116" width="34" height="34" rx="6" fill="#e7c2a5"/><rect x="98" y="116" width="34" height="34" rx="6" fill="#f7b3a7"/><rect x="136" y="116" width="34" height="34" rx="6" fill="#c9d7f2"/></g>
+   <g font-family="Cairo,sans-serif" font-weight="900" font-size="15" fill="#1c1c1c" text-anchor="middle"><text x="39" y="63">H</text><text x="77" y="63">Be</text><text x="115" y="63">Fe</text><text x="153" y="63">Al</text><text x="39" y="101">C</text><text x="77" y="101">Cl</text><text x="115" y="101">Ne</text><text x="153" y="101">Si</text><text x="39" y="139">La</text><text x="77" y="139">U</text><text x="115" y="139">Na</text><text x="153" y="139">Au</text></g>
+   <rect class="sp hl" x="98" y="78" width="34" height="34" rx="6" fill="none" stroke="#fff" stroke-width="4"/>
+   <g class="sp rot"><ellipse cx="100" cy="100" rx="92" ry="34" fill="none" stroke="#c084fc88" stroke-width="2" transform="rotate(-25 100 100)"/><circle cx="190" cy="100" r="6" fill="#e9d5ff" transform="rotate(-25 100 100)"/></g></svg>
+   <h3>الجدول الدوري</h3><span>١١٨ عنصرًا بخصائصها وأنواعها</span><b class="go">دخول</b></a>
+
+ </div>
+ <div class="row"><a class="back" href="../">🏠 العودة لمنصة سحر العلوم</a><button class="back" id="back">↩ الصفحة التمهيدية</button></div>
+</section>
+
+<script>
+var b=document.body;
+function show(m){b.classList.toggle('in',m)}
+document.getElementById('enter').onclick=function(){show(true);try{history.replaceState(null,'','#menu')}catch(e){}};
+document.getElementById('back').onclick=function(){show(false);try{history.replaceState(null,'','#')}catch(e){}};
+if(location.hash==='#menu')show(true);
+document.querySelectorAll('.card').forEach(function(a){a.onclick=function(e){e.preventDefault();b.classList.add('leave');var h=a.href;setTimeout(function(){location.href=h},450)}});
+addEventListener('pageshow',function(){b.classList.remove('leave')});
+var c=document.getElementById('bg'),x=c.getContext('2d'),W,H,S=[];
+function rs(){W=c.width=innerWidth;H=c.height=innerHeight}rs();addEventListener('resize',rs);
+for(var i=0;i<140;i++)S.push({x:Math.random(),y:Math.random(),r:Math.random()*1.5+.3,z:Math.random()*.6+.1,p:Math.random()*6});
+(function f(t){if(!document.hidden){x.clearRect(0,0,W,H);S.forEach(function(s){s.x-=s.z*.00012;if(s.x<0)s.x=1;
+x.fillStyle='rgba(255,255,255,'+(.3+.6*Math.abs(Math.sin(t/900*s.z+s.p)))+')';x.beginPath();x.arc(s.x*W,s.y*H,s.r,0,6.3);x.fill()})}requestAnimationFrame(f)})(0);
+</script></body></html>

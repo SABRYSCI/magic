@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>الجدول الدوري للعناصر</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f7f5ef;--fg:#1c1c1c;--card:#fff;--mut:#666;--bd:#d9d4c7;--sg:#c62828;--sl:#1565c0;--sy:#6a1b9a;
+--alkali:#f7b3a7;--alkaline:#f9d38a;--transition:#c9d7f2;--post:#b5dfd0;--metalloid:#d8c8ef;--nonmetal:#bfe3a8;--halogen:#f5ee9a;--noble:#f2b8dc;--lanthanide:#b9e6ee;--actinide:#e7c2a5;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14161a;--fg:#f0ede4;--card:#1f2228;--mut:#a39f94;--bd:#3a3d44;--sg:#ff8a80;--sl:#82b1ff;--sy:#ce93d8;
+--alkali:#7a3a31;--alkaline:#7a5e22;--transition:#32456e;--post:#2c6150;--metalloid:#533f7a;--nonmetal:#3e6a2a;--halogen:#6c6820;--noble:#74335a;--lanthanide:#2a626b;--actinide:#6e4a33}}
+:root[data-theme="dark"]{--bg:#14161a;--fg:#f0ede4;--card:#1f2228;--mut:#a39f94;--bd:#3a3d44;--sg:#ff8a80;--sl:#82b1ff;--sy:#ce93d8;
+--alkali:#7a3a31;--alkaline:#7a5e22;--transition:#32456e;--post:#2c6150;--metalloid:#533f7a;--nonmetal:#3e6a2a;--halogen:#6c6820;--noble:#74335a;--lanthanide:#2a626b;--actinide:#6e4a33}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:'Tajawal',Tahoma,sans-serif;padding:16px}
+header{display:flex;align-items:center;justify-content:space-between;gap:10px;max-width:1300px;margin:0 auto 12px}
+h1{margin:0;font-size:clamp(1.3rem,3vw,2rem);font-weight:800}
+#theme{border:1px solid var(--bd);background:var(--card);color:var(--fg);border-radius:999px;padding:8px 14px;font:inherit;cursor:pointer}
+.bar{max-width:1300px;margin:0 auto 8px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.bar .t{font-weight:800;font-size:.85rem;color:var(--mut);margin-inline-end:4px}
+.bar button{border:1px solid var(--bd);background:var(--card);color:var(--fg);border-radius:999px;padding:6px 13px;font:inherit;font-size:.85rem;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:transform .15s,box-shadow .15s}
+.bar button:hover{transform:translateY(-1px);box-shadow:0 3px 10px rgba(0,0,0,.15)}
+.bar button.on{outline:2px solid var(--fg);font-weight:800}
+.sw{width:12px;height:12px;border-radius:3px;display:inline-block;border:1px solid rgba(0,0,0,.25)}
+.wrap{max-width:1300px;margin:12px auto 0;overflow-x:auto;padding-bottom:8px}
+#grid{direction:ltr;display:grid;grid-template-columns:repeat(18,minmax(58px,1fr));grid-template-rows:auto repeat(7,auto) 14px auto auto;gap:3px;min-width:1100px}
+.gh{text-align:center;font-size:.75rem;font-weight:700;color:var(--mut)}
+.el{direction:rtl;position:relative;background:var(--card);border:1px solid rgba(0,0,0,.18);border-radius:6px;padding:3px 2px 4px;text-align:center;cursor:pointer;min-height:62px;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.15;transition:transform .15s,opacity .25s,box-shadow .15s}
+.el:hover{transform:scale(1.12);z-index:3;box-shadow:0 6px 18px rgba(0,0,0,.3)}
+.el .n{position:absolute;top:2px;inset-inline-start:4px;font-size:.6rem;opacity:.75}
+.el .s{font-size:1.15rem;font-weight:800;margin-top:6px}
+.el .a{font-size:.6rem;font-weight:500;max-width:100%;overflow:hidden;white-space:nowrap}
+.st-g .s{color:var(--sg)}.st-l .s{color:var(--sl)}.st-syn .s{color:var(--sy)}.st-syn{border-style:dashed}
+.c-alkali{background:var(--alkali)}.c-alkaline{background:var(--alkaline)}.c-transition{background:var(--transition)}.c-post{background:var(--post)}.c-metalloid{background:var(--metalloid)}.c-nonmetal{background:var(--nonmetal)}.c-halogen{background:var(--halogen)}.c-noble{background:var(--noble)}.c-lanthanide{background:var(--lanthanide)}.c-actinide{background:var(--actinide)}
+.dim{opacity:.13}
+.ph{direction:rtl;font-size:.7rem;font-weight:700;display:flex;align-items:center;justify-content:center;border-radius:6px;border:1px dashed rgba(0,0,0,.3);text-align:center}
+#info{direction:rtl;grid-row:2/5;grid-column:3/13;background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px 16px;display:flex;gap:16px;align-items:center;animation:pop .3s ease}
+#info .big{min-width:92px;height:92px;border-radius:12px;border:1px solid rgba(0,0,0,.25);display:flex;flex-direction:column;align-items:center;justify-content:center}
+#info .big b{font-size:2.4rem;line-height:1}#info .big span{font-size:.9rem;font-weight:700}
+#info ul{list-style:none;margin:0;padding:0;columns:2;column-gap:24px;font-size:.88rem}
+#info li{margin:2px 0;break-inside:avoid}#info li em{font-style:normal;color:var(--mut)}
+#info h2{margin:0 0 6px;font-size:1.3rem}
+.note{max-width:1300px;margin:8px auto 0;font-size:.82rem;color:var(--mut);display:flex;flex-wrap:wrap;gap:14px}
+.note b{font-weight:800}
+.credit{max-width:1300px;margin:18px auto 0;text-align:center;padding:12px;border-top:1px solid var(--bd);font-size:1rem;color:var(--mut)}.credit b{color:var(--fg);font-weight:800;font-size:1.1rem}
+@keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<header><h1>⚛️ الجدول الدوري للعناصر</h1><button id="theme">🌓 تغيير الثيم</button></header>
+<div class="bar" id="f1"><span class="t">النوع:</span></div>
+<div class="bar" id="f2"><span class="t">الحالة الفيزيائية:</span></div>
+<div class="bar" id="f3"><span class="t">أسماء المجموعات:</span></div>
+<div class="note"><span>لون الرمز: <b>أسود</b> صلب، <b style="color:var(--sl)">أزرق</b> سائل، <b style="color:var(--sg)">أحمر</b> غاز، <b style="color:var(--sy)">بنفسجي</b> مصنّع (إطار متقطع)</span><span id="cnt"></span></div>
+<div class="wrap"><div id="grid"></div></div>
+<footer class="credit">✦ تصميم وإعداد: <b>صبري محمد حمد</b> ✦</footer>
+<script>
+const S="H He Li Be B C N O F Ne Na Mg Al Si P S Cl Ar K Ca Sc Ti V Cr Mn Fe Co Ni Cu Zn Ga Ge As Se Br Kr Rb Sr Y Zr Nb Mo Tc Ru Rh Pd Ag Cd In Sn Sb Te I Xe Cs Ba La Ce Pr Nd Pm Sm Eu Gd Tb Dy Ho Er Tm Yb Lu Hf Ta W Re Os Ir Pt Au Hg Tl Pb Bi Po At Rn Fr Ra Ac Th Pa U Np Pu Am Cm Bk Cf Es Fm Md No Lr Rf Db Sg Bh Hs Mt Ds Rg Cn Nh Fl Mc Lv Ts Og".split(" ");
+const N="هيدروجين،هيليوم،ليثيوم،بيريليوم،بورون،كربون،نيتروجين،أكسجين،فلور،نيون،صوديوم،مغنيسيوم،ألومنيوم،سيليكون،فوسفور،كبريت،كلور،أرغون،بوتاسيوم،كالسيوم،سكانديوم،تيتانيوم،فاناديوم،كروم،منغنيز،حديد،كوبالت،نيكل،نحاس،خارصين،جاليوم،جرمانيوم،زرنيخ،سيلينيوم،بروم،كريبتون،روبيديوم،سترونشيوم،إتريوم،زركونيوم،نيوبيوم،موليبدنوم،تكنيشيوم،روثينيوم،روديوم،بلاديوم،فضة،كادميوم،إنديوم،قصدير،أنتيمون،تيلوريوم،يود،زينون،سيزيوم،باريوم،لانثانوم،سيريوم،براسيوديميوم،نيوديميوم،بروميثيوم،ساماريوم،يوروبيوم،جادولينيوم،تيربيوم،ديسبروسيوم،هولميوم،إربيوم،ثوليوم،إتربيوم،لوتيشيوم،هافنيوم،تانتالوم،تنجستن،رينيوم،أوزميوم،إيريديوم،بلاتين،ذهب،زئبق،ثاليوم،رصاص،بزموث،بولونيوم،أستاتين،رادون،فرانسيوم،راديوم،أكتينيوم،ثوريوم،بروتكتينيوم،يورانيوم،نبتونيوم،بلوتونيوم،أمريسيوم،كوريوم،بركليوم،كاليفورنيوم،أينشتاينيوم،فيرميوم،مندلفيوم،نوبليوم،لورنسيوم،رذرفورديوم،دوبنيوم،سيبورغيوم،بوريوم،هاسيوم،مايتنريوم،دارمشتاتيوم،رونتجينيوم،كوبرنيسيوم،نيهونيوم،فليروفيوم،موسكوفيوم،ليفرموريوم،تينيسين،أوغانيسون".split("،");
+const M="1.008,4.0026,6.94,9.0122,10.81,12.011,14.007,15.999,18.998,20.180,22.990,24.305,26.982,28.085,30.974,32.06,35.45,39.948,39.098,40.078,44.956,47.867,50.942,51.996,54.938,55.845,58.933,58.693,63.546,65.38,69.723,72.630,74.922,78.971,79.904,83.798,85.468,87.62,88.906,91.224,92.906,95.95,98,101.07,102.91,106.42,107.87,112.41,114.82,118.71,121.76,127.60,126.90,131.29,132.91,137.33,138.91,140.12,140.91,144.24,145,150.36,151.96,157.25,158.93,162.50,164.93,167.26,168.93,173.05,174.97,178.49,180.95,183.84,186.21,190.23,192.22,195.08,196.97,200.59,204.38,207.2,208.98,209,210,222,223,226,227,232.04,231.04,238.03,237,244,243,247,247,251,252,257,258,259,266,267,268,269,270,277,278,281,282,285,286,289,290,293,294,294".split(",");
+const CN={alkali:"الفلزات القلوية",alkaline:"الفلزات القلوية الترابية",transition:"الفلزات الانتقالية",post:"الفلزات بعد الانتقالية",metalloid:"أشباه الفلزات",nonmetal:"اللافلزات الأخرى",halogen:"الهالوجينات",noble:"الغازات النبيلة",lanthanide:"اللانثانيدات",actinide:"الأكتينيدات"};
+const TN={metal:"فلز",nonmetal:"لافلز",metalloid:"شبه فلز"},SN={s:"صلب",l:"سائل",g:"غاز",syn:"مصنّع (صناعي)"};
+const L=(a,z)=>a.includes(z);
+function cat(z){
+ if(L([3,11,19,37,55,87],z))return"alkali";if(L([4,12,20,38,56,88],z))return"alkaline";
+ if(z>=57&&z<=71)return"lanthanide";if(z>=89&&z<=103)return"actinide";
+ if(L([5,14,32,33,51,52],z))return"metalloid";if(L([1,6,7,8,15,16,34],z))return"nonmetal";
+ if(L([9,17,35,53,85,117],z))return"halogen";if(L([2,10,18,36,54,86,118],z))return"noble";
+ if(L([13,31,49,50,81,82,83,84,113,114,115,116],z))return"post";return"transition";}
+const type=c=>c==="metalloid"?"metalloid":(["nonmetal","halogen","noble"].includes(c)?"nonmetal":"metal");
+function state(z){if(z>=95||z===43||z===61)return"syn";if(z===35||z===80)return"l";if(L([1,2,7,8,9,10,17,18,36,54,86],z))return"g";return"s";}
+function pos(z){let r,c;
+ if(z==1)[r,c]=[1,1];else if(z==2)[r,c]=[1,18];else if(z<=4)[r,c]=[2,z-2];else if(z<=10)[r,c]=[2,z+8];
+ else if(z<=12)[r,c]=[3,z-10];else if(z<=18)[r,c]=[3,z];else if(z<=36)[r,c]=[4,z-18];else if(z<=54)[r,c]=[5,z-36];
+ else if(z<=56)[r,c]=[6,z-54];else if(z<=71)[r,c]=[9,z-54];else if(z<=86)[r,c]=[6,z-68];
+ else if(z<=88)[r,c]=[7,z-86];else if(z<=103)[r,c]=[10,z-86];else[r,c]=[7,z-100];
+ return[r+1,c];}
+const grid=document.getElementById("grid");
+for(let g=1;g<=18;g++){const d=document.createElement("div");d.className="gh";d.textContent=g;d.style.gridRow=1;d.style.gridColumn=g;grid.appendChild(d);}
+[[7,"57–71","lanthanide"],[8,"89–103","actinide"]].forEach(([r,t,c])=>{const d=document.createElement("div");d.className="ph c-"+c;d.textContent=t;d.style.gridRow=r;d.style.gridColumn=3;grid.appendChild(d);});
+const info=document.createElement("div");info.id="info";info.innerHTML="<div><h2>اضغط على أي عنصر</h2><div style=\"color:var(--mut)\">لعرض تفاصيله هنا. استخدم الأزرار بالأعلى لتمييز الفلزات واللافلزات وأشباه الفلزات والحالة الفيزيائية وأسماء المجموعات.</div></div>";
+grid.appendChild(info);
+const els=[];
+for(let z=1;z<=118;z++){
+ const c=cat(z),s=state(z),[r,col]=pos(z),d=document.createElement("div");
+ d.className=`el c-${c} st-${s}`;d.style.gridRow=r;d.style.gridColumn=col;
+ d.innerHTML=`<span class="n">${z}</span><b class="s">${S[z-1]}</b><span class="a">${N[z-1]}</span>`;
+ d.onclick=()=>show(z);d.title=N[z-1];grid.appendChild(d);els.push({z,c,s,t:type(c),d});}
+function show(z){const c=cat(z),col=pos(z)[1],main=!(z>=57&&z<=71||z>=89&&z<=103);
+ const per=z>=89&&z<=103?7:z>=57&&z<=71?6:pos(z)[0]-1;
+ info.innerHTML=`<div class="big c-${c}"><b class="st-${state(z)}"><span style="font-size:2.4rem;color:inherit" class="s">${S[z-1]}</span></b><span>${z}</span></div><div><h2>${N[z-1]}</h2><ul>
+ <li><em>العدد الذري:</em> ${z}</li><li><em>الكتلة الذرية:</em> ${M[z-1]}</li><li><em>المجموعة (العائلة):</em> ${CN[c]}</li>
+ <li><em>التصنيف:</em> ${TN[type(c)]}</li><li><em>الحالة الفيزيائية:</em> ${SN[state(z)]}</li><li><em>رقم الدورة:</em> ${per}</li>
+ <li><em>رقم المجموعة:</em> ${main?col:"—"}</li></ul></div>`;
+ info.querySelector(".st-"+state(z)).className="st-"+state(z);}
+const defs=[["f1","k","t",[["all","الكل"],["metal","الفلزات"],["nonmetal","اللافلزات"],["metalloid","أشباه الفلزات"]]],
+ ["f2","k","s",[["s","صلب"],["l","سائل"],["g","غاز"],["syn","مصنّع"]]],
+ ["f3","k","c",Object.entries(CN)]];
+let cur=null;const btns=[];
+defs.forEach(([id,,key,list])=>list.forEach(([v,label])=>{
+ const b=document.createElement("button");b.innerHTML=(key==="c"?`<i class="sw" style="background:var(--${v})"></i>`:"")+label;
+ b.onclick=()=>{cur=(cur&&cur.key===key&&cur.v===v)||v==="all"?null:{key,v};apply();};
+ b.dataset.key=key;b.dataset.v=v;document.getElementById(id).appendChild(b);btns.push(b);}));
+function apply(){let n=0;
+ els.forEach(e=>{const ok=!cur||e[cur.key]===cur.v;e.d.classList.toggle("dim",!ok);if(ok)n++;});
+ btns.forEach(b=>b.classList.toggle("on",cur?(b.dataset.key===cur.key&&b.dataset.v===cur.v):b.dataset.v==="all"));
+ document.getElementById("cnt").innerHTML="عدد العناصر المميّزة: <b>"+n+"</b>";}
+apply();
+document.getElementById("theme").onclick=()=>{const r=document.documentElement,d=r.dataset.theme?r.dataset.theme==="dark":matchMedia("(prefers-color-scheme:dark)").matches;r.dataset.theme=d?"light":"dark";};
+</script>
+<!-- ===== تحسينات الفريق الإلكتروني: طبقة موحدة ===== -->
+<style id="sci-enh">
+:where(button,select,input,a,.chip,.cd){transition:transform .18s ease,box-shadow .25s ease,border-color .25s ease,background-color .25s ease,filter .25s ease}
+:where(button):hover{filter:brightness(1.15);box-shadow:0 0 14px rgba(255,204,0,.28)}
+:where(button):active{transform:scale(.95)}
+*{scrollbar-width:thin;scrollbar-color:#ffcc0088 transparent}
+::selection{background:#ffcc0066;color:#fff}
+#sci-home{position:fixed;right:0;top:34%;z-index:99990;display:flex;flex-direction:column;gap:6px;direction:rtl;font:900 .85rem Cairo,system-ui,sans-serif}#sci-home a{display:flex;align-items:center;gap:8px;padding:9px 12px 9px 16px;text-decoration:none;color:#120e00;background:linear-gradient(135deg,#ffe27a,#ffb300);border-radius:14px 0 0 14px;box-shadow:0 4px 18px #0008,0 0 18px #ffcc0055;transform:translateX(calc(100% - 44px));transition:transform .35s cubic-bezier(.2,.9,.3,1.2)}#sci-home a+a{background:linear-gradient(135deg,#7df9ff,#00b4d8)}
+#sci-home a:hover,#sci-home a:focus{transform:none}
+#sci-home b{font-size:1.25rem;animation:sciBob 2.4s ease-in-out infinite}
+@keyframes sciBob{50%{transform:translateY(-3px) scale(1.12)}}
+#sci-fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:2;mix-blend-mode:screen;opacity:.85}
+#sci-splash{position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;direction:rtl;font-family:Cairo,system-ui,sans-serif;color:#fff;background:radial-gradient(circle at 50% 45%,#10204a,#02040a 70%);transition:opacity .9s ease .2s,visibility 0s 1.2s}
+#sci-splash.out{opacity:0;visibility:hidden;pointer-events:none}
+#sci-splash .ring{width:84px;height:84px;border-radius:50%;border:4px solid #ffffff22;border-top-color:#ffcc00;border-right-color:#4dc3ff;animation:sciSpin 1s linear infinite}
+#sci-splash h2{margin:6px 0 0;font-size:clamp(1.3rem,5vw,2rem);font-weight:900;background:linear-gradient(90deg,#ffe27a,#fff,#7fd8ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+#sci-splash p{margin:0;color:#9bb0dc;font-weight:700;font-size:.9rem}
+@keyframes sciSpin{to{transform:rotate(360deg)}}
+body{animation:sciIn .8s ease both}
+@keyframes sciIn{from{opacity:0}to{opacity:1}}
+</style>
+<div id="sci-home"><a href="index.html#menu" title="العودة لقائمة المختبر"><b>🧪</b><span>قائمة المختبر</span></a><a href="../" title="العودة للصفحة الرئيسية لمنصة سحر العلوم"><b>🏠</b><span>منصة سحر العلوم</span></a></div>
+<div id="sci-splash"><div class="ring"></div><h2>الجدول الدوري للعناصر</h2><p>الفريق الإلكتروني • مدرسة البلاد القديم الابتدائية الإعدادية للبنين</p></div>
+<canvas id="sci-fx"></canvas>
+<script>
+(function(){
+var MODE="none";
+if(MODE==='none'){var q=document.getElementById('sci-fx');q&&q.remove()}
+setTimeout(function(){var s=document.getElementById('sci-splash');if(s)s.classList.add('out')},1500);
+if(MODE==='none')return;var c=document.getElementById('sci-fx'),x=c.getContext('2d'),W,H,P=[],S=null,t0=0;
+function rs(){W=c.width=innerWidth;H=c.height=innerHeight}rs();addEventListener('resize',rs);
+var n=MODE==='water'?22:80;
+for(var i=0;i<n;i++)P.push(MODE==='water'?{x:Math.random()*W,y:Math.random()*H,r:2+Math.random()*7,v:.25+Math.random()*.8,ph:Math.random()*6}:{x:Math.random()*W,y:Math.random()*H,r:.4+Math.random()*1.3,ph:Math.random()*6,sp:.5+Math.random()*2});
+function loop(t){
+ if(document.hidden){requestAnimationFrame(loop);return}
+ x.clearRect(0,0,W,H);
+ if(MODE==='water'){
+  P.forEach(function(p){p.y-=p.v;p.x+=Math.sin(t/900+p.ph)*.4;if(p.y<-20){p.y=H+20;p.x=Math.random()*W}
+   var g=x.createRadialGradient(p.x-p.r*.3,p.y-p.r*.3,p.r*.1,p.x,p.y,p.r);
+   g.addColorStop(0,'rgba(255,255,255,.55)');g.addColorStop(.6,'rgba(120,210,255,.12)');g.addColorStop(1,'rgba(120,210,255,.38)');
+   x.fillStyle=g;x.beginPath();x.arc(p.x,p.y,p.r,0,6.3);x.fill()});
+ }else{
+  P.forEach(function(p){var a=.25+.55*Math.abs(Math.sin(t/1000*p.sp+p.ph));x.fillStyle='rgba(255,255,255,'+a+')';x.beginPath();x.arc(p.x,p.y,p.r,0,6.3);x.fill()});
+  if(!S&&t-t0>5500+Math.random()*4000){S={x:Math.random()*W*.8+W*.2,y:Math.random()*H*.35,l:0};t0=t}
+  if(S){S.x-=14;S.y+=6;S.l++;var g2=x.createLinearGradient(S.x,S.y,S.x+90,S.y-40);g2.addColorStop(0,'rgba(255,255,255,.9)');g2.addColorStop(1,'rgba(255,255,255,0)');
+   x.strokeStyle=g2;x.lineWidth=2;x.beginPath();x.moveTo(S.x,S.y);x.lineTo(S.x+90,S.y-40);x.stroke();if(S.l>40)S=null}
+ }
+ requestAnimationFrame(loop)}
+requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
