@@ -353,7 +353,7 @@ function refreshBadges(){document.querySelectorAll(".cnt").forEach(e=>{const v=s
 
 // جلب الإحصائيات مع مهلة 12 ثانية حتى لا تتعلق الصفحة
 function load(cb){
- const ac=new AbortController(),tm=setTimeout(()=>ac.abort(),12000);
+ const ac=new AbortController(),tm=setTimeout(()=>ac.abort(),30000);
  fetch(URL_SHEET,{signal:ac.signal}).then(r=>r.json()).then(d=>{clearTimeout(tm);stats=d.stats||{};logs=d.logs||[];refreshBadges();applyHide();cb&&cb(d)}).catch(()=>{clearTimeout(tm);cb&&cb(null)});
 }
 function fetchAnalytics(){
