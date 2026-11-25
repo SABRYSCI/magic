@@ -1,0 +1,2647 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>ظاهرة المد والجزر وتوليد الكهرباء 3D</title>
+
+  <!-- خط القاهرة العربي بأوزان واضحة وقوية للسبورات الذكية والعروض التعليمية -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;700;800;900&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS للتنسيق المتجاوب والحديث -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            cairo: ['Cairo', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <!-- استيراد Three.js و OrbitControls عبر Import Map موثوق -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Cairo', sans-serif;
+      background: radial-gradient(circle at 55% 45%, #0b1b3a 0%, #050c1f 58%, #02050d 100%);
+      color: #f8fafc;
+      user-select: none;
+    }
+
+    #canvas-container {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      touch-action: none;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      outline: none;
+    }
+
+    /* ألواح زجاجية داكنة عالية التباين بلمسات سماوية وذهبية */
+    .glass-panel {
+      background: rgba(8, 16, 36, 0.82);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1.5px solid rgba(56, 189, 248, 0.28);
+      box-shadow: 0 12px 38px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+
+    .glass-card {
+      background: rgba(6, 13, 31, 0.94);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+      border: 2px solid rgba(56, 189, 248, 0.42);
+      box-shadow: 0 20px 55px rgba(0, 0, 0, 0.72), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+    }
+
+    /* طبقة فقاعات المعلومات ثلاثية الأبعاد */
+    #bubbles-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 15;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .info-pin-wrapper {
+      position: absolute;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      will-change: transform, opacity;
+      transition: opacity 0.25s ease;
+    }
+
+    .info-pin-btn {
+      pointer-events: auto;
+      transform: translate(-50%, -50%);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.55rem;
+      padding: 0.45rem 0.95rem 0.45rem 0.75rem;
+      border-radius: 9999px;
+      background: rgba(7, 15, 34, 0.9);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 2px solid rgba(255, 255, 255, 0.28);
+      box-shadow: 0 8px 26px rgba(0, 0, 0, 0.62);
+      color: #ffffff;
+      font-size: 16px;
+      font-weight: 800;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    @media (max-width: 640px) {
+      .info-pin-btn {
+        font-size: 14px;
+        padding: 0.35rem 0.75rem;
+      }
+    }
+
+    .info-pin-btn:hover {
+      transform: translate(-50%, -50%) scale(1.08);
+      background: rgba(14, 28, 60, 0.98);
+      border-color: rgba(255, 255, 255, 0.6);
+    }
+
+    .info-pin-btn.active {
+      border-color: var(--accent-color, #38bdf8);
+      box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.28), 0 12px 30px rgba(0, 0, 0, 0.72);
+    }
+
+    .pin-dot {
+      position: relative;
+      width: 12px;
+      height: 12px;
+      border-radius: 9999px;
+      flex-shrink: 0;
+    }
+
+    .pin-dot::after {
+      content: '';
+      position: absolute;
+      inset: -5px;
+      border-radius: 9999px;
+      background: inherit;
+      opacity: 0.5;
+      animation: pinPulse 2s infinite ease-out;
+    }
+
+    @keyframes pinPulse {
+      0% { transform: scale(0.75); opacity: 0.75; }
+      75% { transform: scale(2.05); opacity: 0; }
+      100% { transform: scale(2.05); opacity: 0; }
+    }
+
+    /* بطاقة المعلومات المفتوحة بخط كبير وواضح جداً */
+    .bubble-card {
+      position: fixed;
+      z-index: 28;
+      pointer-events: auto;
+      width: min(410px, calc(100vw - 24px));
+      border-radius: 1.35rem;
+      transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .bubble-card.hidden-card {
+      opacity: 0;
+      pointer-events: none;
+      transform: scale(0.92) translateY(8px);
+    }
+
+    /* شريط أيام الشهر القمري */
+    input[type='range'].lunar-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      height: 10px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #facc15 0%, #38bdf8 25%, #facc15 50%, #38bdf8 75%, #facc15 100%);
+      outline: none;
+      cursor: pointer;
+    }
+
+    input[type='range'].lunar-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #ffffff;
+      border: 4px solid #0284c7;
+      box-shadow: 0 0 16px rgba(56, 189, 248, 0.9);
+      cursor: pointer;
+      transition: transform 0.15s ease;
+    }
+
+    input[type='range'].lunar-slider::-webkit-slider-thumb:hover {
+      transform: scale(1.16);
+    }
+
+    input[type='range'].lunar-slider::-moz-range-thumb {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #ffffff;
+      border: 4px solid #0284c7;
+      box-shadow: 0 0 16px rgba(56, 189, 248, 0.9);
+      cursor: pointer;
+    }
+
+    /* شريط تمرير ناعم */
+    .custom-scroll::-webkit-scrollbar {
+      width: 7px;
+      height: 7px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.5);
+      border-radius: 999px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: rgba(56, 189, 248, 0.45);
+      border-radius: 999px;
+    }
+
+    /* مؤشر التحميل */
+    #loader-overlay {
+      transition: opacity 0.55s ease, visibility 0.55s ease;
+    }
+    #loader-overlay.fade-out {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    /* طيّ لوحة التحكم السفلية لإتاحة مساحة كاملة للمشهد */
+    .dock-collapsed #controls-body {
+      display: none;
+    }
+  </style>
+</head>
+<body class="font-cairo antialiased selection:bg-sky-500/35 selection:text-white">
+
+  <!-- حاوية مشهد Three.js ثلاثي الأبعاد -->
+  <div id="canvas-container" aria-label="محاكاة تفاعلية ثلاثية الأبعاد لظاهرة المد والجزر وتوليد الكهرباء"></div>
+
+  <!-- طبقة فقاعات المعلومات ثلاثية الأبعاد -->
+  <div id="bubbles-layer"></div>
+
+  <!-- طبقة بطاقات المعلومات المفتوحة -->
+  <div id="cards-layer" class="fixed inset-0 z-20 pointer-events-none"></div>
+
+  <!-- شاشة التحميل التمهيدية -->
+  <div id="loader-overlay" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#040915] px-4 text-center">
+    <div class="relative w-20 h-20 mb-5">
+      <div class="absolute inset-0 rounded-full border-4 border-sky-500/20"></div>
+      <div class="absolute inset-0 rounded-full border-4 border-t-sky-400 border-r-amber-400 animate-spin"></div>
+      <div class="absolute inset-4 rounded-full bg-gradient-to-br from-sky-300 via-cyan-500 to-amber-400 blur-[2px]"></div>
+    </div>
+    <p class="text-2xl font-black text-white">جاري تجهيز المحاكاة ثلاثية الأبعاد...</p>
+    <p class="text-base font-bold text-sky-200/80 mt-2">بناء الشمس والأرض والقمر، غلاف المد والجزر، ومحطة الكهرباء</p>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- الشريط العلوي الرئيسي: العنوان + تبديل المشهدين + جدول المقارنة -->
+  <!-- ===================================================================== -->
+  <header class="fixed top-2.5 inset-x-2.5 sm:top-3.5 sm:inset-x-4 z-30 pointer-events-none flex flex-wrap items-center justify-between gap-2.5">
+
+    <!-- العنوان الرئيسي بخط كبير وواضح -->
+    <div class="glass-panel pointer-events-auto rounded-2xl px-4 py-2.5 sm:px-5 sm:py-3 flex items-center gap-3">
+      <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-sky-400 via-cyan-500 to-amber-400 p-[2px] flex-shrink-0 shadow-lg shadow-sky-500/30">
+        <div class="w-full h-full rounded-[10px] bg-slate-950/90 flex items-center justify-center text-2xl">
+          🌊
+        </div>
+      </div>
+      <div>
+        <h1 class="text-lg sm:text-2xl md:text-[26px] font-black text-white leading-tight">
+          ظاهرة المد والجزر وتوليد الكهرباء
+        </h1>
+        <p class="text-xs sm:text-sm font-bold text-sky-200/90 hidden md:block">
+          محاكاة ثلاثية الأبعاد لمد الربيع والمد المنخفض ومحطة الطاقة البحرية
+        </p>
+      </div>
+    </div>
+
+    <!-- أزرار التبديل بين المشهدين + جدول المقارنة -->
+    <div class="pointer-events-auto flex flex-wrap items-center gap-2">
+      <!-- زر مشهد الفضاء -->
+      <button id="btn-scene-space" type="button"
+        class="px-4 py-2.5 sm:px-5 sm:py-3 rounded-2xl text-sm sm:text-base md:text-lg font-extrabold flex items-center gap-2 bg-gradient-to-l from-sky-500 to-blue-600 text-white border-2 border-sky-300/70 shadow-lg shadow-sky-500/30 hover:brightness-110 active:scale-95 transition cursor-pointer">
+        <span>🌍</span>
+        <span>الشمس والأرض والقمر</span>
+      </button>
+
+      <!-- زر مشهد توليد الكهرباء -->
+      <button id="btn-scene-power" type="button"
+        class="px-4 py-2.5 sm:px-5 sm:py-3 rounded-2xl text-sm sm:text-base md:text-lg font-extrabold flex items-center gap-2 bg-amber-500/20 text-amber-200 border-2 border-amber-400/50 hover:bg-amber-500/35 hover:text-white active:scale-95 transition cursor-pointer">
+        <span>⚡</span>
+        <span>توليد الكهرباء من المد والجزر</span>
+      </button>
+
+      <!-- زر جدول المقارنة الشامل -->
+      <button id="btn-compare-modal" type="button"
+        class="glass-panel px-4 py-2.5 sm:px-5 sm:py-3 rounded-2xl text-sm sm:text-base md:text-lg font-extrabold flex items-center gap-2 text-cyan-100 hover:bg-sky-500/25 hover:border-sky-300/60 active:scale-95 transition cursor-pointer">
+        <span>📊</span>
+        <span>جدول المقارنة الشامل</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ===================================================================== -->
+  <!-- بطاقة حالة القمر والمد الفورية (زاوية الشاشة اليمنى في مشهد الفضاء) -->
+  <!-- ===================================================================== -->
+  <section id="moon-hud-card"
+    class="fixed top-[88px] sm:top-[96px] right-2.5 sm:right-4 z-25 glass-card rounded-3xl p-3.5 sm:p-4 w-[285px] sm:w-[345px] transition-all duration-300">
+    <div class="flex items-center justify-between gap-2 mb-2.5">
+      <span class="text-sm sm:text-base font-extrabold text-sky-300">شكل القمر من الأرض</span>
+      <button id="btn-toggle-hud" type="button"
+        class="px-2.5 py-1 rounded-xl bg-white/10 hover:bg-white/20 text-xs sm:text-sm font-bold text-slate-200 cursor-pointer transition">
+        تصغير
+      </button>
+    </div>
+
+    <div id="moon-hud-body" class="space-y-3">
+      <!-- معاينة شكل القمر + الاسم + اليوم القمري -->
+      <div class="flex items-center gap-3.5 bg-white/5 border border-white/10 rounded-2xl p-2.5">
+        <canvas id="moon-phase-canvas" width="96" height="96"
+          class="w-16 h-16 sm:w-20 sm:h-20 rounded-full flex-shrink-0 border-2 border-sky-300/40 shadow-[0_0_20px_rgba(56,189,248,0.3)]"></canvas>
+        <div class="min-w-0 flex-1">
+          <div id="hud-phase-name" class="text-xl sm:text-2xl font-black text-amber-300 leading-tight">
+            المحاق
+          </div>
+          <div id="hud-lunar-day" class="text-base sm:text-lg font-extrabold text-white mt-0.5">
+            اليوم 1 من الشهر القمري
+          </div>
+          <div id="hud-month-timing" class="text-xs sm:text-sm font-bold text-sky-200 mt-0.5">
+            بداية / نهاية الشهر القمري
+          </div>
+        </div>
+      </div>
+
+      <!-- نوع المد الحالي والاصطفاف الهندسي -->
+      <div id="hud-tide-box" class="rounded-2xl p-3 border-2 border-amber-400/50 bg-amber-500/15">
+        <div id="hud-tide-title" class="text-lg sm:text-xl font-black text-amber-300 leading-snug">
+          مد الربيع (أعلى مد)
+        </div>
+        <div id="hud-alignment-text" class="text-sm sm:text-base font-extrabold text-white mt-1 leading-relaxed">
+          استقامة واحدة (0° / 180°) — تتحد قوتا جذب الشمس والقمر
+        </div>
+      </div>
+
+      <!-- شارة الدورة اليومية للمد والجزر -->
+      <div class="rounded-2xl px-3 py-2 bg-sky-500/15 border border-sky-400/35 text-xs sm:text-sm font-bold text-sky-100 leading-relaxed">
+        <span class="text-cyan-300 font-black">⏱️ التوقيت اليومي:</span>
+        يحدث مدّان وجزران يومياً (يتحول المد إلى جزر كل <span class="text-amber-300 font-black">6 ساعات و12 دقيقة</span> تقريباً).
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================================== -->
+  <!-- بطاقة قياس الطاقة الكهربائية الحية (تظهر فقط في مشهد محطة الكهرباء) -->
+  <!-- ===================================================================== -->
+  <section id="power-hud-card"
+    class="fixed top-[88px] sm:top-[96px] right-2.5 sm:right-4 z-25 hidden glass-card rounded-3xl p-4 w-[300px] sm:w-[375px] border-amber-400/50">
+    <div class="flex items-center justify-between gap-2 mb-3">
+      <div class="flex items-center gap-2">
+        <span class="text-2xl">⚡</span>
+        <h2 class="text-lg sm:text-xl font-black text-amber-300">إنتاج الطاقة الكهربائية</h2>
+      </div>
+      <span id="power-status-dot" class="w-3.5 h-3.5 rounded-full bg-emerald-400 shadow-[0_0_12px_#34d399]"></span>
+    </div>
+
+    <!-- عداد الميجاواط الحي -->
+    <div class="rounded-2xl p-3 bg-gradient-to-l from-amber-500/20 to-sky-500/15 border border-amber-400/40 mb-3">
+      <div id="power-mw-readout" class="text-2xl sm:text-3xl font-black text-amber-300 leading-tight">
+        ⚡ 240 ميجاواط
+      </div>
+      <div id="power-mode-desc" class="text-base sm:text-lg font-extrabold text-white mt-1">
+        توليد كهرباء أثناء المد (دخول ماء البحر)
+      </div>
+      <div class="w-full h-3.5 bg-slate-900 rounded-full overflow-hidden mt-2.5 border border-white/15">
+        <div id="power-meter-bar" class="h-full bg-gradient-to-l from-amber-300 via-yellow-400 to-emerald-400 transition-all duration-300" style="width: 92%"></div>
+      </div>
+    </div>
+
+    <!-- مميزات طاقة المد والجزر -->
+    <div class="rounded-2xl p-3 bg-emerald-500/12 border border-emerald-400/35 space-y-1.5">
+      <div class="text-sm sm:text-base font-black text-emerald-300">✅ مميزات طاقة المد والجزر:</div>
+      <ul class="text-sm sm:text-base font-bold text-slate-100 space-y-1 leading-relaxed pr-1">
+        <li>• طاقة متجددة لا تنضب أبداً.</li>
+        <li>• نظيفة صديقة للبيئة ولا تسبب تلوثاً.</li>
+        <li>• يمكن التنبؤ بأوقاتها بدقة عالية طوال العام.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===================================================================== -->
+  <!-- أزرار التحكم الجانبية بالكاميرا والفقاعات (الجانب الأيسر) -->
+  <!-- ===================================================================== -->
+  <aside class="fixed left-2.5 sm:left-4 top-1/2 -translate-y-1/2 z-30 flex flex-col gap-2 pointer-events-auto">
+    <div class="glass-panel rounded-2xl p-1.5 flex flex-col gap-1.5">
+      <button id="btn-zoom-in" type="button" title="تكبير المشهد"
+        class="w-11 h-11 rounded-xl flex items-center justify-center text-white hover:bg-sky-500/30 active:scale-90 transition cursor-pointer text-2xl font-black"
+        aria-label="تكبير">+</button>
+      <div class="h-px bg-white/15 mx-1.5"></div>
+      <button id="btn-zoom-out" type="button" title="تصغير المشهد"
+        class="w-11 h-11 rounded-xl flex items-center justify-center text-white hover:bg-sky-500/30 active:scale-90 transition cursor-pointer text-2xl font-black"
+        aria-label="تصغير">−</button>
+      <div class="h-px bg-white/15 mx-1.5"></div>
+      <button id="btn-reset-view" type="button" title="إعادة ضبط الكاميرا"
+        class="w-11 h-11 rounded-xl flex items-center justify-center text-sky-300 hover:bg-sky-500/25 active:scale-90 transition cursor-pointer"
+        aria-label="إعادة ضبط الكاميرا">
+        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        </svg>
+      </button>
+      <div class="h-px bg-white/15 mx-1.5"></div>
+      <button id="btn-toggle-play" type="button" title="إيقاف / تشغيل الحركة"
+        class="w-11 h-11 rounded-xl flex items-center justify-center text-emerald-400 hover:bg-emerald-500/20 active:scale-90 transition cursor-pointer"
+        aria-label="إيقاف أو تشغيل الحركة">
+        <svg id="icon-play-pause" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.3">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </button>
+      <div class="h-px bg-white/15 mx-1.5"></div>
+      <button id="btn-toggle-bubbles" type="button" title="إخفاء / إظهار فقاعات المعلومات"
+        class="w-11 h-11 rounded-xl flex items-center justify-center text-amber-300 hover:bg-amber-500/20 active:scale-90 transition cursor-pointer"
+        aria-label="إخفاء أو إظهار فقاعات المعلومات">
+        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M7 8h10M7 12h6m-2 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+        </svg>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ===================================================================== -->
+  <!-- شارة الاصطفاف الهندسي السفلية/العلوية البارزة (في مشهد الفضاء) -->
+  <!-- ===================================================================== -->
+  <div id="alignment-banner"
+    class="fixed top-[86px] sm:top-[94px] left-1/2 -translate-x-1/2 z-20 pointer-events-none hidden lg:flex items-center gap-2.5 glass-panel rounded-full px-5 py-2 border-2 border-amber-400/50">
+    <span id="alignment-banner-icon" class="text-xl">✨</span>
+    <span id="alignment-banner-text" class="text-base xl:text-lg font-black text-amber-200 whitespace-nowrap">
+      استقامة واحدة (0° / 180°) — تتحد قوتا جذب الشمس والقمر
+    </span>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- لوحة التحكم السفلية التفاعلية (قابلة للطي لإتاحة مساحة أوسع) -->
+  <!-- ===================================================================== -->
+  <footer id="bottom-dock" class="fixed bottom-2.5 inset-x-2.5 sm:bottom-3.5 sm:inset-x-4 z-30 pointer-events-none flex justify-center">
+    <div class="glass-panel pointer-events-auto rounded-3xl px-3.5 py-2.5 sm:px-5 sm:py-3.5 w-full max-w-6xl">
+
+      <!-- شريط علوي صغير للتحكم في طي/فتح لوحة الأزرار وإظهار/إخفاء الفقاعات -->
+      <div class="flex items-center justify-between gap-2 mb-2">
+        <div class="flex items-center gap-2 text-sm sm:text-base font-extrabold text-sky-200">
+          <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse"></span>
+          <span id="dock-title">لوحة التحكم — حالات المد والجزر وأيام الشهر القمري</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="btn-bubbles-text" type="button"
+            class="px-3 py-1 rounded-xl bg-white/10 hover:bg-white/20 text-xs sm:text-sm font-extrabold text-amber-200 transition cursor-pointer">
+            إخفاء الفقاعات
+          </button>
+          <button id="btn-collapse-dock" type="button"
+            class="px-3 py-1 rounded-xl bg-white/10 hover:bg-white/20 text-xs sm:text-sm font-extrabold text-slate-200 transition cursor-pointer">
+            إخفاء الشريط ▾
+          </button>
+        </div>
+      </div>
+
+      <!-- جسم لوحة التحكم -->
+      <div id="controls-body">
+
+        <!-- (أ) أدوات التحكم الخاصة بمشهد الفضاء (الشمس والأرض والقمر) -->
+        <div id="space-controls" class="space-y-3">
+          <!-- أزرار الحالات الجاهزة بخط كبير وواضح -->
+          <div class="flex flex-wrap items-center justify-center gap-2">
+            <button data-preset="orbit" type="button"
+              class="preset-btn px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-2xl text-sm sm:text-base font-extrabold border-2 border-sky-400/50 bg-sky-500/25 text-white hover:bg-sky-500/40 active:scale-95 transition cursor-pointer">
+              🔄 حركة مستمرة (دورة شهرية)
+            </button>
+
+            <button data-preset="newMoon" type="button"
+              class="preset-btn px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-2xl text-sm sm:text-base font-extrabold border-2 border-amber-400/45 bg-amber-500/15 text-amber-100 hover:bg-amber-500/35 active:scale-95 transition cursor-pointer">
+              🌑 مد الربيع — المحاق (يوم 1 / 29-30)
+            </button>
+
+            <button data-preset="fullMoon" type="button"
+              class="preset-btn px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-2xl text-sm sm:text-base font-extrabold border-2 border-amber-400/45 bg-amber-500/15 text-amber-100 hover:bg-amber-500/35 active:scale-95 transition cursor-pointer">
+              🌕 مد الربيع — البدر (يوم 14-15)
+            </button>
+
+            <button data-preset="firstQuarter" type="button"
+              class="preset-btn px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-2xl text-sm sm:text-base font-extrabold border-2 border-cyan-400/45 bg-cyan-500/15 text-cyan-100 hover:bg-cyan-500/35 active:scale-95 transition cursor-pointer">
+              🌓 المد المنخفض — التربيع الأول (يوم 7-8)
+            </button>
+
+            <button data-preset="lastQuarter" type="button"
+              class="preset-btn px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-2xl text-sm sm:text-base font-extrabold border-2 border-cyan-400/45 bg-cyan-500/15 text-cyan-100 hover:bg-cyan-500/35 active:scale-95 transition cursor-pointer">
+              🌗 المد المنخفض — التربيع الأخير (يوم 21-22)
+            </button>
+          </div>
+
+          <!-- شريط أيام الشهر القمري التفاعلي (1 إلى 29.5) -->
+          <div class="flex flex-col sm:flex-row items-center gap-3 bg-white/5 border border-white/15 rounded-2xl px-4 py-2.5">
+            <label for="lunar-day-slider" class="text-sm sm:text-base font-extrabold text-white whitespace-nowrap flex items-center gap-2">
+              <span>📅 أيام الشهر القمري:</span>
+              <span id="slider-day-badge" class="px-2.5 py-0.5 rounded-lg bg-sky-500/30 border border-sky-400/50 text-amber-300 font-black tabular-nums">
+                اليوم 1
+              </span>
+            </label>
+            <div class="w-full flex-1 flex flex-col gap-1">
+              <input id="lunar-day-slider" type="range" min="1" max="29.5" step="0.1" value="1"
+                class="lunar-slider w-full" aria-label="اختر يوم الشهر القمري" />
+              <div class="flex justify-between text-[11px] sm:text-xs font-extrabold text-slate-300 px-0.5">
+                <span class="text-amber-300">1 المحاق</span>
+                <span class="text-cyan-300">7-8 التربيع الأول</span>
+                <span class="text-amber-300">14-15 البدر</span>
+                <span class="text-cyan-300">21-22 التربيع الأخير</span>
+                <span class="text-amber-300">29.5 المحاق</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- (ب) أدوات التحكم الخاصة بمشهد محطة توليد الكهرباء -->
+        <div id="power-controls" class="hidden space-y-2.5">
+          <div class="flex flex-wrap items-center justify-center gap-2.5">
+            <button data-power-mode="highTide" type="button"
+              class="power-mode-btn px-4 py-2.5 sm:px-5 sm:py-3 rounded-2xl text-sm sm:text-base md:text-lg font-extrabold border-2 border-sky-400/60 bg-sky-500/30 text-white hover:bg-sky-500/45 active:scale-95 transition cursor-pointer">
+              🌊 حالة المد (ارتفاع البحر ← دخول الماء)
+            </button>
+
+            <button data-power-mode="lowTide" type="button"
+              class="power-mode-btn px-4 py-2.5 sm:px-5 sm:py-3 rounded-2xl text-sm sm:text-base md:text-lg font-extrabold border-2 border-cyan-400/45 bg-cyan-500/15 text-cyan-100 hover:bg-cyan-500/35 active:scale-95 transition cursor-pointer">
+              ⬇️ حالة الجزر (انخفاض البحر ← خروج الماء)
+            </button>
+
+            <button data-power-mode="autoCycle" type="button"
+              class="power-mode-btn px-4 py-2.5 sm:px-5 sm:py-3 rounded-2xl text-sm sm:text-base md:text-lg font-extrabold border-2 border-amber-400/50 bg-amber-500/20 text-amber-100 hover:bg-amber-500/35 active:scale-95 transition cursor-pointer">
+              🔄 دورة تلقائية (مد وجزر مستمر)
+            </button>
+          </div>
+          <p class="text-center text-sm sm:text-base font-bold text-sky-100/90">
+            لاحظ دوران التوربين المائي في الاتجاهين عند دخول الماء أثناء المد وخروجه أثناء الجزر لتوليد الكهرباء للمدينة!
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </footer>
+
+  <!-- ===================================================================== -->
+  <!-- نافذة جدول المقارنة الشامل بخط كبير ومقروء جداً للسبورات -->
+  <!-- ===================================================================== -->
+  <div id="compare-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-md">
+    <div class="glass-card rounded-3xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden border-2 border-sky-400/45">
+
+      <!-- رأس النافذة -->
+      <div class="flex items-center justify-between px-6 py-4 border-b border-white/15 bg-white/5">
+        <div class="flex items-center gap-3">
+          <span class="text-3xl">📊</span>
+          <div>
+            <h2 class="text-xl sm:text-2xl md:text-3xl font-black text-white">جدول المقارنة الشامل: مد الربيع والمد المنخفض</h2>
+            <p class="text-sm sm:text-base font-bold text-sky-200">مقارنة علمية واضحة للأطوار والأيام والاصطفاف والتوقيت وتوليد الكهرباء</p>
+          </div>
+        </div>
+        <button id="btn-close-modal" type="button"
+          class="w-11 h-11 rounded-2xl bg-white/10 hover:bg-rose-500/35 text-white flex items-center justify-center transition cursor-pointer text-xl font-black"
+          aria-label="إغلاق">✕</button>
+      </div>
+
+      <!-- جسم النافذة القابل للتمرير -->
+      <div class="p-5 sm:p-6 overflow-y-auto custom-scroll space-y-5">
+
+        <!-- جدول المقارنة الرئيسي -->
+        <div class="overflow-x-auto rounded-2xl border-2 border-white/15">
+          <table class="w-full text-right border-collapse min-w-[680px]">
+            <thead>
+              <tr class="bg-sky-500/20 text-white text-base sm:text-lg font-black">
+                <th class="py-4 px-4 border-b border-white/15 w-1/4">وجه المقارنة</th>
+                <th class="py-4 px-4 border-b border-white/15 text-amber-300 w-[37.5%]">🌟 مد الربيع (Spring Tide)</th>
+                <th class="py-4 px-4 border-b border-white/15 text-cyan-300 w-[37.5%]">🌊 المد المنخفض (Neap Tide)</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-white/10 text-base sm:text-lg font-bold text-slate-100 leading-relaxed">
+              <tr class="hover:bg-white/5">
+                <td class="py-3.5 px-4 text-sky-300 font-black">وضع الشمس والأرض والقمر</td>
+                <td class="py-3.5 px-4">تقع الثلاثة على <span class="text-amber-300 font-black">استقامة واحدة</span> (زاوية 0° أو 180°).</td>
+                <td class="py-3.5 px-4">تصنع <span class="text-cyan-300 font-black">زاوية قائمة (90°)</span> مع الأرض في رأس الزاوية.</td>
+              </tr>
+              <tr class="hover:bg-white/5">
+                <td class="py-3.5 px-4 text-sky-300 font-black">اسم طور القمر</td>
+                <td class="py-3.5 px-4">🌑 <span class="text-amber-300 font-black">المحاق</span> و 🌕 <span class="text-amber-300 font-black">البدر</span>.</td>
+                <td class="py-3.5 px-4">🌓 <span class="text-cyan-300 font-black">التربيع الأول</span> و 🌗 <span class="text-cyan-300 font-black">التربيع الأخير</span>.</td>
+              </tr>
+              <tr class="hover:bg-white/5">
+                <td class="py-3.5 px-4 text-sky-300 font-black">الأيام في الشهر القمري</td>
+                <td class="py-3.5 px-4">بداية/نهاية الشهر (<span class="text-amber-300 font-black">يوم 1 أو 29–30</span>) ومنتصفه (<span class="text-amber-300 font-black">يوم 14–15</span>).</td>
+                <td class="py-3.5 px-4">الأسبوع الأول (<span class="text-cyan-300 font-black">يوم 7–8</span>) والأسبوع الثالث (<span class="text-cyan-300 font-black">يوم 21–22</span>).</td>
+              </tr>
+              <tr class="hover:bg-white/5">
+                <td class="py-3.5 px-4 text-sky-300 font-black">عدد مرات الحدوث شهرياً</td>
+                <td class="py-3.5 px-4">مرتان في كل شهر قمري.</td>
+                <td class="py-3.5 px-4">مرتان في كل شهر قمري.</td>
+              </tr>
+              <tr class="hover:bg-white/5">
+                <td class="py-3.5 px-4 text-sky-300 font-black">قوة الجاذبية وارتفاع المد</td>
+                <td class="py-3.5 px-4"><span class="text-amber-300 font-black">تتحد</span> جاذبية الشمس والقمر ← ينتج <span class="text-white font-black">أعلى مد وأدنى جزر</span> (أكبر فرق في المنسوب).</td>
+                <td class="py-3.5 px-4"><span class="text-cyan-300 font-black">تتعارض</span> جاذبية الشمس مع القمر ← ينتج <span class="text-white font-black">مد منخفض وجزر معتدل</span> (أقل فرق في المنسوب).</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- بطاقتا ملخص التوقيت اليومي وتوليد الكهرباء -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="rounded-2xl p-4 bg-sky-500/15 border-2 border-sky-400/35">
+            <h3 class="text-xl font-black text-sky-300 mb-2">⏱️ توقيت المد والجزر اليومي</h3>
+            <p class="text-base sm:text-lg font-bold text-slate-100 leading-relaxed">
+              تحدث ظاهرة المد والجزر <span class="text-amber-300 font-black">مرتين كل يوم</span> بسبب دوران الأرض حول محورها؛ حيث يقع المد كل <span class="text-white font-black">12 ساعة و25 دقيقة</span> تقريباً، ويفصل بين حالة المد وحالة الجزر نحو <span class="text-amber-300 font-black">6 ساعات و12 دقيقة</span>.
+            </p>
+          </div>
+          <div class="rounded-2xl p-4 bg-amber-500/15 border-2 border-amber-400/40">
+            <h3 class="text-xl font-black text-amber-300 mb-2">⚡ توليد الكهرباء من المد والجزر</h3>
+            <p class="text-base sm:text-lg font-bold text-slate-100 leading-relaxed">
+              تُبنى سدود بحرية في المصبات لحجز المياه؛ وعند <span class="text-white font-black">المد</span> تتدفق المياه عبر أنفاق لإدارة التوربينات، وعند <span class="text-white font-black">الجزر</span> تعود المياه للبحر فتدير التوربينات مجدداً لتوليد كهرباء <span class="text-emerald-300 font-black">متجددة ونظيفة</span>.
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- رسالة خطأ بديلة (دون استخدام alert) -->
+  <div id="error-banner" class="fixed top-24 left-1/2 -translate-x-1/2 z-50 hidden glass-card border-rose-500/60 rounded-2xl px-5 py-4 text-lg font-bold text-rose-200 max-w-lg text-center"></div>
+
+  <!-- ===================================================================== -->
+  <!-- السكربت الرئيسي لـ Three.js وبناء المشهدين والتفاعلات -->
+  <!-- ===================================================================== -->
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    // =========================================================================
+    // 1. بيانات فقاعات المعلومات التفاعلية للمشهدين (بأسلوب علمي واضح ومختصر)
+    // =========================================================================
+    const SPACE_BUBBLES = [
+      {
+        id: 'moon',
+        title: 'القمر (المحرك الرئيسي للمد)',
+        accent: '#38bdf8',
+        badge: 'قوة الجذب الأساسية',
+        getContent: (lunarInfo) =>
+          `يمتلك القمر التأثير الأكبر في حدوث المد والجزر بسبب قربه الشديد من الأرض مقارنة بالشمس (تأثيره يفوق ضعف تأثير الشمس). الطور الحالي هو «${lunarInfo.phaseName}» في اليوم ${lunarInfo.dayLabel} من الشهر القمري.`,
+      },
+      {
+        id: 'highTide',
+        title: 'انتفاخ المد العالي',
+        accent: '#22d3ee',
+        badge: 'يحدث مرتين يومياً',
+        getContent: (lunarInfo) =>
+          `يتكوّن انتفاخ مائي في الجهة المقابلة للقمر بفعل قوة جذبه، وانتفاخ آخر في الجهة المقابلة تماماً بفعل القصور الذاتي واتزان الدوران. يتكرر المد العالي كل 12 ساعة و25 دقيقة تقريباً. الحالة الآن: ${lunarInfo.tideShort}.`,
+      },
+      {
+        id: 'lowTide',
+        title: 'منطقة الجزر',
+        accent: '#818cf8',
+        badge: 'بعد ~6 ساعات و12 دقيقة',
+        getContent: (lunarInfo) =>
+          `تنسحب المياه من المناطق المتعامدة على خط الأرض والقمر لتغذية انتفاخ المد، فينخفض منسوب البحر وتحدث ظاهرة الجزر بعد نحو 6 ساعات و12 دقيقة من وقت المد. ${lunarInfo.lowTideNote}`,
+      },
+      {
+        id: 'sun',
+        title: 'الشمس (القوة المساندة)',
+        accent: '#fbbf24',
+        badge: 'تحدد شدة المد',
+        getContent: (lunarInfo) =>
+          `تؤثر جاذبية الشمس في مياه المحيطات أيضاً؛ فعندما تصطف الشمس والأرض والقمر على استقامة واحدة (المحاق والبدر) تتحد الجاذبيتان فينشأ «مد الربيع»، وعندما تصنع زاوية قائمة 90° (التربيع الأول والأخير) تتعارض الجاذبيتان فينشأ «المد المنخفض».`,
+      },
+    ];
+
+    const POWER_BUBBLES = [
+      {
+        id: 'damGate',
+        title: 'بوابة السد البحري',
+        accent: '#38bdf8',
+        badge: 'التحكم بتدفق المياه',
+        getContent: () =>
+          'سد خرساني ضخم يُبنى عند مصبات الأنهار والخلجان؛ يحتوي على بوابات تحكم تُفتح وتُغلق لاستغلال فارق منسوب المياه بين البحر المفتوح وحوض التخزين خلال عمليتي المد والجزر.',
+      },
+      {
+        id: 'turbine',
+        title: 'التوربين المائي',
+        accent: '#22d3ee',
+        badge: 'طاقة حركية ← ميكانيكية',
+        getContent: () =>
+          'مروحة معدنية قوية داخل النفق المائي؛ تدور شفراتها بسرعة عند اندفاع مياه البحر أثناء المد، وتدور في الاتجاه المعاكس عند عودة المياه أثناء الجزر، محولةً حركة المياه إلى طاقة دوران ميكانيكية.',
+      },
+      {
+        id: 'generator',
+        title: 'المولد الكهربائي',
+        accent: '#facc15',
+        badge: 'طاقة ميكانيكية ← كهربائية',
+        getContent: () =>
+          'يرتبط المولد مباشرة بعمود دوران التوربين المائي؛ وعند دورانه داخل ملفات مغناطيسية تتولد طاقة كهربائية نظيفة ومستمرة دون حرق وقود أو انبعاث غازات ملوّثة.',
+      },
+      {
+        id: 'cityGrid',
+        title: 'الشبكة والمدينة',
+        accent: '#34d399',
+        badge: 'كهرباء نظيفة للمنازل',
+        getContent: () =>
+          'تنتقل الكهرباء المولدة عبر أبراج وكابلات الضغط العالي لإضاءة المنازل وتشغيل المصانع والمدن الساحلية بطاقة متجددة يمكن التنبؤ بمواعيد إنتاجها بدقة على مدار العام.',
+      },
+    ];
+
+    // =========================================================================
+    // 2. دوال الضوضاء الإجرائية لتوليد خامات ثلاثية الأبعاد عالية الدقة
+    // =========================================================================
+    function hash2D(x, y, seed = 1337) {
+      let n = Math.imul(x, 374761393) + Math.imul(y, 668265263) + Math.imul(seed, 1442695041);
+      n = (n ^ (n >>> 13)) * 1274126177;
+      return ((n ^ (n >>> 16)) >>> 0) / 4294967295;
+    }
+
+    function valueNoise2D(x, y, periodX, seed = 1337) {
+      const xi = Math.floor(x);
+      const yi = Math.floor(y);
+      const xf = x - xi;
+      const yf = y - yi;
+      const u = xf * xf * (3 - 2 * xf);
+      const v = yf * yf * (3 - 2 * yf);
+      const x0 = ((xi % periodX) + periodX) % periodX;
+      const x1 = (x0 + 1) % periodX;
+
+      const a = hash2D(x0, yi, seed);
+      const b = hash2D(x1, yi, seed);
+      const c = hash2D(x0, yi + 1, seed);
+      const d = hash2D(x1, yi + 1, seed);
+      return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+    }
+
+    function fbm2D(x, y, periodX, octaves = 4, seed = 1337) {
+      let val = 0;
+      let amp = 0.5;
+      let freq = 1;
+      let norm = 0;
+      for (let i = 0; i < octaves; i++) {
+        val += amp * valueNoise2D(x * freq, y * freq, Math.max(1, Math.round(periodX * freq)), seed + i * 71);
+        norm += amp;
+        amp *= 0.5;
+        freq *= 2;
+      }
+      return val / norm;
+    }
+
+    function createGlowTexture(c0, c1, c2) {
+      const s = 256;
+      const c = document.createElement('canvas');
+      c.width = c.height = s;
+      const ctx = c.getContext('2d');
+      const g = ctx.createRadialGradient(s / 2, s / 2, 4, s / 2, s / 2, s / 2);
+      g.addColorStop(0, c0);
+      g.addColorStop(0.38, c1);
+      g.addColorStop(0.76, c2);
+      g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, s, s);
+      return new THREE.CanvasTexture(c);
+    }
+
+    /**
+     * توليد خامة سطح الأرض (قارات، محيطات، جليد قطبي، خريطة خشونة)
+     */
+    function generateEarthTexture() {
+      const w = 1024;
+      const h = 512;
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      const img = ctx.createImageData(w, h);
+
+      const seeds = [
+        { lon: 22, lat: 8, rx: 24, ry: 26, w: 0.52 },
+        { lon: 25, lat: -18, rx: 14, ry: 18, w: 0.44 },
+        { lon: 46, lat: 23, rx: 13, ry: 10, w: 0.48 },
+        { lon: 18, lat: 50, rx: 24, ry: 14, w: 0.48 },
+        { lon: 80, lat: 52, rx: 46, ry: 20, w: 0.55 },
+        { lon: 102, lat: 30, rx: 26, ry: 18, w: 0.5 },
+        { lon: -100, lat: 46, rx: 32, ry: 20, w: 0.54 },
+        { lon: -60, lat: -15, rx: 17, ry: 24, w: 0.52 },
+        { lon: 134, lat: -25, rx: 17, ry: 11, w: 0.48 },
+      ];
+
+      for (let y = 0; y < h; y++) {
+        const v = y / (h - 1);
+        const lat = 90 - v * 180;
+        const absLat = Math.abs(lat);
+        for (let x = 0; x < w; x++) {
+          const u = x / w;
+          const lon = u * 360 - 180;
+          const coast = fbm2D(u * 8, v * 4, 8, 5, 42);
+          const detail = fbm2D(u * 22, v * 11, 22, 3, 777);
+
+          let land = 0;
+          for (let i = 0; i < seeds.length; i++) {
+            const c = seeds[i];
+            let dLon = lon - c.lon;
+            if (dLon > 180) dLon -= 360;
+            if (dLon < -180) dLon += 360;
+            const dLat = lat - c.lat;
+            const d2 = (dLon * dLon) / (c.rx * c.rx) + (dLat * dLat) / (c.ry * c.ry);
+            if (d2 < 2.2) land += c.w * Math.exp(-d2 * 1.15);
+          }
+          if (lat < -65) land += ((-65 - lat) / 22) * 0.85;
+
+          const elev = land + (coast - 0.47) * 0.7 + (detail - 0.5) * 0.14;
+          const idx = (y * w + x) * 4;
+          let r, g, b;
+
+          if (absLat + (coast - 0.5) * 14 > 79) {
+            r = 236; g = 246; b = 255;
+          } else if (elev > 0.34) {
+            const hN = Math.min(1, (elev - 0.34) / 0.55);
+            const desert = Math.exp(-Math.pow((absLat - 24) / 13, 2)) * fbm2D(u * 9, v * 5, 9, 3, 211);
+            if (desert > 0.34 && absLat < 40) {
+              r = 198 + detail * 24; g = 166 + detail * 20; b = 108 + detail * 16;
+            } else {
+              r = 44 + hN * 68 + detail * 20;
+              g = 118 + (1 - hN) * 42 + detail * 24;
+              b = 54 + detail * 18;
+            }
+          } else {
+            const d = Math.min(1, (0.34 - elev) / 0.4);
+            r = 16 * (1 - d) + 7 * d;
+            g = 96 * (1 - d) + 34 * d;
+            b = 172 * (1 - d) + 98 * d;
+          }
+          img.data[idx] = Math.min(255, Math.max(0, r));
+          img.data[idx + 1] = Math.min(255, Math.max(0, g));
+          img.data[idx + 2] = Math.min(255, Math.max(0, b));
+          img.data[idx + 3] = 255;
+        }
+      }
+      ctx.putImageData(img, 0, 0);
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.anisotropy = 8;
+      return tex;
+    }
+
+    /**
+     * توليد خامة سحب شفافة للأرض
+     */
+    function generateCloudsTexture() {
+      const w = 512;
+      const h = 256;
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      const img = ctx.createImageData(w, h);
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          const u = x / w;
+          const v = y / h;
+          const n = fbm2D(u * 9, v * 5, 9, 4, 515);
+          const a = Math.max(0, Math.min(1, (n - 0.53) * 3.2));
+          const idx = (y * w + x) * 4;
+          img.data[idx] = 248;
+          img.data[idx + 1] = 252;
+          img.data[idx + 2] = 255;
+          img.data[idx + 3] = Math.round(a * 185);
+        }
+      }
+      ctx.putImageData(img, 0, 0);
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+
+    /**
+     * توليد خامة سطح القمر المليء بالفوهات والبحار القمرية
+     */
+    function generateMoonTextures() {
+      const w = 512;
+      const h = 256;
+      const cCol = document.createElement('canvas');
+      cCol.width = w; cCol.height = h;
+      const ctxCol = cCol.getContext('2d');
+      const imgCol = ctxCol.createImageData(w, h);
+
+      const cBump = document.createElement('canvas');
+      cBump.width = w; cBump.height = h;
+      const ctxBump = cBump.getContext('2d');
+      const imgBump = ctxBump.createImageData(w, h);
+
+      // فوهات قمرية موزعة عشوائياً بثبات
+      const craters = [];
+      for (let i = 0; i < 42; i++) {
+        craters.push({
+          u: hash2D(i, 1, 901),
+          v: 0.12 + hash2D(i, 2, 901) * 0.76,
+          r: 0.018 + hash2D(i, 3, 901) * 0.055,
+        });
+      }
+
+      for (let y = 0; y < h; y++) {
+        const v = y / h;
+        for (let x = 0; x < w; x++) {
+          const u = x / w;
+          const maria = fbm2D(u * 5, v * 3, 5, 4, 313);
+          const grain = fbm2D(u * 26, v * 13, 26, 3, 617);
+
+          let shade = 148 + (maria - 0.5) * 85 + (grain - 0.5) * 32;
+          let bump = 128 + (grain - 0.5) * 50;
+
+          for (let i = 0; i < craters.length; i++) {
+            const cr = craters[i];
+            let du = Math.abs(u - cr.u);
+            if (du > 0.5) du = 1 - du;
+            const dv = (v - cr.v) * 0.55;
+            const dist = Math.hypot(du, dv) / cr.r;
+            if (dist < 1.25) {
+              if (dist < 0.85) {
+                const depth = 1 - (dist / 0.85) * (dist / 0.85);
+                shade -= depth * 28;
+                bump -= depth * 70;
+              } else {
+                const rim = Math.sin(((dist - 0.85) / 0.4) * Math.PI);
+                shade += rim * 24;
+                bump += rim * 48;
+              }
+            }
+          }
+
+          const idx = (y * w + x) * 4;
+          const sCol = Math.min(245, Math.max(58, shade));
+          imgCol.data[idx] = sCol;
+          imgCol.data[idx + 1] = sCol * 0.99;
+          imgCol.data[idx + 2] = sCol * 0.95;
+          imgCol.data[idx + 3] = 255;
+
+          const bVal = Math.min(255, Math.max(0, bump));
+          imgBump.data[idx] = imgBump.data[idx + 1] = imgBump.data[idx + 2] = bVal;
+          imgBump.data[idx + 3] = 255;
+        }
+      }
+      ctxCol.putImageData(imgCol, 0, 0);
+      ctxBump.putImageData(imgBump, 0, 0);
+
+      const map = new THREE.CanvasTexture(cCol);
+      map.colorSpace = THREE.SRGBColorSpace;
+      const bumpMap = new THREE.CanvasTexture(cBump);
+      return { map, bumpMap };
+    }
+
+    /**
+     * توليد خامة سطح الشمس البلازمي المتوهج
+     */
+    function generateSunTexture() {
+      const s = 512;
+      const c = document.createElement('canvas');
+      c.width = c.height = s;
+      const ctx = c.getContext('2d');
+      const img = ctx.createImageData(s, s);
+      for (let y = 0; y < s; y++) {
+        for (let x = 0; x < s; x++) {
+          const u = x / s;
+          const v = y / s;
+          const w = fbm2D(u * 8, v * 8, 8, 4, 808);
+          const n = fbm2D(u * 14 + w, v * 14 - w, 14, 4, 809);
+          const idx = (y * s + x) * 4;
+          img.data[idx] = 255;
+          img.data[idx + 1] = Math.min(255, 145 + n * 110);
+          img.data[idx + 2] = Math.min(255, 22 + Math.pow(n, 2) * 145);
+          img.data[idx + 3] = 255;
+        }
+      }
+      ctx.putImageData(img, 0, 0);
+      const tex = new THREE.CanvasTexture(c);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      return tex;
+    }
+
+    /**
+     * توليد خامة الخرسانة للسد البحري
+     */
+    function generateConcreteTexture() {
+      const s = 256;
+      const c = document.createElement('canvas');
+      c.width = c.height = s;
+      const ctx = c.getContext('2d');
+      const img = ctx.createImageData(s, s);
+      for (let y = 0; y < s; y++) {
+        for (let x = 0; x < s; x++) {
+          const n = fbm2D((x / s) * 18, (y / s) * 18, 18, 3, 456);
+          const seam = (y % 64 < 2 || x % 128 < 2) ? -18 : 0;
+          const v = Math.min(230, Math.max(105, 152 + (n - 0.5) * 42 + seam));
+          const idx = (y * s + x) * 4;
+          img.data[idx] = v;
+          img.data[idx + 1] = v + 4;
+          img.data[idx + 2] = v + 10;
+          img.data[idx + 3] = 255;
+        }
+      }
+      ctx.putImageData(img, 0, 0);
+      const tex = new THREE.CanvasTexture(c);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(2, 2);
+      return tex;
+    }
+
+    // =========================================================================
+    // 3. حساب معلومات الشهر القمري ونوع المد بدقة علمية
+    // =========================================================================
+    const LUNAR_CYCLE_DAYS = 29.53;
+
+    /**
+     * تحويل اليوم القمري (1 إلى 29.5) إلى زاوية مدار القمر (0 = المحاق بين الأرض والشمس)
+     */
+    function lunarDayToAngle(day) {
+      const norm = ((day - 1) / (LUNAR_CYCLE_DAYS - 1)) % 1;
+      return (norm < 0 ? norm + 1 : norm) * Math.PI * 2;
+    }
+
+    /**
+     * استخراج اسم الطور، التوقيت في الشهر، ونوع المد من زاوية القمر
+     */
+    function getLunarStateInfo(moonAngle) {
+      const normAngle = ((moonAngle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+      const fraction = normAngle / (Math.PI * 2);
+      const day = 1 + fraction * (LUNAR_CYCLE_DAYS - 1);
+      const dayRounded = Math.round(day * 10) / 10;
+      const dayInt = Math.max(1, Math.min(30, Math.round(day)));
+
+      // معامل الاستقامة: 1 عند المحاق والبدر (مد الربيع)، 0 عند التربيعين (المد المنخفض)
+      const springFactor = Math.abs(Math.cos(normAngle));
+
+      let phaseName = '';
+      let monthTiming = '';
+      if (day < 2.2 || day > 28.2) {
+        phaseName = 'المحاق';
+        monthTiming = 'بداية / نهاية الشهر القمري (يوم 1 أو 29–30)';
+      } else if (day < 6.4) {
+        phaseName = 'هلال أول الشهر';
+        monthTiming = 'أيام الأسبوع الأول (يوم 2–6)';
+      } else if (day < 9.3) {
+        phaseName = 'التربيع الأول';
+        monthTiming = 'نهاية الأسبوع الأول (يوم 7–8)';
+      } else if (day < 13.4) {
+        phaseName = 'أحدب متزايد';
+        monthTiming = 'الأسبوع الثاني (يوم 9–13)';
+      } else if (day < 16.4) {
+        phaseName = 'البدر';
+        monthTiming = 'منتصف الشهر القمري (يوم 14–15)';
+      } else if (day < 20.5) {
+        phaseName = 'أحدب متناقص';
+        monthTiming = 'الأسبوع الثالث (يوم 16–20)';
+      } else if (day < 23.5) {
+        phaseName = 'التربيع الأخير';
+        monthTiming = 'نهاية الأسبوع الثالث (يوم 21–22)';
+      } else {
+        phaseName = 'هلال آخر الشهر';
+        monthTiming = 'الأسبوع الرابع (يوم 23–28)';
+      }
+
+      let tideType = 'moderate';
+      let tideTitle = 'مد وجزر معتدل (انتقالي)';
+      let tideShort = 'مد معتدل';
+      let alignmentText = 'زاوية مائلة — تتحول الجاذبية تدريجياً بين مد الربيع والمد المنخفض';
+      let lowTideNote = 'يكون انخفاض الجزر معتدلاً في هذا الوضع الانتقالي.';
+      let badgeTheme = 'sky';
+
+      if (springFactor >= 0.78) {
+        tideType = 'spring';
+        tideTitle = 'مد الربيع (أعلى مد وأدنى جزر)';
+        tideShort = 'مد عالٍ جداً (مد الربيع)';
+        alignmentText = 'استقامة واحدة (0° / 180°) — تتحد قوتا جذب الشمس والقمر';
+        lowTideNote = 'في مد الربيع يكون الجزر شديد الانخفاض بسبب سحب كمية كبيرة من المياه نحو قمتي المد.';
+        badgeTheme = 'amber';
+      } else if (springFactor <= 0.32) {
+        tideType = 'neap';
+        tideTitle = 'المد المنخفض (أضعف مد)';
+        tideShort = 'مد منخفض (ضعيف)';
+        alignmentText = 'زاوية قائمة (90°) — تتعارض قوة جذب الشمس مع القمر';
+        lowTideNote = 'في المد المنخفض يكون الجزر معتدلاً والفارق بين المد والجزر صغيراً.';
+        badgeTheme = 'cyan';
+      }
+
+      return {
+        day,
+        dayInt,
+        dayLabel: dayRounded % 1 === 0 ? `${dayInt}` : `${dayInt}`,
+        phaseName,
+        monthTiming,
+        springFactor,
+        tideType,
+        tideTitle,
+        tideShort,
+        alignmentText,
+        lowTideNote,
+        badgeTheme,
+        normAngle,
+      };
+    }
+
+    /**
+     * رسم معاينة دقيقة لشكل القمر كما يُرى من الأرض على Canvas صغير بزاوية الشاشة
+     */
+    function drawMoonPhasePreview(canvas, normAngle) {
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width;
+      const h = canvas.height;
+      const cx = w / 2;
+      const cy = h / 2;
+      const r = w * 0.43;
+
+      ctx.clearRect(0, 0, w, h);
+
+      // خلفية داكنة فضائية
+      ctx.fillStyle = '#071024';
+      ctx.beginPath();
+      ctx.arc(cx, cy, r + 3, 0, Math.PI * 2);
+      ctx.fill();
+
+      // القرص المظلم للقمر (الجانب غير المضاء)
+      ctx.fillStyle = '#1e293b';
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.fill();
+
+      // حساب الإضاءة: 0 = محاق (مظلم)، PI/2 = تربيع أول (النصف الأيمن مضاء)، PI = بدر (مضاء بالكامل)، 3PI/2 = تربيع أخير (الأيسر مضاء)
+      const cosA = Math.cos(normAngle); // +1 عند المحاق، 0 عند التربيع، -1 عند البدر
+      const isWaxing = normAngle < Math.PI; // النصف الأول من الشهر القمري
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.clip();
+
+      // تدرج سطوع القمر
+      const litGrad = ctx.createRadialGradient(cx - r * 0.2, cy - r * 0.2, 2, cx, cy, r * 1.1);
+      litGrad.addColorStop(0, '#fffbeb');
+      litGrad.addColorStop(0.65, '#e2e8f0');
+      litGrad.addColorStop(1, '#cbd5e1');
+
+      if (Math.abs(normAngle - Math.PI) < 0.08) {
+        // بدر كامل
+        ctx.fillStyle = litGrad;
+        ctx.fillRect(0, 0, w, h);
+      } else if (normAngle > 0.08 && normAngle < Math.PI * 2 - 0.08) {
+        // النصف الأساسي المضاء (الأيمن في التزايد، الأيسر في التناقص)
+        ctx.fillStyle = litGrad;
+        ctx.beginPath();
+        if (isWaxing) {
+          ctx.arc(cx, cy, r, -Math.PI / 2, Math.PI / 2, false);
+        } else {
+          ctx.arc(cx, cy, r, Math.PI / 2, -Math.PI / 2, false);
+        }
+        ctx.closePath();
+        ctx.fill();
+
+        // القطع الناقص الفاصل بين النور والظلام (Terminator)
+        const ellipseRx = Math.abs(cosA) * r;
+        const isGibbous = cosA < 0; // أحدب (أكثر من نصف القمر مضاء)
+        ctx.fillStyle = isGibbous ? litGrad : '#1e293b';
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, Math.max(0.5, ellipseRx), r, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // فوهات لطيفة لإضفاء مظهر قمري واقعي
+      ctx.fillStyle = 'rgba(100, 116, 139, 0.22)';
+      [
+        [0.36, 0.38, 0.11],
+        [0.62, 0.45, 0.14],
+        [0.48, 0.65, 0.1],
+        [0.64, 0.28, 0.07],
+      ].forEach(([fx, fy, fr]) => {
+        ctx.beginPath();
+        ctx.arc(w * fx, h * fy, w * fr, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      ctx.restore();
+
+      // إطار خفيف يحدد محيط القمر حتى في طور المحاق
+      ctx.strokeStyle = 'rgba(148, 163, 184, 0.45)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // =========================================================================
+    // 4. المتغيرات العامة للمشهدين والحالة التفاعلية
+    // =========================================================================
+    let scene, camera, renderer, controls;
+    let spaceGroup, powerGroup;
+    let starsPoints;
+
+    // عناصر مشهد الفضاء
+    let earthMesh, cloudsMesh, sunMesh, sunTex, moonMesh;
+    let tidalBulgeGroup, tidalBulgeMesh, tidalRimMesh, solarBulgeRing;
+    let moonForceArrow, sunForceArrow;
+    let springAlignLine, neapAngleGroup;
+    let spaceLights = [];
+
+    // عناصر مشهد محطة الكهرباء
+    let powerLights = [];
+    let seaWaterMesh, basinWaterMesh, seaSurfaceGeo, basinSurfaceGeo;
+    let turbineRotor, driveShaft, sluiceGateMesh, generatorCoreMat, generatorGlowLight;
+    let flowParticles, flowPositions;
+    let cablePulses = [];
+    let cityWindowMats = [];
+    let flowCurveLeftToRight = [];
+    let powerCablePaths = [];
+
+    // حالة التطبيق
+    const state = {
+      activeScene: 'space', // 'space' أو 'power'
+      isPlaying: true,
+      showBubbles: true,
+      // مشهد الفضاء
+      spacePreset: 'newMoon', // 'orbit', 'newMoon', 'fullMoon', 'firstQuarter', 'lastQuarter'
+      moonAngle: 0, // 0 = المحاق (بداية الشهر القمري، مد الربيع)
+      targetMoonAngle: 0,
+      isContinuousOrbit: false,
+      // مشهد محطة الكهرباء
+      powerMode: 'highTide', // 'highTide', 'lowTide', 'autoCycle'
+      seaLevel: 2.1,
+      basinLevel: -0.7,
+      flowVelocity: 1.0, // موجب: بحر -> حوض (مد) | سالب: حوض -> بحر (جزر)
+      // فقاعات المعلومات المفتوحة
+      openCards: new Set(),
+      // تحريك الكاميرا بسلاسة عند تبديل المشاهد
+      camAnim: null,
+    };
+
+    const ORBIT_RADIUS = 8.6;
+    const SUN_POS = new THREE.Vector3(19.5, 0, 0);
+
+    // مراجع DOM
+    const dom = {
+      container: document.getElementById('canvas-container'),
+      bubblesLayer: document.getElementById('bubbles-layer'),
+      cardsLayer: document.getElementById('cards-layer'),
+      loader: document.getElementById('loader-overlay'),
+      btnSceneSpace: document.getElementById('btn-scene-space'),
+      btnScenePower: document.getElementById('btn-scene-power'),
+      btnCompare: document.getElementById('btn-compare-modal'),
+      compareModal: document.getElementById('compare-modal'),
+      btnCloseModal: document.getElementById('btn-close-modal'),
+      moonHudCard: document.getElementById('moon-hud-card'),
+      moonHudBody: document.getElementById('moon-hud-body'),
+      btnToggleHud: document.getElementById('btn-toggle-hud'),
+      moonPhaseCanvas: document.getElementById('moon-phase-canvas'),
+      hudPhaseName: document.getElementById('hud-phase-name'),
+      hudLunarDay: document.getElementById('hud-lunar-day'),
+      hudMonthTiming: document.getElementById('hud-month-timing'),
+      hudTideBox: document.getElementById('hud-tide-box'),
+      hudTideTitle: document.getElementById('hud-tide-title'),
+      hudAlignmentText: document.getElementById('hud-alignment-text'),
+      alignmentBanner: document.getElementById('alignment-banner'),
+      alignmentBannerText: document.getElementById('alignment-banner-text'),
+      powerHudCard: document.getElementById('power-hud-card'),
+      powerMwReadout: document.getElementById('power-mw-readout'),
+      powerModeDesc: document.getElementById('power-mode-desc'),
+      powerMeterBar: document.getElementById('power-meter-bar'),
+      bottomDock: document.getElementById('bottom-dock'),
+      dockTitle: document.getElementById('dock-title'),
+      btnCollapseDock: document.getElementById('btn-collapse-dock'),
+      btnBubblesText: document.getElementById('btn-bubbles-text'),
+      spaceControls: document.getElementById('space-controls'),
+      powerControls: document.getElementById('power-controls'),
+      lunarSlider: document.getElementById('lunar-day-slider'),
+      sliderDayBadge: document.getElementById('slider-day-badge'),
+      btnZoomIn: document.getElementById('btn-zoom-in'),
+      btnZoomOut: document.getElementById('btn-zoom-out'),
+      btnResetView: document.getElementById('btn-reset-view'),
+      btnTogglePlay: document.getElementById('btn-toggle-play'),
+      iconPlayPause: document.getElementById('icon-play-pause'),
+      btnToggleBubbles: document.getElementById('btn-toggle-bubbles'),
+      errorBanner: document.getElementById('error-banner'),
+    };
+
+    const pinElements = {};
+    const cardElements = {};
+
+    // =========================================================================
+    // 5. بناء مشهد Three.js الأساسي والمشهدين الفرعيين
+    // =========================================================================
+    function initThree() {
+      const w = dom.container.clientWidth || window.innerWidth;
+      const h = dom.container.clientHeight || window.innerHeight;
+
+      scene = new THREE.Scene();
+
+      camera = new THREE.PerspectiveCamera(44, w / h, 0.1, 400);
+      const isMobile = w < 700;
+      camera.position.set(2.5, isMobile ? 16.5 : 13.5, isMobile ? 25.5 : 21.5);
+
+      renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        alpha: true,
+        powerPreference: 'high-performance',
+      });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setSize(w, h);
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.15;
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      dom.container.appendChild(renderer.domElement);
+
+      controls = new OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.065;
+      controls.enablePan = true;
+      controls.minDistance = 7;
+      controls.maxDistance = 52;
+      controls.target.set(3.2, 0, 0);
+      controls.addEventListener('start', () => {
+        state.camAnim = null;
+      });
+
+      buildSpaceScene();
+      buildPowerPlantScene();
+
+      // البدء بمشهد الفضاء
+      powerGroup.visible = false;
+      setPowerLightsActive(false);
+    }
+
+    /**
+     * إنشاء سهم ثلاثي الأبعاد متوهج لتمثيل قوى الجاذبية
+     */
+    function createGlowingArrow(colorHex, length = 3.6) {
+      const grp = new THREE.Group();
+      const mat = new THREE.MeshStandardMaterial({
+        color: colorHex,
+        emissive: colorHex,
+        emissiveIntensity: 0.95,
+        roughness: 0.25,
+        metalness: 0.2,
+      });
+
+      const shaftLen = length * 0.72;
+      const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, shaftLen, 16), mat);
+      shaft.rotation.z = -Math.PI / 2;
+      shaft.position.x = shaftLen / 2;
+      grp.add(shaft);
+
+      const head = new THREE.Mesh(new THREE.ConeGeometry(0.32, length * 0.3, 20), mat);
+      head.rotation.z = -Math.PI / 2;
+      head.position.x = shaftLen + length * 0.14;
+      grp.add(head);
+
+      return grp;
+    }
+
+    /**
+     * بناء المشهد الأول: الشمس والأرض والقمر والمد والجزر
+     */
+    function buildSpaceScene() {
+      spaceGroup = new THREE.Group();
+      scene.add(spaceGroup);
+
+      // إضاءة الفضاء (مصدر الضوء الرئيسي يأتي من اتجاه الشمس +X لإظهار أطوار القمر واقعياً)
+      const amb = new THREE.AmbientLight(0x93c5fd, 0.38);
+      const sunDirLight = new THREE.DirectionalLight(0xfffbeb, 2.8);
+      sunDirLight.position.set(28, 3, 2);
+      const sunPointLight = new THREE.PointLight(0xffd27d, 4.0, 65, 0.8);
+      sunPointLight.position.copy(SUN_POS);
+
+      spaceGroup.add(amb, sunDirLight, sunPointLight);
+      spaceLights = [amb, sunDirLight, sunPointLight];
+
+      // خلفية النجوم
+      const starCount = 2200;
+      const pos = new Float32Array(starCount * 3);
+      for (let i = 0; i < starCount; i++) {
+        const r = 65 + Math.random() * 120;
+        const th = Math.random() * Math.PI * 2;
+        const ph = Math.acos(2 * Math.random() - 1);
+        pos[i * 3] = r * Math.sin(ph) * Math.cos(th);
+        pos[i * 3 + 1] = r * Math.cos(ph);
+        pos[i * 3 + 2] = r * Math.sin(ph) * Math.sin(th);
+      }
+      const sGeo = new THREE.BufferGeometry();
+      sGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      starsPoints = new THREE.Points(
+        sGeo,
+        new THREE.PointsMaterial({
+          color: 0xe0f2fe,
+          size: 0.72,
+          map: createGlowTexture('rgba(255,255,255,1)', 'rgba(186,230,253,0.6)', 'rgba(0,0,0,0)'),
+          transparent: true,
+          opacity: 0.9,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending,
+        })
+      );
+      spaceGroup.add(starsPoints);
+
+      // --- الشمس (على اليمين +X) ---
+      sunTex = generateSunTexture();
+      sunMesh = new THREE.Mesh(
+        new THREE.SphereGeometry(3.45, 56, 42),
+        new THREE.MeshBasicMaterial({ map: sunTex })
+      );
+      sunMesh.position.copy(SUN_POS);
+      spaceGroup.add(sunMesh);
+
+      const sunCorona = new THREE.Sprite(
+        new THREE.SpriteMaterial({
+          map: createGlowTexture('rgba(255,250,210,0.95)', 'rgba(255,180,45,0.48)', 'rgba(255,100,0,0.06)'),
+          blending: THREE.AdditiveBlending,
+          transparent: true,
+          depthWrite: false,
+        })
+      );
+      sunCorona.scale.set(13.8, 13.8, 1);
+      sunMesh.add(sunCorona);
+
+      // --- الأرض في المركز ---
+      const earthContainer = new THREE.Group();
+      spaceGroup.add(earthContainer);
+
+      const earthTex = generateEarthTexture();
+      earthMesh = new THREE.Mesh(
+        new THREE.SphereGeometry(2.05, 64, 48),
+        new THREE.MeshStandardMaterial({
+          map: earthTex,
+          roughness: 0.72,
+          metalness: 0.08,
+        })
+      );
+      earthContainer.add(earthMesh);
+
+      cloudsMesh = new THREE.Mesh(
+        new THREE.SphereGeometry(2.11, 48, 36),
+        new THREE.MeshStandardMaterial({
+          map: generateCloudsTexture(),
+          transparent: true,
+          opacity: 0.62,
+          depthWrite: false,
+        })
+      );
+      earthContainer.add(cloudsMesh);
+
+      // محور القطب الشمالي والجنوبي الواضح
+      const axisRod = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.035, 0.035, 5.4, 12),
+        new THREE.MeshBasicMaterial({ color: 0xbae6fd, transparent: true, opacity: 0.6 })
+      );
+      earthContainer.add(axisRod);
+
+      // --- غلاف المياه الديناميكي ثلاثي الأبعاد (انتفاخ المد والجزر) ---
+      tidalBulgeGroup = new THREE.Group();
+      spaceGroup.add(tidalBulgeGroup);
+
+      const bulgeGeo = new THREE.SphereGeometry(2.22, 64, 48);
+      tidalBulgeMesh = new THREE.Mesh(
+        bulgeGeo,
+        new THREE.MeshPhysicalMaterial({
+          color: 0x06b6d4,
+          emissive: 0x0284c7,
+          emissiveIntensity: 0.55,
+          roughness: 0.14,
+          metalness: 0.05,
+          transparent: true,
+          opacity: 0.5,
+          depthWrite: false,
+          side: THREE.FrontSide,
+        })
+      );
+      tidalBulgeGroup.add(tidalBulgeMesh);
+
+      // حلقة استوائية ساطعة تحدد شكل الانتفاخ المائي بوضوح مذهل للطلاب
+      const rimCurvePts = [];
+      for (let i = 0; i <= 96; i++) {
+        const a = (i / 96) * Math.PI * 2;
+        rimCurvePts.push(new THREE.Vector3(Math.cos(a) * 2.26, 0, Math.sin(a) * 2.26));
+      }
+      tidalRimMesh = new THREE.LineLoop(
+        new THREE.BufferGeometry().setFromPoints(rimCurvePts),
+        new THREE.LineBasicMaterial({ color: 0x67e8f9, transparent: true, opacity: 0.95 })
+      );
+      tidalBulgeGroup.add(tidalRimMesh);
+
+      // هالة مد الشمس الثانوية (ثابتة باتجاه الشمس +X لتوضيح أثر جاذبية الشمس)
+      const solarRingPts = [];
+      for (let i = 0; i <= 72; i++) {
+        const a = (i / 72) * Math.PI * 2;
+        solarRingPts.push(new THREE.Vector3(Math.cos(a) * 2.62, 0.02, Math.sin(a) * 2.24));
+      }
+      solarBulgeRing = new THREE.LineLoop(
+        new THREE.BufferGeometry().setFromPoints(solarRingPts),
+        new THREE.LineBasicMaterial({ color: 0xfbbf24, transparent: true, opacity: 0.45 })
+      );
+      spaceGroup.add(solarBulgeRing);
+
+      // --- مدار القمر الدائري ---
+      const orbitPts = [];
+      for (let i = 0; i <= 128; i++) {
+        const a = (i / 128) * Math.PI * 2;
+        orbitPts.push(new THREE.Vector3(Math.cos(a) * ORBIT_RADIUS, 0, Math.sin(a) * ORBIT_RADIUS));
+      }
+      const orbitRing = new THREE.LineLoop(
+        new THREE.BufferGeometry().setFromPoints(orbitPts),
+        new THREE.LineBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.35 })
+      );
+      spaceGroup.add(orbitRing);
+
+      // --- القمر ---
+      const moonTex = generateMoonTextures();
+      moonMesh = new THREE.Mesh(
+        new THREE.SphereGeometry(0.84, 48, 36),
+        new THREE.MeshStandardMaterial({
+          map: moonTex.map,
+          bumpMap: moonTex.bumpMap,
+          bumpScale: 0.045,
+          roughness: 0.92,
+          metalness: 0.02,
+        })
+      );
+      spaceGroup.add(moonMesh);
+
+      // --- أسهم قوى الجذب (القمر سماوي، الشمس ذهبي) ---
+      moonForceArrow = createGlowingArrow(0x22d3ee, 3.2);
+      spaceGroup.add(moonForceArrow);
+
+      sunForceArrow = createGlowingArrow(0xfbbf24, 3.4);
+      sunForceArrow.position.set(3.4, 0, 0);
+      spaceGroup.add(sunForceArrow);
+
+      // --- مؤشر الاستقامة الواحدة (مد الربيع: خط ذهبي متقطع يربط الشمس والأرض والقمر) ---
+      const alignGeo = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(-ORBIT_RADIUS - 1.2, 0, 0),
+        new THREE.Vector3(SUN_POS.x - 3.6, 0, 0),
+      ]);
+      const alignMat = new THREE.LineDashedMaterial({
+        color: 0xfacc15,
+        dashSize: 0.75,
+        gapSize: 0.45,
+        transparent: true,
+        opacity: 0.9,
+      });
+      springAlignLine = new THREE.Line(alignGeo, alignMat);
+      springAlignLine.computeLineDistances();
+      spaceGroup.add(springAlignLine);
+
+      // --- مؤشر الزاوية القائمة 90° (المد المنخفض) ---
+      neapAngleGroup = new THREE.Group();
+      const rightAngleMat = new THREE.LineBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.95 });
+      const legGeo = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(0, 0.05, ORBIT_RADIUS),
+        new THREE.Vector3(0, 0.05, 0),
+        new THREE.Vector3(SUN_POS.x - 3.6, 0.05, 0),
+      ]);
+      neapAngleGroup.add(new THREE.Line(legGeo, rightAngleMat));
+
+      // مربع الزاوية القائمة (90°) بوضوح عند الأرض
+      const sq = 3.85;
+      const squareGeo = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(sq, 0.06, 0),
+        new THREE.Vector3(sq, 0.06, sq),
+        new THREE.Vector3(0, 0.06, sq),
+      ]);
+      neapAngleGroup.add(
+        new THREE.Line(squareGeo, new THREE.LineBasicMaterial({ color: 0xfacc15, transparent: true, opacity: 0.95 }))
+      );
+      spaceGroup.add(neapAngleGroup);
+    }
+
+    /**
+     * بناء المشهد الثاني: محطة توليد الكهرباء من المد والجزر (سد بحري تفاعلي ثلاثي الأبعاد)
+     */
+    function buildPowerPlantScene() {
+      powerGroup = new THREE.Group();
+      scene.add(powerGroup);
+
+      // إضاءة نهارية ساحلية مشرقة تبرز تفاصيل السد والمياه والتوربينات والمدينة
+      const hemi = new THREE.HemisphereLight(0xe0f2fe, 0x0f172a, 1.35);
+      const sunL = new THREE.DirectionalLight(0xfff7ed, 2.2);
+      sunL.position.set(-14, 18, 14);
+      const fillL = new THREE.DirectionalLight(0x38bdf8, 0.85);
+      fillL.position.set(16, 8, -10);
+      powerGroup.add(hemi, sunL, fillL);
+      powerLights = [hemi, sunL, fillL];
+
+      const concreteTex = generateConcreteTexture();
+      const concreteMat = new THREE.MeshStandardMaterial({
+        map: concreteTex,
+        roughness: 0.85,
+        metalness: 0.08,
+        color: 0xdbe4ee,
+      });
+      const darkConcreteMat = new THREE.MeshStandardMaterial({
+        map: concreteTex,
+        roughness: 0.9,
+        color: 0x64748b,
+      });
+
+      // --- قاع البحر والقاعدة الصخرية ---
+      const seabed = new THREE.Mesh(
+        new THREE.BoxGeometry(28, 1.8, 12),
+        new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.95 })
+      );
+      seabed.position.set(0, -4.4, 0);
+      powerGroup.add(seabed);
+
+      // جدار خلفي زجاجي خفيف لإعطاء عمق مجسم للحوضين
+      const backWall = new THREE.Mesh(
+        new THREE.BoxGeometry(28, 7.6, 0.4),
+        new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.9 })
+      );
+      backWall.position.set(0, -0.4, -5.8);
+      powerGroup.add(backWall);
+
+      // --- السد البحري الخرساني في المنتصف مع نافذة زجاجية كاشفة لنفق التوربين ---
+      const damGroup = new THREE.Group();
+      powerGroup.add(damGroup);
+
+      // الجدار الخلفي للسد
+      const damBack = new THREE.Mesh(new THREE.BoxGeometry(4.4, 7.8, 3.2), concreteMat);
+      damBack.position.set(0, 0.3, -3.4);
+      damGroup.add(damBack);
+
+      // الجزء العلوي للسد فوق النفق (جسر وطريق علوي)
+      const damTop = new THREE.Mesh(new THREE.BoxGeometry(4.8, 2.5, 11.4), concreteMat);
+      damTop.position.set(0, 3.05, 0);
+      damGroup.add(damTop);
+
+      // القاعدة السفلية تحت النفق
+      const damBottom = new THREE.Mesh(new THREE.BoxGeometry(4.8, 1.6, 11.4), darkConcreteMat);
+      damBottom.position.set(0, -3.2, 0);
+      damGroup.add(damBottom);
+
+      // دعامتان جانبيتان للنفق مع نافذة عرض زجاجية شفافة في الأمام
+      const glassWindow = new THREE.Mesh(
+        new THREE.PlaneGeometry(4.6, 4.3),
+        new THREE.MeshPhysicalMaterial({
+          color: 0xbae6fd,
+          transparent: true,
+          opacity: 0.16,
+          roughness: 0.08,
+          metalness: 0.1,
+          side: THREE.DoubleSide,
+        })
+      );
+      glassWindow.position.set(0, -0.3, 5.55);
+      damGroup.add(glassWindow);
+
+      // إطار معدني ساطع حول نافذة النفق الكاشفة
+      const frameMat = new THREE.MeshStandardMaterial({
+        color: 0x38bdf8,
+        emissive: 0x0284c7,
+        emissiveIntensity: 0.45,
+        metalness: 0.7,
+        roughness: 0.25,
+      });
+      const topBar = new THREE.Mesh(new THREE.BoxGeometry(4.9, 0.18, 0.25), frameMat);
+      topBar.position.set(0, 1.85, 5.65);
+      const botBar = new THREE.Mesh(new THREE.BoxGeometry(4.9, 0.18, 0.25), frameMat);
+      botBar.position.set(0, -2.4, 5.65);
+      damGroup.add(topBar, botBar);
+
+      // جدار النفق الداخلي الأسطواني شبه المفتوح من الأمام
+      const tunnelInner = new THREE.Mesh(
+        new THREE.CylinderGeometry(1.75, 1.75, 4.7, 32, 1, true, Math.PI * 0.2, Math.PI * 1.4),
+        new THREE.MeshStandardMaterial({
+          color: 0x1e3a5f,
+          roughness: 0.65,
+          metalness: 0.35,
+          side: THREE.DoubleSide,
+        })
+      );
+      tunnelInner.rotation.z = Math.PI / 2;
+      tunnelInner.position.set(0, -0.35, 1.8);
+      damGroup.add(tunnelInner);
+
+      // --- بوابة التحكم بالسد (Sluice Gate) ---
+      sluiceGateMesh = new THREE.Mesh(
+        new THREE.BoxGeometry(0.28, 3.4, 3.8),
+        new THREE.MeshStandardMaterial({
+          color: 0xf59e0b,
+          metalness: 0.65,
+          roughness: 0.35,
+        })
+      );
+      sluiceGateMesh.position.set(-2.35, 1.4, 1.8);
+      damGroup.add(sluiceGateMesh);
+
+      // --- التوربين المائي الدوّار داخل النفق ---
+      turbineRotor = new THREE.Group();
+      turbineRotor.position.set(0, -0.35, 1.8);
+      damGroup.add(turbineRotor);
+
+      const metalMat = new THREE.MeshStandardMaterial({
+        color: 0xe2e8f0,
+        metalness: 0.88,
+        roughness: 0.2,
+      });
+      const bladeMat = new THREE.MeshStandardMaterial({
+        color: 0x38bdf8,
+        emissive: 0x0369a1,
+        emissiveIntensity: 0.35,
+        metalness: 0.78,
+        roughness: 0.22,
+      });
+
+      const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 1.25, 24), metalMat);
+      hub.rotation.z = Math.PI / 2;
+      turbineRotor.add(hub);
+
+      const noseCone = new THREE.Mesh(new THREE.ConeGeometry(0.42, 0.7, 24), metalMat);
+      noseCone.rotation.z = Math.PI / 2;
+      noseCone.position.x = -0.95;
+      turbineRotor.add(noseCone);
+
+      // 6 شفرات توربينية مائلة بشكل هندسي واضح
+      for (let i = 0; i < 6; i++) {
+        const bladeHolder = new THREE.Group();
+        bladeHolder.rotation.x = (i / 6) * Math.PI * 2;
+        const blade = new THREE.Mesh(new THREE.BoxGeometry(0.14, 1.35, 0.44), bladeMat);
+        blade.position.y = 0.82;
+        blade.rotation.y = 0.42;
+        bladeHolder.add(blade);
+        turbineRotor.add(bladeHolder);
+      }
+
+      // عمود نقل الحركة الرأسي من التوربين إلى المولد الكهربائي
+      driveShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 5.2, 16), metalMat);
+      driveShaft.position.set(0, 2.3, 1.8);
+      damGroup.add(driveShaft);
+
+      // --- غرفة المولد الكهربائي أعلى السد ---
+      const genHouse = new THREE.Group();
+      genHouse.position.set(0, 5.55, 1.8);
+      damGroup.add(genHouse);
+
+      const genGlassBox = new THREE.Mesh(
+        new THREE.BoxGeometry(3.4, 2.5, 3.0),
+        new THREE.MeshPhysicalMaterial({
+          color: 0xe0f2fe,
+          transparent: true,
+          opacity: 0.24,
+          roughness: 0.12,
+        })
+      );
+      genHouse.add(genGlassBox);
+
+      const genRoof = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.3, 3.4), darkConcreteMat);
+      genRoof.position.y = 1.35;
+      genHouse.add(genRoof);
+
+      generatorCoreMat = new THREE.MeshStandardMaterial({
+        color: 0xfacc15,
+        emissive: 0xf59e0b,
+        emissiveIntensity: 1.4,
+        metalness: 0.5,
+        roughness: 0.2,
+      });
+      const genCore = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.85, 1.65, 24), generatorCoreMat);
+      genHouse.add(genCore);
+
+      // ملفات نحاسية حول المولد
+      for (let i = -1; i <= 1; i++) {
+        const coil = new THREE.Mesh(
+          new THREE.TorusGeometry(0.95, 0.11, 12, 28),
+          new THREE.MeshStandardMaterial({ color: 0xf97316, metalness: 0.85, roughness: 0.25 })
+        );
+        coil.rotation.x = Math.PI / 2;
+        coil.position.y = i * 0.48;
+        genHouse.add(coil);
+      }
+
+      generatorGlowLight = new THREE.PointLight(0xfacc15, 3.5, 12);
+      genHouse.add(generatorGlowLight);
+
+      // --- مياه البحر المفتوح (الجانب الأيسر -X) ---
+      seaSurfaceGeo = new THREE.BoxGeometry(11.4, 6.2, 10.6, 18, 1, 12);
+      seaWaterMesh = new THREE.Mesh(
+        seaSurfaceGeo,
+        new THREE.MeshPhysicalMaterial({
+          color: 0x0284c7,
+          emissive: 0x0369a1,
+          emissiveIntensity: 0.25,
+          roughness: 0.18,
+          metalness: 0.08,
+          transparent: true,
+          opacity: 0.78,
+        })
+      );
+      seaWaterMesh.position.set(-8.1, -0.5, 0.2);
+      powerGroup.add(seaWaterMesh);
+
+      // --- مياه حوض التخزين / المصب (الجانب الأيمن +X) ---
+      basinSurfaceGeo = new THREE.BoxGeometry(8.0, 6.2, 10.6, 14, 1, 12);
+      basinWaterMesh = new THREE.Mesh(
+        basinSurfaceGeo,
+        new THREE.MeshPhysicalMaterial({
+          color: 0x06b6d4,
+          emissive: 0x0891b2,
+          emissiveIntensity: 0.22,
+          roughness: 0.2,
+          metalness: 0.08,
+          transparent: true,
+          opacity: 0.74,
+        })
+      );
+      basinWaterMesh.position.set(6.4, -1.8, 0.2);
+      powerGroup.add(basinWaterMesh);
+
+      // --- جزيئات تدفق المياه المتوهجة عبر النفق ---
+      const pCount = 190;
+      flowPositions = new Float32Array(pCount * 3);
+      for (let i = 0; i < pCount; i++) {
+        flowPositions[i * 3] = (Math.random() - 0.5) * 14;
+        const rad = Math.random() * 1.35;
+        const ang = Math.random() * Math.PI * 2;
+        flowPositions[i * 3 + 1] = -0.35 + Math.cos(ang) * rad;
+        flowPositions[i * 3 + 2] = 1.8 + Math.sin(ang) * rad;
+      }
+      const fpGeo = new THREE.BufferGeometry();
+      fpGeo.setAttribute('position', new THREE.BufferAttribute(flowPositions, 3));
+      flowParticles = new THREE.Points(
+        fpGeo,
+        new THREE.PointsMaterial({
+          color: 0xa5f3fc,
+          size: 0.42,
+          map: createGlowTexture('rgba(255,255,255,1)', 'rgba(103,232,249,0.85)', 'rgba(0,0,0,0)'),
+          transparent: true,
+          opacity: 0.95,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending,
+        })
+      );
+      powerGroup.add(flowParticles);
+
+      // --- الشاطئ والمدينة الساحلية وأبراج نقل الكهرباء (أقصى اليمين) ---
+      const shoreLand = new THREE.Mesh(
+        new THREE.BoxGeometry(7.2, 6.8, 11.6),
+        new THREE.MeshStandardMaterial({ color: 0x3f6212, roughness: 0.9 })
+      );
+      shoreLand.position.set(13.8, -0.2, 0);
+      powerGroup.add(shoreLand);
+
+      // برجا كهرباء (أحدهما فوق السد والآخر عند المدينة)
+      const createPylon = (x, y, z) => {
+        const g = new THREE.Group();
+        const m = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.75, roughness: 0.35 });
+        const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.22, 4.4, 8), m);
+        pole.position.y = 2.2;
+        const arm = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.14, 2.2), m);
+        arm.position.y = 3.8;
+        g.add(pole, arm);
+        g.position.set(x, y, z);
+        powerGroup.add(g);
+      };
+      createPylon(1.5, 4.3, 1.8);
+      createPylon(11.4, 3.2, 1.8);
+
+      // خطوط الكهرباء المعلقة بين المولد والمدينة + نبضات الطاقة الذهبية المتحركة
+      const cableOffsets = [-0.85, 0.85];
+      powerCablePaths = [];
+      cablePulses = [];
+
+      cableOffsets.forEach((zOff) => {
+        const curve = new THREE.QuadraticBezierCurve3(
+          new THREE.Vector3(1.5, 8.1, 1.8 + zOff),
+          new THREE.Vector3(6.5, 6.4, 1.8 + zOff),
+          new THREE.Vector3(11.4, 7.0, 1.8 + zOff)
+        );
+        powerCablePaths.push(curve);
+
+        const pts = curve.getPoints(32);
+        const line = new THREE.Line(
+          new THREE.BufferGeometry().setFromPoints(pts),
+          new THREE.LineBasicMaterial({ color: 0xfde047 })
+        );
+        powerGroup.add(line);
+
+        // 4 نبضات طاقة متوهجة لكل سلك
+        for (let k = 0; k < 4; k++) {
+          const pulse = new THREE.Mesh(
+            new THREE.SphereGeometry(0.22, 12, 12),
+            new THREE.MeshBasicMaterial({ color: 0xfef08a })
+          );
+          powerGroup.add(pulse);
+          cablePulses.push({ mesh: pulse, curve, t: k / 4 });
+        }
+      });
+
+      // منازل ومبانٍ ساحلية تضيء نوافذها باللون الذهبي عند توليد الكهرباء
+      cityWindowMats = [];
+      const buildings = [
+        { x: 12.6, z: -1.8, w: 2.1, h: 3.1, d: 2.0, col: 0x334155 },
+        { x: 15.2, z: -0.6, w: 2.2, h: 4.1, d: 2.2, col: 0x475569 },
+        { x: 13.4, z: 2.4, w: 2.3, h: 2.4, d: 2.0, col: 0x3b4d63 },
+        { x: 15.6, z: 3.2, w: 1.9, h: 3.0, d: 1.9, col: 0x334155 },
+      ];
+
+      buildings.forEach((b) => {
+        const bldg = new THREE.Mesh(
+          new THREE.BoxGeometry(b.w, b.h, b.d),
+          new THREE.MeshStandardMaterial({ color: b.col, roughness: 0.8 })
+        );
+        bldg.position.set(b.x, 3.2 + b.h / 2, b.z);
+        powerGroup.add(bldg);
+
+        const winMat = new THREE.MeshStandardMaterial({
+          color: 0xfef08a,
+          emissive: 0xfacc15,
+          emissiveIntensity: 1.5,
+          roughness: 0.2,
+        });
+        cityWindowMats.push(winMat);
+
+        // صفوف النوافذ المضيئة على الواجهتين الأمامية واليسرى
+        const rows = Math.max(2, Math.floor(b.h * 0.85));
+        for (let r = 0; r < rows; r++) {
+          for (let c = -1; c <= 1; c += 2) {
+            const winFront = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 0.46), winMat);
+            winFront.position.set(b.x + c * 0.45, 3.7 + r * 0.9, b.z + b.d / 2 + 0.02);
+            powerGroup.add(winFront);
+
+            const winSide = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 0.46), winMat);
+            winSide.rotation.y = -Math.PI / 2;
+            winSide.position.set(b.x - b.w / 2 - 0.02, 3.7 + r * 0.9, b.z + c * 0.42);
+            powerGroup.add(winSide);
+          }
+        }
+      });
+    }
+
+    function setSpaceLightsActive(active) {
+      spaceLights.forEach((l) => (l.visible = active));
+    }
+    function setPowerLightsActive(active) {
+      powerLights.forEach((l) => (l.visible = active));
+    }
+
+    // =========================================================================
+    // 6. إنشاء وإدارة فقاعات المعلومات التفاعلية للمشهدين
+    // =========================================================================
+    function rebuildBubblesUI() {
+      dom.bubblesLayer.innerHTML = '';
+      dom.cardsLayer.innerHTML = '';
+      Object.keys(pinElements).forEach((k) => delete pinElements[k]);
+      Object.keys(cardElements).forEach((k) => delete cardElements[k]);
+      state.openCards.clear();
+
+      const list = state.activeScene === 'space' ? SPACE_BUBBLES : POWER_BUBBLES;
+      const lunarInfo = getLunarStateInfo(state.moonAngle);
+
+      list.forEach((item) => {
+        // الدبوس العائم
+        const wrap = document.createElement('div');
+        wrap.className = 'info-pin-wrapper';
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'info-pin-btn';
+        btn.style.setProperty('--accent-color', item.accent);
+        btn.innerHTML = `
+          <span class="pin-dot" style="background:${item.accent}; box-shadow:0 0 12px ${item.accent};"></span>
+          <span>${item.title}</span>
+        `;
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          toggleBubbleCard(item.id);
+        });
+
+        wrap.appendChild(btn);
+        dom.bubblesLayer.appendChild(wrap);
+        pinElements[item.id] = { wrap, btn, item };
+
+        // بطاقة المعلومات الكبيرة عالية التباين
+        const card = document.createElement('div');
+        card.className = 'bubble-card glass-card hidden-card p-5';
+        card.style.borderColor = `${item.accent}99`;
+        card.innerHTML = `
+          <div class="flex items-start justify-between gap-3 mb-3">
+            <div class="flex items-center gap-2.5">
+              <span class="w-4 h-4 rounded-full flex-shrink-0" style="background:${item.accent}; box-shadow:0 0 14px ${item.accent};"></span>
+              <div>
+                <h3 class="text-xl font-black text-white leading-tight">${item.title}</h3>
+                <span class="inline-block mt-1 px-2.5 py-0.5 rounded-lg text-xs font-extrabold bg-white/10" style="color:${item.accent}">${item.badge}</span>
+              </div>
+            </div>
+            <button type="button" data-close-bubble="${item.id}"
+              class="w-9 h-9 rounded-xl bg-white/10 hover:bg-rose-500/35 text-white flex items-center justify-center transition cursor-pointer font-black text-lg flex-shrink-0"
+              aria-label="إغلاق">✕</button>
+          </div>
+          <p data-card-body="${item.id}" class="text-[17px] sm:text-[18px] font-bold text-slate-100 leading-[1.75]">
+            ${item.getContent(lunarInfo)}
+          </p>
+        `;
+
+        card.querySelector(`[data-close-bubble="${item.id}"]`).addEventListener('click', (e) => {
+          e.stopPropagation();
+          state.openCards.delete(item.id);
+          refreshBubbleCardsState();
+        });
+
+        dom.cardsLayer.appendChild(card);
+        cardElements[item.id] = card;
+      });
+    }
+
+    function toggleBubbleCard(id) {
+      if (state.openCards.has(id)) {
+        state.openCards.delete(id);
+      } else {
+        // على الشاشات الصغيرة نفتح بطاقة واحدة لوضوح كامل
+        if (window.innerWidth < 900) state.openCards.clear();
+        state.openCards.add(id);
+      }
+      refreshBubbleCardsState();
+    }
+
+    function refreshBubbleCardsState() {
+      const lunarInfo = getLunarStateInfo(state.moonAngle);
+      Object.entries(pinElements).forEach(([id, obj]) => {
+        const open = state.openCards.has(id) && state.showBubbles;
+        const card = cardElements[id];
+        if (open) {
+          const bodyEl = card.querySelector(`[data-card-body="${id}"]`);
+          if (bodyEl) bodyEl.textContent = obj.item.getContent(lunarInfo);
+          card.classList.remove('hidden-card');
+          obj.btn.classList.add('active');
+        } else {
+          card.classList.add('hidden-card');
+          obj.btn.classList.remove('active');
+        }
+      });
+    }
+
+    // =========================================================================
+    // 7. تبديل المشاهد وتطبيق الأوضاع الجاهزة
+    // =========================================================================
+    function switchScene(targetScene) {
+      if (state.activeScene === targetScene) return;
+      state.activeScene = targetScene;
+
+      const isSpace = targetScene === 'space';
+      spaceGroup.visible = isSpace;
+      powerGroup.visible = !isSpace;
+      setSpaceLightsActive(isSpace);
+      setPowerLightsActive(!isSpace);
+
+      // تحديث أزرار المشهد العلوي
+      if (isSpace) {
+        dom.btnSceneSpace.className =
+          'px-4 py-2.5 sm:px-5 sm:py-3 rounded-2xl text-sm sm:text-base md:text-lg font-extrabold flex items-center gap-2 bg-gradient-to-l from-sky-500 to-blue-600 text-white border-2 border-sky-300/70 shadow-lg shadow-sky-500/30 hover:brightness-110 active:scale-95 transition cursor-pointer';
+        dom.btnScenePower.className =
+          'px-4 py-2.5 sm:px-5 sm:py-3 rounded-2xl text-sm sm:text-base md:text-lg font-extrabold flex items-center gap-2 bg-amber-500/20 text-amber-200 border-2 border-amber-400/50 hover:bg-amber-500/35 hover:text-white active:scale-95 transition cursor-pointer';
+      } else {
+        dom.btnScenePower.className =
+          'px-4 py-2.5 sm:px-5 sm:py-3 rounded-2xl text-sm sm:text-base md:text-lg font-extrabold flex items-center gap-2 bg-gradient-to-l from-amber-500 to-orange-500 text-slate-950 border-2 border-amber-200/80 shadow-lg shadow-amber-500/35 hover:brightness-110 active:scale-95 transition cursor-pointer';
+        dom.btnSceneSpace.className =
+          'px-4 py-2.5 sm:px-5 sm:py-3 rounded-2xl text-sm sm:text-base md:text-lg font-extrabold flex items-center gap-2 bg-sky-500/20 text-sky-100 border-2 border-sky-400/50 hover:bg-sky-500/35 hover:text-white active:scale-95 transition cursor-pointer';
+      }
+
+      // إظهار/إخفاء البطاقات والأدوات المناسبة
+      dom.moonHudCard.classList.toggle('hidden', !isSpace);
+      dom.alignmentBanner.classList.toggle('lg:flex', isSpace);
+      dom.alignmentBanner.classList.toggle('hidden', true);
+      if (isSpace) dom.alignmentBanner.classList.add('lg:flex');
+
+      dom.powerHudCard.classList.toggle('hidden', isSpace);
+      dom.spaceControls.classList.toggle('hidden', !isSpace);
+      dom.powerControls.classList.toggle('hidden', isSpace);
+
+      dom.dockTitle.textContent = isSpace
+        ? 'لوحة التحكم — حالات المد والجزر وأيام الشهر القمري'
+        : 'لوحة التحكم — تشغيل محطة توليد الكهرباء من المد والجزر';
+
+      // انتقال سلس للكاميرا إلى أفضل زاوية لكل مشهد
+      animateCameraToSceneDefault(targetScene);
+      rebuildBubblesUI();
+    }
+
+    function animateCameraToSceneDefault(targetScene) {
+      const isMobile = window.innerWidth < 700;
+      if (targetScene === 'space') {
+        state.camAnim = {
+          pos: new THREE.Vector3(2.5, isMobile ? 16.5 : 13.5, isMobile ? 25.5 : 21.5),
+          target: new THREE.Vector3(3.2, 0, 0),
+        };
+      } else {
+        state.camAnim = {
+          pos: new THREE.Vector3(0.5, isMobile ? 10.5 : 7.8, isMobile ? 28 : 22.5),
+          target: new THREE.Vector3(1.8, 1.4, 0.5),
+        };
+      }
+    }
+
+    function applySpacePreset(preset) {
+      state.spacePreset = preset;
+      if (preset === 'orbit') {
+        state.isContinuousOrbit = true;
+        state.isPlaying = true;
+      } else {
+        state.isContinuousOrbit = false;
+        const angles = {
+          newMoon: 0,
+          firstQuarter: Math.PI * 0.5,
+          fullMoon: Math.PI,
+          lastQuarter: Math.PI * 1.5,
+        };
+        state.targetMoonAngle = angles[preset] ?? 0;
+      }
+      highlightActivePresetButtons();
+      updatePlayIcon();
+    }
+
+    function applyPowerMode(mode) {
+      state.powerMode = mode;
+      document.querySelectorAll('.power-mode-btn').forEach((btn) => {
+        const active = btn.dataset.powerMode === mode;
+        btn.classList.toggle('ring-2', active);
+        btn.classList.toggle('ring-white', active);
+        btn.classList.toggle('scale-[1.03]', active);
+      });
+    }
+
+    function highlightActivePresetButtons() {
+      document.querySelectorAll('.preset-btn').forEach((btn) => {
+        const active = btn.dataset.preset === state.spacePreset;
+        btn.classList.toggle('ring-2', active);
+        btn.classList.toggle('ring-white', active);
+        btn.classList.toggle('brightness-125', active);
+      });
+    }
+
+    function updatePlayIcon() {
+      dom.btnTogglePlay.classList.toggle('text-emerald-400', state.isPlaying);
+      dom.btnTogglePlay.classList.toggle('text-slate-400', !state.isPlaying);
+      dom.iconPlayPause.innerHTML = state.isPlaying
+        ? '<path stroke-linecap="round" stroke-linejoin="round" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />'
+        : '<path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />';
+    }
+
+    // =========================================================================
+    // 8. تحديث لوحة القمر الحية ومواقع الفقاعات ثلاثية الأبعاد
+    // =========================================================================
+    let lastHudUpdateKey = '';
+
+    function updateSpaceHUD(lunarInfo) {
+      // تحديث الشريط السلس دون إرباك سحب المستخدم
+      if (document.activeElement !== dom.lunarSlider) {
+        dom.lunarSlider.value = lunarInfo.day.toFixed(1);
+      }
+      dom.sliderDayBadge.textContent = `اليوم ${lunarInfo.dayInt}`;
+
+      // رسم معاينة شكل القمر الحي
+      drawMoonPhasePreview(dom.moonPhaseCanvas, lunarInfo.normAngle);
+
+      const key = `${lunarInfo.phaseName}-${lunarInfo.dayInt}-${lunarInfo.tideType}`;
+      if (key === lastHudUpdateKey) return;
+      lastHudUpdateKey = key;
+
+      dom.hudPhaseName.textContent = lunarInfo.phaseName;
+      dom.hudLunarDay.textContent = `اليوم ${lunarInfo.dayInt} من الشهر القمري`;
+      dom.hudMonthTiming.textContent = lunarInfo.monthTiming;
+      dom.hudTideTitle.textContent = lunarInfo.tideTitle;
+      dom.hudAlignmentText.textContent = lunarInfo.alignmentText;
+      dom.alignmentBannerText.textContent = lunarInfo.alignmentText;
+
+      // تلوين الصندوق حسب نوع المد
+      if (lunarInfo.badgeTheme === 'amber') {
+        dom.hudTideBox.className = 'rounded-2xl p-3 border-2 border-amber-400/70 bg-amber-500/20';
+        dom.hudTideTitle.className = 'text-lg sm:text-xl font-black text-amber-300 leading-snug';
+        dom.alignmentBanner.style.borderColor = 'rgba(251, 191, 36, 0.75)';
+        dom.alignmentBannerText.className = 'text-base xl:text-lg font-black text-amber-200 whitespace-nowrap';
+      } else if (lunarInfo.badgeTheme === 'cyan') {
+        dom.hudTideBox.className = 'rounded-2xl p-3 border-2 border-cyan-400/70 bg-cyan-500/20';
+        dom.hudTideTitle.className = 'text-lg sm:text-xl font-black text-cyan-300 leading-snug';
+        dom.alignmentBanner.style.borderColor = 'rgba(34, 211, 238, 0.75)';
+        dom.alignmentBannerText.className = 'text-base xl:text-lg font-black text-cyan-200 whitespace-nowrap';
+      } else {
+        dom.hudTideBox.className = 'rounded-2xl p-3 border-2 border-sky-400/50 bg-sky-500/15';
+        dom.hudTideTitle.className = 'text-lg sm:text-xl font-black text-sky-300 leading-snug';
+        dom.alignmentBanner.style.borderColor = 'rgba(56, 189, 248, 0.55)';
+        dom.alignmentBannerText.className = 'text-base xl:text-lg font-black text-sky-100 whitespace-nowrap';
+      }
+
+      // تحديث محتوى البطاقات المفتوحة إن وجدت
+      if (state.openCards.size > 0) refreshBubbleCardsState();
+    }
+
+    const _v = new THREE.Vector3();
+
+    function getAnchorWorldPos(id) {
+      if (state.activeScene === 'space') {
+        const a = state.moonAngle;
+        const cosA = Math.cos(a);
+        const sinA = Math.sin(a);
+        const sf = Math.abs(cosA);
+        const bulgeReach = 2.22 * THREE.MathUtils.lerp(1.2, 1.54, sf);
+
+        if (id === 'moon') return _v.set(cosA * ORBIT_RADIUS, 1.45, sinA * ORBIT_RADIUS);
+        if (id === 'highTide') return _v.set(cosA * (bulgeReach + 0.35), 1.35, sinA * (bulgeReach + 0.35));
+        if (id === 'lowTide') return _v.set(-sinA * 2.55, -1.65, cosA * 2.55);
+        if (id === 'sun') return _v.set(SUN_POS.x, 4.35, 0);
+      } else {
+        if (id === 'damGate') return _v.set(-2.35, 3.8, 2.2);
+        if (id === 'turbine') return _v.set(0, -1.8, 4.2);
+        if (id === 'generator') return _v.set(0, 7.3, 1.8);
+        if (id === 'cityGrid') return _v.set(13.8, 7.6, 1.0);
+      }
+      return _v.set(0, 0, 0);
+    }
+
+    function updateBubblesProjection() {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      const isSmall = w < 768;
+
+      Object.entries(pinElements).forEach(([id, obj]) => {
+        if (!state.showBubbles) {
+          obj.wrap.style.opacity = '0';
+          obj.btn.style.pointerEvents = 'none';
+          return;
+        }
+
+        const worldPos = getAnchorWorldPos(id);
+        worldPos.project(camera);
+
+        const behind = worldPos.z > 1;
+        const sx = (worldPos.x * 0.5 + 0.5) * w;
+        const sy = (-worldPos.y * 0.5 + 0.5) * h;
+
+        const cx = Math.max(85, Math.min(w - 85, sx));
+        const cy = Math.max(92, Math.min(h - 175, sy));
+
+        obj.wrap.style.opacity = behind ? '0' : '1';
+        obj.btn.style.pointerEvents = behind ? 'none' : 'auto';
+        obj.wrap.style.transform = `translate3d(${cx.toFixed(1)}px, ${cy.toFixed(1)}px, 0)`;
+
+        // تموضع البطاقة المفتوحة
+        if (state.openCards.has(id)) {
+          const card = cardElements[id];
+          const cw = card.offsetWidth || 380;
+          const ch = card.offsetHeight || 220;
+          let lx, ly;
+
+          if (isSmall) {
+            lx = (w - cw) / 2;
+            ly = 92;
+          } else {
+            lx = cx < w * 0.52 ? cx + 30 : cx - cw - 30;
+            ly = cy - ch * 0.42;
+            lx = Math.max(72, Math.min(w - cw - 20, lx));
+            ly = Math.max(96, Math.min(h - ch - 190, ly));
+          }
+          card.style.left = `${lx.toFixed(1)}px`;
+          card.style.top = `${ly.toFixed(1)}px`;
+        }
+      });
+    }
+
+    // =========================================================================
+    // 9. حلقة التحريك الرئيسية (60fps) لكلا المشهدين
+    // =========================================================================
+    const clock = new THREE.Clock();
+
+    function shortestAngleStep(cur, tgt, alpha) {
+      let d = ((tgt - cur + Math.PI) % (Math.PI * 2)) - Math.PI;
+      if (d < -Math.PI) d += Math.PI * 2;
+      return cur + d * alpha;
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const dt = Math.min(clock.getDelta(), 0.05);
+      const t = clock.getElapsedTime();
+
+      // تحريك الكاميرا بسلاسة عند التبديل بين المشهدين أو إعادة الضبط
+      if (state.camAnim) {
+        const k = 1 - Math.exp(-5.0 * dt);
+        camera.position.lerp(state.camAnim.pos, k);
+        controls.target.lerp(state.camAnim.target, k);
+        if (camera.position.distanceTo(state.camAnim.pos) < 0.08) {
+          state.camAnim = null;
+        }
+      }
+
+      if (state.activeScene === 'space') {
+        updateSpaceAnimation(dt, t);
+      } else {
+        updatePowerPlantAnimation(dt, t);
+      }
+
+      controls.update();
+      renderer.render(scene, camera);
+      updateBubblesProjection();
+    }
+
+    function updateSpaceAnimation(dt, t) {
+      // 1) تحديث زاوية القمر (مدار مستمر أو انتقال سلس لطور محدد)
+      if (state.isContinuousOrbit) {
+        if (state.isPlaying) {
+          state.moonAngle = (state.moonAngle + dt * 0.38) % (Math.PI * 2);
+          state.targetMoonAngle = state.moonAngle;
+        }
+      } else {
+        state.moonAngle = shortestAngleStep(state.moonAngle, state.targetMoonAngle, 1 - Math.exp(-5.5 * dt));
+      }
+
+      const cosA = Math.cos(state.moonAngle);
+      const sinA = Math.sin(state.moonAngle);
+
+      // موضع القمر ودورانه المتزامن نحو الأرض
+      moonMesh.position.set(cosA * ORBIT_RADIUS, 0, sinA * ORBIT_RADIUS);
+      moonMesh.rotation.y = -state.moonAngle;
+
+      // دوران الأرض والسحب والشمس والنجوم
+      if (state.isPlaying) {
+        earthMesh.rotation.y += dt * 0.55;
+        cloudsMesh.rotation.y += dt * 0.65;
+        sunTex.offset.x += dt * 0.025;
+        starsPoints.rotation.y += dt * 0.008;
+      }
+
+      // 2) تشوّه غلاف المياه ثلاثي الأبعاد (انتفاخ المد والجزر)
+      const lunarInfo = getLunarStateInfo(state.moonAngle);
+      const sf = lunarInfo.springFactor; // 1 = مد الربيع، 0 = المد المنخفض
+
+      // توجيه الانتفاخ على طول محور الأرض - القمر
+      tidalBulgeGroup.rotation.y = -state.moonAngle;
+
+      const pulse = Math.sin(t * 2.6) * 0.018;
+      const scaleAlongMoon = THREE.MathUtils.lerp(1.2, 1.54, sf) + pulse;
+      const scalePerp = THREE.MathUtils.lerp(0.95, 0.85, sf);
+      tidalBulgeMesh.scale.set(scaleAlongMoon, 0.99, scalePerp);
+      tidalRimMesh.scale.set(scaleAlongMoon, 1, scalePerp);
+
+      // إبراز اللون السماوي المضيء عند مد الربيع
+      const springColor = new THREE.Color(0x22d3ee);
+      const neapColor = new THREE.Color(0x0284c7);
+      tidalBulgeMesh.material.color.lerpColors(neapColor, springColor, sf);
+      tidalBulgeMesh.material.emissiveIntensity = THREE.MathUtils.lerp(0.35, 0.82, sf);
+      tidalBulgeMesh.material.opacity = THREE.MathUtils.lerp(0.42, 0.58, sf);
+
+      // 3) توجيه سهم جاذبية القمر وسهم جاذبية الشمس مع نبضة واضحة
+      const arrowPulse = 1 + Math.sin(t * 3.8) * 0.08;
+      moonForceArrow.position.set(cosA * 3.25, 0, sinA * 3.25);
+      moonForceArrow.rotation.y = -state.moonAngle;
+      moonForceArrow.scale.set(arrowPulse, 1, 1);
+
+      sunForceArrow.scale.set(arrowPulse * 0.95, 1, 1);
+
+      // 4) إظهار مؤشر الاستقامة (مد الربيع) أو الزاوية القائمة 90° (المد المنخفض)
+      springAlignLine.visible = sf > 0.78;
+      if (springAlignLine.visible) {
+        springAlignLine.material.opacity = 0.55 + Math.sin(t * 4) * 0.35;
+      }
+
+      neapAngleGroup.visible = sf < 0.32;
+      if (neapAngleGroup.visible) {
+        // قلب اتجاه الزاوية القائمة للأعلى أو للأسفل حسب التربيع الأول أو الأخير
+        neapAngleGroup.scale.z = sinA >= 0 ? 1 : -1;
+      }
+
+      // تحديث لوحة القمر الحية
+      updateSpaceHUD(lunarInfo);
+    }
+
+    function updatePowerPlantAnimation(dt, t) {
+      // تحديد مستوى المياه المستهدف واتجاه التدفق
+      let targetSea = 1.65;
+      let targetBasin = -1.25;
+      let targetFlow = 1.0; // +1 = مد (دخول)، -1 = جزر (خروج)
+      let currentLabel = 'توليد كهرباء أثناء المد (دخول ماء البحر)';
+      let targetMw = 240;
+
+      if (state.powerMode === 'highTide') {
+        targetSea = 1.55;
+        targetBasin = -1.35;
+        targetFlow = 1.0;
+        currentLabel = 'حالة المد: ارتفاع البحر ← تدفق الماء لداخل الحوض';
+        targetMw = 240;
+      } else if (state.powerMode === 'lowTide') {
+        targetSea = -1.45;
+        targetBasin = 1.45;
+        targetFlow = -0.92;
+        currentLabel = 'حالة الجزر: انخفاض البحر ← عودة الماء للبحر';
+        targetMw = 220;
+      } else {
+        // دورة تلقائية سلسة بين المد والجزر
+        const wave = Math.sin(t * 0.55);
+        targetSea = wave * 1.55;
+        targetBasin = -wave * 1.35;
+        targetFlow = wave >= 0 ? Math.max(0.25, wave) : Math.min(-0.25, wave);
+        targetMw = Math.round(Math.abs(targetFlow) * 245);
+        currentLabel =
+          wave >= 0
+            ? 'دورة تلقائية (المد الآن): دخول المياه وتدوير التوربين'
+            : 'دورة تلقائية (الجزر الآن): خروج المياه وتدوير التوربين عكسياً';
+      }
+
+      const smooth = state.isPlaying ? 1 - Math.exp(-3.0 * dt) : 0;
+      state.seaLevel = THREE.MathUtils.lerp(state.seaLevel, targetSea, smooth);
+      state.basinLevel = THREE.MathUtils.lerp(state.basinLevel, targetBasin, smooth);
+      state.flowVelocity = THREE.MathUtils.lerp(state.flowVelocity, targetFlow, smooth);
+
+      // تحريك منسوب البحر وحوض التخزين مع تموج لطيف
+      seaWaterMesh.position.y = -1.2 + state.seaLevel + Math.sin(t * 2.2) * 0.08;
+      basinWaterMesh.position.y = -1.2 + state.basinLevel + Math.cos(t * 1.9) * 0.06;
+
+      // فتح بوابة السد عند التدفق
+      const gateLift = 0.7 + Math.abs(state.flowVelocity) * 1.15;
+      sluiceGateMesh.position.y = THREE.MathUtils.lerp(sluiceGateMesh.position.y, gateLift, 0.1);
+
+      // تدوير التوربين المائي وعمود المولد بسرعة واتجاه التدفق
+      if (state.isPlaying) {
+        const spin = state.flowVelocity * dt * 6.5;
+        turbineRotor.rotation.x += spin;
+        driveShaft.rotation.y += spin * 1.2;
+
+        // تحريك جزيئات تدفق المياه عبر النفق
+        const posArr = flowParticles.geometry.attributes.position.array;
+        for (let i = 0; i < posArr.length; i += 3) {
+          posArr[i] += state.flowVelocity * dt * 7.8;
+          if (posArr[i] > 7.2) posArr[i] = -7.2;
+          if (posArr[i] < -7.2) posArr[i] = 7.2;
+        }
+        flowParticles.geometry.attributes.position.needsUpdate = true;
+
+        // تحريك نبضات الكهرباء الذهبية على الكابلات من المولد إلى المدينة
+        const speedPower = 0.25 + Math.abs(state.flowVelocity) * 0.65;
+        cablePulses.forEach((p) => {
+          p.t = (p.t + dt * speedPower) % 1;
+          p.curve.getPoint(p.t, p.mesh.position);
+          p.mesh.visible = Math.abs(state.flowVelocity) > 0.15;
+        });
+      }
+
+      // شدة إضاءة المولد الكهربائي ونوافذ المدينة
+      const energyRatio = Math.min(1, Math.abs(state.flowVelocity));
+      generatorCoreMat.emissiveIntensity = 0.4 + energyRatio * 1.6 + Math.sin(t * 6) * 0.15;
+      generatorGlowLight.intensity = 1.2 + energyRatio * 3.5;
+
+      cityWindowMats.forEach((m) => {
+        m.emissiveIntensity = 0.25 + energyRatio * 1.75;
+      });
+
+      // تحديث لوحة قياس الميجاواط
+      const displayMw = state.isPlaying ? Math.round(energyRatio * targetMw) : 0;
+      dom.powerMwReadout.textContent = `⚡ ${displayMw} ميجاواط`;
+      dom.powerModeDesc.textContent = state.isPlaying ? currentLabel : 'المحاكاة متوقفة مؤقتاً';
+      dom.powerMeterBar.style.width = `${Math.max(8, Math.round((displayMw / 250) * 100))}%`;
+    }
+
+    // =========================================================================
+    // 10. ربط جميع الأحداث والتفاعلات
+    // =========================================================================
+    function bindEvents() {
+      dom.btnSceneSpace.addEventListener('click', () => switchScene('space'));
+      dom.btnScenePower.addEventListener('click', () => switchScene('power'));
+
+      // أزرار الحالات الجاهزة في مشهد الفضاء
+      document.querySelectorAll('.preset-btn').forEach((btn) => {
+        btn.addEventListener('click', () => applySpacePreset(btn.dataset.preset));
+      });
+
+      // شريط أيام الشهر القمري
+      dom.lunarSlider.addEventListener('input', (e) => {
+        const dayVal = parseFloat(e.target.value);
+        state.isContinuousOrbit = false;
+        state.spacePreset = 'custom';
+        state.targetMoonAngle = lunarDayToAngle(dayVal);
+        state.moonAngle = state.targetMoonAngle;
+        highlightActivePresetButtons();
+      });
+
+      // أزرار أوضاع محطة الكهرباء
+      document.querySelectorAll('.power-mode-btn').forEach((btn) => {
+        btn.addEventListener('click', () => applyPowerMode(btn.dataset.powerMode));
+      });
+
+      // تصغير/توسيع بطاقة حالة القمر
+      dom.btnToggleHud.addEventListener('click', () => {
+        const collapsed = dom.moonHudBody.classList.toggle('hidden');
+        dom.btnToggleHud.textContent = collapsed ? 'توسيع' : 'تصغير';
+      });
+
+      // طي/فتح لوحة التحكم السفلية
+      dom.btnCollapseDock.addEventListener('click', () => {
+        const collapsed = dom.bottomDock.classList.toggle('dock-collapsed');
+        dom.btnCollapseDock.textContent = collapsed ? 'إظهار الشريط ▴' : 'إخفاء الشريط ▾';
+      });
+
+      // إظهار / إخفاء جميع الفقاعات
+      const toggleAllBubbles = () => {
+        state.showBubbles = !state.showBubbles;
+        dom.btnBubblesText.textContent = state.showBubbles ? 'إخفاء الفقاعات' : 'إظهار الفقاعات';
+        dom.btnToggleBubbles.classList.toggle('text-amber-300', state.showBubbles);
+        dom.btnToggleBubbles.classList.toggle('text-slate-400', !state.showBubbles);
+        refreshBubbleCardsState();
+      };
+      dom.btnToggleBubbles.addEventListener('click', toggleAllBubbles);
+      dom.btnBubblesText.addEventListener('click', toggleAllBubbles);
+
+      // تشغيل / إيقاف الحركة
+      dom.btnTogglePlay.addEventListener('click', () => {
+        state.isPlaying = !state.isPlaying;
+        updatePlayIcon();
+      });
+
+      // أزرار التكبير والتصغير وإعادة ضبط الكاميرا
+      const zoomBy = (factor) => {
+        state.camAnim = null;
+        const offset = camera.position.clone().sub(controls.target);
+        const len = THREE.MathUtils.clamp(offset.length() * factor, controls.minDistance, controls.maxDistance);
+        offset.setLength(len);
+        camera.position.copy(controls.target).add(offset);
+        controls.update();
+      };
+      dom.btnZoomIn.addEventListener('click', () => zoomBy(0.8));
+      dom.btnZoomOut.addEventListener('click', () => zoomBy(1.25));
+      dom.btnResetView.addEventListener('click', () => animateCameraToSceneDefault(state.activeScene));
+
+      // نافذة جدول المقارنة الشامل
+      dom.btnCompare.addEventListener('click', () => {
+        dom.compareModal.classList.remove('hidden');
+        dom.compareModal.classList.add('flex');
+      });
+      dom.btnCloseModal.addEventListener('click', () => {
+        dom.compareModal.classList.add('hidden');
+        dom.compareModal.classList.remove('flex');
+      });
+      dom.compareModal.addEventListener('click', (e) => {
+        if (e.target === dom.compareModal) {
+          dom.compareModal.classList.add('hidden');
+          dom.compareModal.classList.remove('flex');
+        }
+      });
+
+      // تحديث الأبعاد عند تغيير حجم النافذة
+      window.addEventListener('resize', () => {
+        const w = dom.container.clientWidth || window.innerWidth;
+        const h = dom.container.clientHeight || window.innerHeight;
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+        renderer.setSize(w, h);
+      });
+    }
+
+    // =========================================================================
+    // 11. التشغيل الأولي عند اكتمال التحميل
+    // =========================================================================
+    window.addEventListener('load', () => {
+      try {
+        initThree();
+        rebuildBubblesUI();
+        bindEvents();
+        applySpacePreset('newMoon');
+        applyPowerMode('highTide');
+        updatePlayIcon();
+        animate();
+
+        setTimeout(() => {
+          dom.loader.classList.add('fade-out');
+        }, 350);
+      } catch (err) {
+        console.error('خطأ في تشغيل مشهد Three.js:', err);
+        dom.loader.classList.add('fade-out');
+        dom.errorBanner.textContent =
+          'تعذّر تشغيل الرسوميات ثلاثية الأبعاد (WebGL). يرجى التأكد من تفعيل تسريع الرسوميات في المتصفح وإعادة المحاولة.';
+        dom.errorBanner.classList.remove('hidden');
+      }
+    });
+  </script>
+<!-- ===== تحسينات الفريق الإلكتروني: طبقة موحدة ===== -->
+<style id="sci-enh">
+:where(button,select,input,a,.chip,.cd){transition:transform .18s ease,box-shadow .25s ease,border-color .25s ease,background-color .25s ease,filter .25s ease}
+:where(button):hover{filter:brightness(1.15);box-shadow:0 0 14px rgba(255,204,0,.28)}
+:where(button):active{transform:scale(.95)}
+*{scrollbar-width:thin;scrollbar-color:#ffcc0088 transparent}
+::selection{background:#ffcc0066;color:#fff}
+#sci-home{position:fixed;right:0;top:34%;z-index:99990;display:flex;flex-direction:column;gap:6px;direction:rtl;font:900 .85rem Cairo,system-ui,sans-serif}#sci-home a{display:flex;align-items:center;gap:8px;padding:9px 12px 9px 16px;text-decoration:none;color:#120e00;background:linear-gradient(135deg,#ffe27a,#ffb300);border-radius:14px 0 0 14px;box-shadow:0 4px 18px #0008,0 0 18px #ffcc0055;transform:translateX(calc(100% - 44px));transition:transform .35s cubic-bezier(.2,.9,.3,1.2)}#sci-home a+a{background:linear-gradient(135deg,#7df9ff,#00b4d8)}
+#sci-home a:hover,#sci-home a:focus{transform:none}
+#sci-home b{font-size:1.25rem;animation:sciBob 2.4s ease-in-out infinite}
+@keyframes sciBob{50%{transform:translateY(-3px) scale(1.12)}}
+#sci-fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:2;mix-blend-mode:screen;opacity:.85}
+#sci-splash{position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;direction:rtl;font-family:Cairo,system-ui,sans-serif;color:#fff;background:radial-gradient(circle at 50% 45%,#10204a,#02040a 70%);transition:opacity .9s ease .2s,visibility 0s 1.2s}
+#sci-splash.out{opacity:0;visibility:hidden;pointer-events:none}
+#sci-splash .ring{width:84px;height:84px;border-radius:50%;border:4px solid #ffffff22;border-top-color:#ffcc00;border-right-color:#4dc3ff;animation:sciSpin 1s linear infinite}
+#sci-splash h2{margin:6px 0 0;font-size:clamp(1.3rem,5vw,2rem);font-weight:900;background:linear-gradient(90deg,#ffe27a,#fff,#7fd8ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+#sci-splash p{margin:0;color:#9bb0dc;font-weight:700;font-size:.9rem}
+@keyframes sciSpin{to{transform:rotate(360deg)}}
+body{animation:sciIn .8s ease both}
+@keyframes sciIn{from{opacity:0}to{opacity:1}}
+</style>
+<div id="sci-home"><a href="index.html#menu" title="العودة لقائمة المختبر"><b>🧪</b><span>قائمة المختبر</span></a><a href="../" title="العودة للصفحة الرئيسية لمنصة سحر العلوم"><b>🏠</b><span>منصة سحر العلوم</span></a></div>
+<div id="sci-splash"><div class="ring"></div><h2>المد والجزر</h2><p>الفريق الإلكتروني • مدرسة البلاد القديم الابتدائية الإعدادية للبنين</p></div>
+<canvas id="sci-fx"></canvas>
+<script>
+(function(){
+var MODE="water";
+setTimeout(function(){var s=document.getElementById('sci-splash');if(s)s.classList.add('out')},1500);
+var c=document.getElementById('sci-fx'),x=c.getContext('2d'),W,H,P=[],S=null,t0=0;
+function rs(){W=c.width=innerWidth;H=c.height=innerHeight}rs();addEventListener('resize',rs);
+var n=MODE==='water'?22:80;
+for(var i=0;i<n;i++)P.push(MODE==='water'?{x:Math.random()*W,y:Math.random()*H,r:2+Math.random()*7,v:.25+Math.random()*.8,ph:Math.random()*6}:{x:Math.random()*W,y:Math.random()*H,r:.4+Math.random()*1.3,ph:Math.random()*6,sp:.5+Math.random()*2});
+function loop(t){
+ if(document.hidden){requestAnimationFrame(loop);return}
+ x.clearRect(0,0,W,H);
+ if(MODE==='water'){
+  P.forEach(function(p){p.y-=p.v;p.x+=Math.sin(t/900+p.ph)*.4;if(p.y<-20){p.y=H+20;p.x=Math.random()*W}
+   var g=x.createRadialGradient(p.x-p.r*.3,p.y-p.r*.3,p.r*.1,p.x,p.y,p.r);
+   g.addColorStop(0,'rgba(255,255,255,.55)');g.addColorStop(.6,'rgba(120,210,255,.12)');g.addColorStop(1,'rgba(120,210,255,.38)');
+   x.fillStyle=g;x.beginPath();x.arc(p.x,p.y,p.r,0,6.3);x.fill()});
+ }else{
+  P.forEach(function(p){var a=.25+.55*Math.abs(Math.sin(t/1000*p.sp+p.ph));x.fillStyle='rgba(255,255,255,'+a+')';x.beginPath();x.arc(p.x,p.y,p.r,0,6.3);x.fill()});
+  if(!S&&t-t0>5500+Math.random()*4000){S={x:Math.random()*W*.8+W*.2,y:Math.random()*H*.35,l:0};t0=t}
+  if(S){S.x-=14;S.y+=6;S.l++;var g2=x.createLinearGradient(S.x,S.y,S.x+90,S.y-40);g2.addColorStop(0,'rgba(255,255,255,.9)');g2.addColorStop(1,'rgba(255,255,255,0)');
+   x.strokeStyle=g2;x.lineWidth=2;x.beginPath();x.moveTo(S.x,S.y);x.lineTo(S.x+90,S.y-40);x.stroke();if(S.l>40)S=null}
+ }
+ requestAnimationFrame(loop)}
+requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

@@ -1,411 +1,144 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="منصة سحر العلوم - مدرسة البلاد القديم الإعدادية للبنين. التدريب التفاعلي لاختبارات TIMSS 2027 في العلوم والرياضيات.">
-<meta name="author" content="صبري محمد حمد">
-<meta name="theme-color" content="#070b14">
-<title>منصة سحر العلوم - TIMSS 2027</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🔬%3C/text%3E%3C/svg%3E">
-<link rel="preconnect" href="https://www.edunet.bh">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;800;900&family=Tajawal:wght@700;800;900&display=swap" rel="stylesheet">
+<html lang="ar" dir="rtl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>مختبر الأرض والكون الافتراضي – منصة سحر العلوم</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#070b14;--c1:#00f2fe;--c2:#4facfe;--m1:#f093fb;--m2:#f5576c;--g1:#10b981;--g2:#f59e0b;--glass:rgba(255,255,255,.06);--bd:rgba(255,255,255,.13)}
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html{scroll-behavior:smooth}
-body{font-family:'Cairo',Tahoma,sans-serif;background:var(--bg);color:#fff;min-height:100vh;display:flex;flex-direction:column;overflow-x:hidden}
-h1,h2,h3,.nav-title,.kpi-value{font-family:'Tajawal','Cairo',Tahoma,sans-serif;font-weight:900}
-#bg{position:fixed;inset:0;z-index:-2;pointer-events:none}
-.blob{position:fixed;z-index:-1;width:46vmax;height:46vmax;border-radius:50%;filter:blur(90px);opacity:.28;pointer-events:none;will-change:transform;animation:drift 22s ease-in-out infinite alternate}
-.b1{background:#0891b2;top:-15vmax;right:-12vmax}
-.b2{background:#9333ea;bottom:-18vmax;left:-14vmax;animation-delay:-8s}
-@keyframes drift{to{transform:translate3d(-6vmax,5vmax,0) scale(1.15)}}
-.container{max-width:1150px;margin:0 auto;padding:22px 16px;width:100%;flex:1}
-header{text-align:center;margin-bottom:30px;animation:down .8s ease both}
-.hero-img{width:100%;max-width:750px;border-radius:20px;border:1px solid var(--bd);box-shadow:0 12px 40px rgba(0,242,254,.22);margin-bottom:16px}
-.school{color:#a0aec0;font-weight:800;font-size:1.1rem}
-.title{font-size:clamp(2.4rem,8vw,4.2rem);line-height:1.2;background:linear-gradient(100deg,var(--c1),var(--c2),var(--m1),var(--c1));background-size:300% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:shine 6s linear infinite;margin:4px 0 8px}
-@keyframes shine{to{background-position:-300% 0}}
-.sub{color:#cbd5e0;font-weight:600;max-width:650px;margin:0 auto;line-height:1.7}
-.view{display:none}.view.active{display:block}
-.view.active>*{animation:up .5s cubic-bezier(.2,.8,.2,1) both}
-@keyframes up{from{opacity:0;transform:translate3d(0,22px,0)}to{opacity:1;transform:none}}
-@keyframes down{from{opacity:0;transform:translate3d(0,-20px,0)}to{opacity:1;transform:none}}
-.prompt{text-align:center;font-size:clamp(1.3rem,4vw,1.8rem);margin-bottom:22px;color:#e2e8f0}
-.nav{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:26px;padding:14px 20px;border-radius:22px;background:var(--glass);border:1px solid var(--bd);backdrop-filter:blur(12px)}
-.nav-title{font-size:1.45rem}
-.nav-btns{display:flex;gap:10px;flex-wrap:wrap}
-.btn-nav{font:800 .95rem 'Cairo',Tahoma,sans-serif;color:#fff;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);padding:10px 20px;border-radius:50px;cursor:pointer;transition:.25s}
-.btn-nav:hover{background:rgba(255,255,255,.22);transform:translateY(-2px)}
-.btn-home{background:linear-gradient(45deg,#3b82f6,#1d4ed8);border:0}
-.btn-print{background:linear-gradient(45deg,#f59e0b,#ef4444);border:0}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:26px;margin:10px 0 30px}
-.giant{position:relative;overflow:hidden;min-height:290px;padding:36px 22px;border-radius:30px;text-align:center;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--glass);border:2px solid var(--bd);backdrop-filter:blur(12px);transition:transform .35s cubic-bezier(.2,.9,.3,1.3),box-shadow .35s,border-color .35s}
-.giant::before{content:"";position:absolute;inset:-60%;background:conic-gradient(from 0deg,transparent,var(--gc,#fff),transparent 30%);opacity:0;transition:.4s;animation:spin 5s linear infinite;z-index:-1}
-.giant::after{content:"";position:absolute;inset:2px;border-radius:28px;background:#0c1220;z-index:-1}
-.giant:hover::before{opacity:.55}
-.giant:hover{transform:translateY(-10px) scale(1.02);box-shadow:0 0 40px var(--gs)}
-@keyframes spin{to{transform:rotate(360deg)}}
-.giant .ic{font-size:5rem;animation:float 4s ease-in-out infinite;filter:drop-shadow(0 8px 14px rgba(0,0,0,.5))}
-@keyframes float{50%{transform:translateY(-10px) rotate(4deg)}}
-.giant .sic{font-size:1.8rem;letter-spacing:6px;opacity:.85;margin:10px 0}
-.giant h2{font-size:2.2rem;margin-bottom:8px;color:var(--gc)}
-.giant p{color:#cbd5e0;font-weight:600;line-height:1.6}
-.cbadge{position:absolute;top:16px;left:16px;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.2);padding:3px 12px;border-radius:30px;font-size:.85rem;font-weight:800}
-.t-sci{--gc:#00f2fe;--gs:rgba(0,242,254,.35)}.t-math{--gc:#f093fb;--gs:rgba(240,147,251,.35)}
-.t-g1{--gc:#34d399;--gs:rgba(16,185,129,.35)}.t-g2{--gc:#fbbf24;--gs:rgba(245,158,11,.35)}
-.pill{display:inline-block;margin-top:14px;padding:7px 22px;border-radius:50px;font-weight:900;color:#000;background:var(--gc)}
-.models{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px}
-.card{padding:24px 18px;border-radius:24px;text-align:center;background:var(--glass);border:1px solid var(--bd);backdrop-filter:blur(10px);display:flex;flex-direction:column;align-items:center;justify-content:space-between;gap:12px;transition:.3s;opacity:0;animation:up .55s cubic-bezier(.2,.8,.2,1) forwards}
-.card:hover{transform:translateY(-6px);border-color:var(--gc);box-shadow:0 0 28px var(--gs)}
-.card .mi{font-size:3rem;transition:.3s}.card:hover .mi{transform:scale(1.2) rotate(-6deg)}
-.card h3{font-size:1.25rem;line-height:1.55}
-.btns{display:flex;flex-wrap:wrap;gap:10px;width:100%}
-.btn{flex:1;min-width:120px;text-decoration:none;padding:12px;border-radius:16px;font-weight:900;font-size:.95rem;text-align:center;display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:.25s;position:relative;overflow:hidden;color:#000;background:linear-gradient(45deg,var(--gc),var(--gc2))}
-.t-g1 .btn{--gc2:#059669;color:#fff}.t-g2 .btn{--gc2:#d97706}
-.btn:hover{transform:scale(1.04);box-shadow:0 0 18px var(--gs)}
-.btn::after{content:"";position:absolute;top:0;left:-120%;width:60%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.45),transparent);transform:skewX(-20deg)}
-.btn:hover::after{left:140%;transition:.7s}
-.btn.ans{background:rgba(16,185,129,.15);color:#34d399;border:1.5px solid #10b981}
-.btn.ans:hover{background:linear-gradient(45deg,#10b981,#059669);color:#fff}
-.btn.off{background:rgba(45,55,72,.7);color:#94a3b8;border:1px dashed #4a5568;pointer-events:none}
-.cc{background:rgba(0,0,0,.4);color:#fff;padding:2px 8px;border-radius:20px;font-size:.78rem}
-.t-g2 .btn:not(.ans):not(.off) .cc{color:#fbbf24;background:rgba(0,0,0,.75)}
-.dash{background:rgba(15,22,38,.85);border:1px solid var(--bd);border-radius:26px;padding:22px;backdrop-filter:blur(14px)}
-.status{font-weight:800;margin-bottom:14px;color:#fbbf24}
-.filters{background:rgba(255,255,255,.04);border:1px solid var(--bd);border-radius:20px;padding:16px;margin-bottom:22px;display:grid;gap:14px}
-.frow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.frow b{margin-left:6px;font-weight:900}
-.chip{font:800 .9rem 'Cairo',Tahoma,sans-serif;color:#cbd5e0;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);padding:8px 16px;border-radius:30px;cursor:pointer;transition:.2s}
-.chip:hover{background:rgba(255,255,255,.18)}
-.chip.on{background:linear-gradient(45deg,var(--c2),var(--c1));color:#000;border-color:transparent;box-shadow:0 0 14px rgba(0,242,254,.4)}
-.dates{display:flex;flex-wrap:wrap;gap:12px;padding-top:12px;border-top:1px dashed rgba(255,255,255,.15)}
-.dates label{display:flex;align-items:center;gap:8px;flex:1;min-width:230px;color:#94a3b8;font-weight:700;white-space:nowrap}
-.dates input{width:100%;font:600 .9rem 'Cairo',Tahoma,sans-serif;background:#1e293b;color:#fff;border:1px solid #475569;border-radius:10px;padding:8px 12px;color-scheme:dark}
-.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:22px}
-.kpi{padding:16px 12px;text-align:center;border-radius:18px;background:rgba(255,255,255,.04);border:1px solid var(--bd)}
-.kpi.big{background:linear-gradient(135deg,rgba(0,242,254,.16),rgba(240,147,251,.16));border-color:var(--c1)}
-.kpi small{display:block;color:#cbd5e0;font-weight:800;margin-bottom:6px}
-.kpi-value{font-size:2.4rem}
-.tbl{border-radius:18px;overflow:hidden;border:1px solid var(--bd);overflow-x:auto}
-table{width:100%;border-collapse:collapse;font-size:.92rem;min-width:520px}
-th,td{padding:10px 14px;text-align:right;border-bottom:1px solid rgba(255,255,255,.07)}
-th{background:rgba(255,255,255,.06);color:#94a3b8;font-weight:900}
-td.bar{width:34%}
-.barw{height:10px;border-radius:10px;background:rgba(255,255,255,.08);overflow:hidden}
-.barw i{display:block;height:100%;width:0;border-radius:10px;background:linear-gradient(90deg,var(--c2),var(--m1));transition:width .9s cubic-bezier(.2,.8,.2,1)}
-.rep-head{display:none}
-footer{text-align:center;margin-top:50px;padding:28px 12px;border-top:1px solid var(--bd)}
-.foot-img{width:100%;max-width:850px;border-radius:16px;border:1px solid var(--bd);margin-bottom:18px}
-.fa{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;align-items:center}
-.dev{padding:12px 26px;border-radius:50px;font-weight:800;background:rgba(255,255,255,.06);border:1px solid rgba(0,242,254,.3)}
-.dev span{color:var(--c1);font-weight:900}
-.btn-stats{font:900 1rem 'Cairo',Tahoma,sans-serif;color:#fff;border:0;padding:12px 24px;border-radius:50px;cursor:pointer;background:linear-gradient(45deg,#10b981,#059669);box-shadow:0 0 16px rgba(16,185,129,.35);transition:.25s}
-.btn-stats:hover{transform:translateY(-2px) scale(1.03)}
-.btn-lock{font-size:1.1rem;background:rgba(255,255,255,.06);border:1px solid var(--bd);color:#fff;width:46px;height:46px;border-radius:50%;cursor:pointer;opacity:.35;transition:.25s}
-.btn-lock:hover{opacity:1}
-#adminModal{display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:16px}
-#adminModal.show{display:flex}
-#adminBox{background:#0f1626;border:1px solid var(--bd);border-radius:24px;padding:26px;width:100%;max-width:380px;text-align:center;display:grid;gap:12px}
-#adminBox input{font:700 1rem 'Cairo',Tahoma,sans-serif;text-align:center;background:#1e293b;color:#fff;border:1px solid #475569;border-radius:12px;padding:10px}
-.am-btns{display:flex;flex-direction:column;gap:10px}
-@media(max-width:650px){.grid{grid-template-columns:1fr;gap:18px}.giant{min-height:230px}.giant h2{font-size:1.8rem}.nav{flex-direction:column;text-align:center}.nav-btns{width:100%}.btn-nav{flex:1}.models{grid-template-columns:1fr}.dev,.btn-stats{width:100%}.blob{filter:blur(60px)}}
-@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.card{opacity:1}}
-@media print{
- @page{size:A4;margin:14mm}
- #adminModal,.btn-lock{display:none!important}
- body{background:#fff!important;color:#000!important;display:block}
- #bg,.blob,header,footer,.nav,.filters,.view:not(#view-analytics),.status{display:none!important}
- #view-analytics{display:block!important}
- .dash{background:#fff;border:0;padding:0;backdrop-filter:none}
- .rep-head{display:block;text-align:center;border-bottom:3px solid #0891b2;padding-bottom:10px;margin-bottom:14px;color:#000}
- .rep-head h2{font-size:20pt}.rep-head p{font-size:11pt;margin-top:4px}
- .kpi,.kpi.big{background:#fff!important;border:1.5px solid #333!important;break-inside:avoid}
- .kpi small,.kpi-value{color:#000!important}
- .tbl{border:1px solid #333;overflow:visible}
- th{background:#e5e7eb!important;color:#000!important}
- td,th{color:#000!important;border-bottom:1px solid #999}
- .barw{background:#e5e7eb!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
- .barw i{background:#0891b2!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
- tr{break-inside:avoid}
-}
-</style>
-</head>
-<body>
-<canvas id="bg"></canvas><div class="blob b1"></div><div class="blob b2"></div>
-<div class="container">
-<header>
- <img src="https://i.postimg.cc/K88X7RLb/trwysyh-dhhbyt.png" alt="ترويسة سحر العلوم" class="hero-img" onerror="this.style.display='none'">
- <div class="school">مدرسة البلاد القديم الابتدائية الإعدادية للبنين</div>
- <h1 class="title">منصة سحر العلوم</h1>
- <p class="sub">بوابتك الرقمية التفاعلية للتميز والاستعداد الأمثل لاختبارات TIMSS 2027</p>
-</header>
+:root{--gold:#ffcc00;--bd:#243360;--mut:#9bb0dc}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:#02040a;color:#f4f7ff;font-family:Cairo,system-ui,sans-serif;overflow-x:hidden}
+#bg{position:fixed;inset:0;width:100%;height:100%;z-index:0}
+.neb{position:fixed;inset:0;z-index:0;background:radial-gradient(ellipse at 20% 15%,#1b2f7a55,transparent 55%),radial-gradient(ellipse at 85% 80%,#7a1b6a40,transparent 55%),radial-gradient(ellipse at 60% 40%,#0b5a7a30,transparent 60%);animation:neb 14s ease-in-out infinite alternate}
+@keyframes neb{to{transform:scale(1.12) rotate(2deg)}}
+.view{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 16px;text-align:center;transition:transform .8s cubic-bezier(.7,0,.2,1),opacity .8s}
+#menu{display:none;opacity:0;transform:translateY(40px)}
+body.in #landing{transform:translateY(-100%);opacity:0;position:absolute;inset:0;pointer-events:none}
+body.in #menu{display:flex;opacity:1;transform:none}
+.org{display:flex;flex-direction:column;align-items:center;gap:2px;animation:fd 1s .1s both}
+.flag{width:74px;height:50px;filter:drop-shadow(0 4px 12px #000a);animation:wave 3s ease-in-out infinite;transform-origin:right center}
+@keyframes wave{50%{transform:skewY(-3deg) scaleX(.97)}}
+.org b{font-size:clamp(1.1rem,3.6vw,1.6rem);font-weight:900}
+.org span{color:#cfe0ff;font-weight:700;font-size:clamp(.85rem,2.8vw,1.1rem)}
+.org .sch{margin-top:6px;padding:4px 18px;border:1px solid #ffcc0066;border-radius:30px;background:#ffcc0012;color:var(--gold);font-weight:900}
+h1{margin:22px 0 4px;font-size:clamp(2rem,8vw,4.2rem);font-weight:900;line-height:1.25;background:linear-gradient(90deg,#ffe27a,#fff,#7fd8ff,#ffe27a);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:sh 6s linear infinite,fd 1s .3s both}
+@keyframes sh{to{background-position:-300% 0}}
+.sub{margin:0 0 20px;color:var(--mut);font-size:clamp(.95rem,3vw,1.25rem);font-weight:700;animation:fd 1s .5s both}
+.by{max-width:640px;padding:14px 22px;border-radius:18px;background:#0b1124cc;border:1px solid var(--bd);backdrop-filter:blur(8px);animation:fd 1s .7s both;line-height:1.9}
+.by small{display:block;color:var(--mut);font-weight:700}
+.by b{color:var(--gold);font-weight:900;font-size:1.15rem}
+.row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:28px}
+#enter{font:900 1.5rem Cairo,sans-serif;padding:12px 56px;border:0;border-radius:40px;cursor:pointer;color:#120e00;background:linear-gradient(135deg,#ffe27a,#ffb300);box-shadow:0 0 0 0 #ffcc0099,0 8px 30px #0009;animation:pulse 2s infinite,fd 1s .9s both;transition:transform .2s}
+#enter:hover{transform:scale(1.08)}
+.plat{display:inline-flex;align-items:center;gap:6px;font:800 1rem Cairo,sans-serif;padding:12px 26px;border-radius:40px;text-decoration:none;color:#fff;background:#ffffff14;border:1px solid #ffffff44;animation:fd 1s 1s both;transition:.2s}
+.plat:hover{background:#00f2fe33;border-color:#00f2fe;transform:scale(1.05)}
+@keyframes pulse{70%{box-shadow:0 0 0 22px #ffcc0000,0 8px 30px #0009}}
+@keyframes fd{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
+#menu h2{margin:0 0 6px;font-size:clamp(1.6rem,5vw,2.6rem);font-weight:900;color:var(--gold)}
+#menu p{margin:0 0 26px;color:var(--mut);font-weight:700}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:20px;width:min(1180px,100%)}
+.card{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;padding:16px 12px 18px;border-radius:24px;text-decoration:none;color:#fff;background:linear-gradient(160deg,#0f1a3ee6,#070c1ee6);border:2px solid var(--bd);overflow:hidden;opacity:0;animation:fd .8s forwards;transition:transform .3s,border-color .3s,box-shadow .3s}
+.card:nth-child(1){animation-delay:.15s}.card:nth-child(2){animation-delay:.3s}.card:nth-child(3){animation-delay:.45s}.card:nth-child(4){animation-delay:.6s}.card:nth-child(5){animation-delay:.75s}.card:nth-child(6){animation-delay:.9s}.hl{animation:hl 2.4s ease-in-out infinite}@keyframes hl{0%,100%{transform:translate(-38px,-38px);opacity:1}25%{transform:translate(38px,-38px)}50%{transform:translate(38px,38px)}75%{transform:translate(-38px,38px)}}
+.card::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 30%,var(--c),transparent 65%);opacity:.18;transition:opacity .3s}
+.card:hover{transform:translateY(-10px) scale(1.04);border-color:var(--c);box-shadow:0 18px 44px #000a,0 0 34px var(--c)}
+.card:hover::before{opacity:.45}
+.card svg{width:170px;height:170px;position:relative}
+.card h3{margin:0;font-size:1.7rem;font-weight:900;position:relative}
+.card span{font-size:.88rem;color:var(--mut);font-weight:700;position:relative;min-height:2.6em}
+.go{position:relative;margin-top:4px;padding:4px 20px;border-radius:20px;background:var(--c);color:#06101e;font-weight:900;font-size:.95rem}
+.back{background:none;border:1px solid var(--bd);color:var(--mut);font:700 .9rem Cairo,sans-serif;padding:8px 18px;border-radius:20px;cursor:pointer;text-decoration:none}
+.back:hover{color:#fff;border-color:var(--gold)}
+body.leave .view{opacity:0;transform:scale(1.08);filter:blur(6px)}
+.sp{transform-box:fill-box;transform-origin:center}
+.rot{animation:rt 12s linear infinite}.rot2{animation:rt 7s linear infinite}.rot3{animation:rt 18s linear infinite reverse}
+@keyframes rt{to{transform:rotate(360deg)}}
+.pl{animation:pl 3s ease-in-out infinite}@keyframes pl{50%{transform:scale(1.15)}}
+.wv{animation:wv 3s linear infinite}@keyframes wv{to{transform:translateX(-60px)}}
+.wv2{animation:wv 4.5s linear infinite reverse}
+.lvl{animation:lv 4s ease-in-out infinite}@keyframes lv{50%{transform:translateY(-12px)}}
+.mv{animation:mv 5s ease-in-out infinite alternate}@keyframes mv{from{transform:translateX(-62px)}to{transform:translateX(10px)}}
+.dr{animation:dr 2.4s ease-in infinite}@keyframes dr{0%{transform:translateY(-30px);opacity:0}25%{opacity:1}80%{transform:translateY(52px);opacity:1}100%{transform:translateY(58px);opacity:0}}
+.rp{animation:rp 2.4s ease-out infinite;opacity:0}@keyframes rp{70%{opacity:0}75%{opacity:.9;transform:scale(.3)}100%{opacity:0;transform:scale(1.6)}}
+.cor{animation:cr 3s ease-in-out infinite alternate}@keyframes cr{to{opacity:.35;transform:scale(1.12)}}
+</style></head><body>
+<canvas id="bg"></canvas><div class="neb"></div>
 
-<div id="view-home" class="view active"></div>
-<div id="view-grades" class="view"></div>
-<div id="view-list" class="view"></div>
+<section class="view" id="landing">
+ <div class="org">
+  <svg class="flag" viewBox="0 0 74 50"><rect width="74" height="50" fill="#ce1126"/><path d="M0 0H22L32 5 22 10 32 15 22 20 32 25 22 30 32 35 22 40 32 45 22 50H0Z" fill="#fff"/></svg>
+  <b>مملكة البحرين</b>
+  <span>وزارة التربية والتعليم</span>
+  <span class="sch">مدرسة البلاد القديم الابتدائية الإعدادية للبنين</span>
+  <span>قسم العلوم</span>
+ </div>
+ <h1>مختبر الأرض والكون<br>الافتراضي</h1>
+ <p class="sub">ست تجارب تفاعلية تأخذك من عالم الذرات إلى باطن الأرض وأطراف المجموعة الشمسية</p>
+ <div class="by"><small>إعداد</small><b>الفريق الإلكتروني بالمدرسة</b><small>تحت إشراف معلم العلوم</small><b>الأستاذ / صبري محمد حمد</b></div>
+ <div class="row"><button id="enter">دخول ▶</button><a class="plat" href="../">🏠 العودة لمنصة سحر العلوم</a></div>
+</section>
 
-<div id="view-analytics" class="view">
- <div class="nav">
-  <div class="nav-title" style="color:var(--c1)">📊 لوحة الإحصائيات والتقارير</div>
-  <div class="nav-btns">
-   <button class="btn-nav btn-print" onclick="window.print()">🖨️ طباعة التقرير</button>
-   <button class="btn-nav" onclick="fetchAnalytics()">🔄 تحديث</button>
-   <button class="btn-nav btn-home" onclick="showView('home')">🏠 المنصة</button>
-  </div>
- </div>
- <div class="dash">
-  <div class="rep-head"><h2>تقرير استخدام منصة سحر العلوم - TIMSS 2027</h2><p>مدرسة البلاد القديم الابتدائية الإعدادية للبنين</p><p id="repFilters"></p><p id="repDate"></p></div>
-  <p class="status" id="status">⏳ جاري جلب البيانات...</p>
-  <div class="filters">
-   <div class="frow"><b>📅 الفترة:</b>
-    <button class="chip on" data-p="all">كل الأوقات</button><button class="chip" data-p="today">اليوم</button><button class="chip" data-p="yesterday">أمس</button><button class="chip" data-p="week">آخر 7 أيام</button>
-   </div>
-   <div class="frow"><b>📚 المادة:</b>
-    <button class="chip on" data-s="all">الكل</button><button class="chip" data-s="sci">🔬 العلوم</button><button class="chip" data-s="math">📐 الرياضيات</button>
-   </div>
-   <div class="frow"><b>🎓 الصف:</b>
-    <button class="chip on" data-g="all">الكل</button><button class="chip" data-g="1">الأول الإعدادي</button><button class="chip" data-g="2">الثاني الإعدادي</button>
-   </div>
-   <div class="dates">
-    <label>من: <input type="datetime-local" id="dFrom"></label>
-    <label>إلى: <input type="datetime-local" id="dTo"></label>
-   </div>
-  </div>
-  <div class="kpis" id="kpis"></div>
-  <div class="tbl"><table><thead><tr><th>#</th><th>اسم النموذج / المصدر</th><th>المادة</th><th>الصف</th><th>مرات الدخول</th><th>النسبة</th></tr></thead><tbody id="tbody"></tbody></table></div>
- </div>
-</div>
+<section class="view" id="menu">
+ <h2>اختر التجربة العلمية</h2><p>اضغط على أي أيقونة للدخول إلى الموقع</p>
+ <div class="grid">
 
-<footer>
- <img src="https://i.postimg.cc/BvB49Nw7/alswrt-aljdydt.jpg" alt="TIMSS 2027" class="foot-img" loading="lazy" onerror="this.style.display='none'">
- <div class="fa">
-  <div class="dev">💻 برمجة الأستاذ / صبري محمد حمد <span>36864227</span></div>
-  <button class="btn-stats" onclick="openAnalytics()">📊 لوحة الإحصائيات والتقارير</button>
-  <button class="btn-lock" onclick="openAdmin()" title="التحكم" aria-label="التحكم">🔒</button>
+  <a class="card" href="solar-system.html" style="--c:#ffb73b"><svg viewBox="0 0 200 200">
+   <circle cx="100" cy="100" r="90" fill="none" stroke="#ffffff22"/><circle cx="100" cy="100" r="62" fill="none" stroke="#ffffff22"/><circle cx="100" cy="100" r="38" fill="none" stroke="#ffffff22"/>
+   <circle class="sp pl" cx="100" cy="100" r="22" fill="#ffcc33"/><circle class="sp pl" cx="100" cy="100" r="30" fill="#ffaa0033"/>
+   <g class="sp rot2"><circle cx="138" cy="100" r="5" fill="#c9a27a"/></g>
+   <g class="sp rot"><circle cx="162" cy="100" r="8" fill="#4da3ff"/><circle cx="170" cy="96" r="2.5" fill="#ddd"/></g>
+   <g class="sp rot3"><circle cx="190" cy="100" r="9" fill="#e6b873"/></g></svg>
+   <h3>النظام الشمسي</h3><span>الشمس والكواكب والمدارات</span><b class="go">دخول</b></a>
+
+  <a class="card" href="earth-layers.html" style="--c:#ff7a3b"><svg viewBox="0 0 200 200">
+   <g class="sp rot3"><circle cx="100" cy="100" r="86" fill="#7a4a2a"/><circle cx="100" cy="100" r="80" fill="#c0541a"/><circle cx="100" cy="100" r="58" fill="#ff8a1f"/><circle cx="100" cy="100" r="36" fill="#ffd23a"/>
+   <path d="M100 100 L186 100 A86 86 0 0 0 100 14Z" fill="#02040a" opacity=".85"/></g>
+   <circle class="sp pl" cx="100" cy="100" r="20" fill="#fff6c8"/><circle class="sp pl" cx="100" cy="100" r="28" fill="#fff6c840"/></svg>
+   <h3>طبقات الأرض</h3><span>القشرة والوشاح واللب</span><b class="go">دخول</b></a>
+
+  <a class="card" href="tides.html" style="--c:#36c4ff"><svg viewBox="0 0 200 200">
+   <circle cx="150" cy="42" r="20" fill="#f1f1e6"/><circle cx="143" cy="37" r="4" fill="#cfcfc0"/><circle cx="156" cy="48" r="3" fill="#cfcfc0"/><circle class="sp pl" cx="150" cy="42" r="30" fill="#ffffff22"/>
+   <clipPath id="cp"><rect x="14" y="70" width="172" height="110" rx="16"/></clipPath>
+   <g clip-path="url(#cp)"><rect x="14" y="70" width="172" height="110" fill="#06223f"/>
+   <g class="lvl"><path class="wv" d="M-10 100 q15 -14 30 0 t30 0 t30 0 t30 0 t30 0 t30 0 t30 0 t30 0 t30 0 V190H-10Z" fill="#1d8fe0"/>
+   <path class="wv2" d="M-10 112 q15 -12 30 0 t30 0 t30 0 t30 0 t30 0 t30 0 t30 0 t30 0 t30 0 V190H-10Z" fill="#36c4ff" opacity=".75"/></g></g></svg>
+   <h3>المد والجزر</h3><span>جاذبية القمر وتوليد الكهرباء</span><b class="go">دخول</b></a>
+
+  <a class="card" href="eclipse.html" style="--c:#ffd23a"><svg viewBox="0 0 200 200">
+   <g class="sp rot"><g stroke="#ffb300" stroke-width="5" stroke-linecap="round"><path d="M100 10v16M100 174v16M10 100h16M174 100h16M36 36l11 11M153 153l11 11M164 36l-11 11M47 153l-11 11"/></g></g>
+   <circle class="sp cor" cx="100" cy="100" r="62" fill="#ffcc3340"/><circle cx="100" cy="100" r="48" fill="#ffd23a"/>
+   <g class="mv"><circle cx="100" cy="100" r="46" fill="#080a14" stroke="#ffffff33" stroke-width="2"/></g></svg>
+   <h3>الكسوف والخسوف</h3><span>ظل القمر والأرض والشمس</span><b class="go">دخول</b></a>
+
+  <a class="card" href="water.html" style="--c:#4de0c0"><svg viewBox="0 0 200 200">
+   <circle cx="100" cy="112" r="62" fill="#1d7fd6"/><circle cx="100" cy="112" r="62" fill="none" stroke="#7fd8ff" stroke-width="2"/>
+   <g class="sp rot"><path d="M70 90q14-10 24 2t-6 22-22 6-8-18zM112 116q16-6 22 8t-8 22-16-8z" fill="#3fbf6a"/></g>
+   <g class="dr"><path d="M100 30c10 16 16 24 16 34a16 16 0 0 1-32 0c0-10 6-18 16-34z" fill="#9fe8ff" stroke="#fff" stroke-width="2"/></g>
+   <ellipse class="sp rp" cx="100" cy="176" rx="38" ry="9" fill="none" stroke="#9fe8ff" stroke-width="3"/></svg>
+   <h3>المياه على الأرض</h3><span>توزيع المياه العذبة والمالحة</span><b class="go">دخول</b></a>
+
+  <a class="card" href="periodic-table.html" style="--c:#c084fc"><svg viewBox="0 0 200 200">
+   <g class="cells"><rect x="22" y="40" width="34" height="34" rx="6" fill="#f7b3a7"/><rect x="60" y="40" width="34" height="34" rx="6" fill="#f9d38a"/><rect x="98" y="40" width="34" height="34" rx="6" fill="#c9d7f2"/><rect x="136" y="40" width="34" height="34" rx="6" fill="#b5dfd0"/>
+   <rect x="22" y="78" width="34" height="34" rx="6" fill="#bfe3a8"/><rect x="60" y="78" width="34" height="34" rx="6" fill="#f5ee9a"/><rect x="98" y="78" width="34" height="34" rx="6" fill="#f2b8dc"/><rect x="136" y="78" width="34" height="34" rx="6" fill="#d8c8ef"/>
+   <rect x="22" y="116" width="34" height="34" rx="6" fill="#b9e6ee"/><rect x="60" y="116" width="34" height="34" rx="6" fill="#e7c2a5"/><rect x="98" y="116" width="34" height="34" rx="6" fill="#f7b3a7"/><rect x="136" y="116" width="34" height="34" rx="6" fill="#c9d7f2"/></g>
+   <g font-family="Cairo,sans-serif" font-weight="900" font-size="15" fill="#1c1c1c" text-anchor="middle"><text x="39" y="63">H</text><text x="77" y="63">Be</text><text x="115" y="63">Fe</text><text x="153" y="63">Al</text><text x="39" y="101">C</text><text x="77" y="101">Cl</text><text x="115" y="101">Ne</text><text x="153" y="101">Si</text><text x="39" y="139">La</text><text x="77" y="139">U</text><text x="115" y="139">Na</text><text x="153" y="139">Au</text></g>
+   <rect class="sp hl" x="98" y="78" width="34" height="34" rx="6" fill="none" stroke="#fff" stroke-width="4"/>
+   <g class="sp rot"><ellipse cx="100" cy="100" rx="92" ry="34" fill="none" stroke="#c084fc88" stroke-width="2" transform="rotate(-25 100 100)"/><circle cx="190" cy="100" r="6" fill="#e9d5ff" transform="rotate(-25 100 100)"/></g></svg>
+   <h3>الجدول الدوري</h3><span>١١٨ عنصرًا بخصائصها وأنواعها</span><b class="go">دخول</b></a>
+
  </div>
-</footer>
-<div id="adminModal" onclick="if(event.target===this)closeAdmin()"><div id="adminBox"></div></div>
-</div>
+ <div class="row"><a class="back" href="../">🏠 العودة لمنصة سحر العلوم</a><button class="back" id="back">↩ الصفحة التمهيدية</button></div>
+</section>
 
 <script>
-const URL_SHEET="https://script.google.com/macros/s/AKfycbz_RZ_RFSzE8OH4yZJNDHhptdhQ_fBTubu8hJUZLjutbMJ6S4QmSkIXO7P8RLyum3qm/exec";
-const PW_HASH="04a46a95ab26aa2c783c60535f8694ce86de40ad0de476ab579cb0d19d214deb";
-const E="https://www.edunet.bh/e_content/level_2/";
-const D="https://drive.google.com/file/d/";
-const SUB={sci:{n:"العلوم",i:"🔬",sub:"🧬 ⚗️ 🧲",d:"النماذج التدريبية والإجابات النموذجية لمادة العلوم",t:"t-sci"},
-           math:{n:"الرياضيات",i:"📐",sub:"📊 🧮 ♾️",d:"النماذج التدريبية وتحديات الهندسة والجبر",t:"t-math"}};
-const GR={1:{n:"الأول الإعدادي",i:{sci:"🌱",math:"📏"},t:"t-g1"},2:{n:"الثاني الإعدادي",i:{sci:"🚀",math:"🏆"},t:"t-g2"}};
-// [id,label,url,kind]  kind: m=نموذج a=إجابة x=إثرائي ; url=null => قريباً
-const M=(id,l,u)=>[id,l,u,"m"],A=(id,l,u)=>[id,l,u,"a"],X=(id,l,u)=>[id,l,u,"x"];
-const S1=E+"stage_7/subject_ID_5/Part_1/TIMSS/",S2=E+"stage_8/subject_ID_5/Part_1/TIMSS/";
-const M1=E+"stage_7/subject_ID_3/Part_1/TIMSS/",M2=E+"stage_8/subject_ID_3/Part_1/TIMSS/";
-const CH={
- "sci1":[
-  {i:"🌿",t:"الفصل 1 و 3: الخلايا لبنات الحياة والنباتات",b:[M("sci_g1_ch1_3","🚀 ابدأ النموذج",S1+"Sci-Grade-7-S1-Chapter-1-and-3/Sci%20Grade%207%20S1%20Chapter%201%20and%203/story.html")]},
-  {i:"⚙️",t:"الفصل 2: الحركة والقوى والآلات البسيطة",b:[M("sci_g1_ch2","🚀 ابدأ النموذج",S1+"Chapter-2/Chapter%202/story.html")]},
-  {i:"💎",t:"الفصل 4 و 5: الصخور والمعادن والذرات والعناصر والمركبات",b:[M("sci_g1_ch4_5","🚀 ابدأ النموذج",S1+"Chapters-4-and-5/Chapters%204%20and%205/story.html")]}],
- "sci2":[
-  {i:"🧪",t:"الفصل 1: طبيعة المادة",b:[M("sci_g2_ch1_a","🚀 نموذج (أ)",S2+"Sci-Ch1A-G8/Sci-Ch1A-G8/story.html"),A("sci_g2_ch1_a_ans","💡 إجابة (أ)",D+"1cT1k9jt3F0S8at9agVYq_MX0Inlud0Mq/view?usp=sharing"),M("sci_g2_ch1_b","🚀 نموذج (ب)",S2+"Sci-Ch1B-G8/Sci-Ch1B-G8/story.html"),A("sci_g2_ch1_b_ans","💡 إجابة (ب)",D+"16Pc1FtBxYDxKTYOPTpRzJsn6EDnR6lMo/view?usp=sharing")]},
-  {i:"🩸",t:"الفصل 2: الدوران والمناعة",b:[M("sci_g2_ch2_a","🚀 نموذج (أ)",S2+"Sci-Ch2A-G8/Sci-Ch2A-G8/story.html"),A("sci_g2_ch2_a_ans","💡 إجابة (أ)",D+"17YaCQc03WimMtPvlX0s9tKbQggDEJUnZ/view?usp=drive_link"),M("sci_g2_ch2_b","🚀 نموذج (ب)",S2+"Sci-Ch2B-G8/Sci-Ch2B-G8/story.html"),A("sci_g2_ch2_b_ans","💡 إجابة (ب)",D+"1ibkweKz_FVUXSBWYzB-Bvd3HZk2MJAaE/view?usp=drive_link")]},
-  {i:"🫁",t:"الفصل 3: أجهزة الجسم (الهضم، التنفس، الإخراج)",b:[M("sci_g2_ch3_a","🚀 نموذج (أ)",S2+"Sci-Ch3A-G8/Sci-Ch3A-G8/story.html"),A("sci_g2_ch3_a_ans","💡 إجابة (أ)",D+"1aELVeMJzWay7tr9080deyWzEd24y7TqW/view?usp=drive_link"),M("sci_g2_ch3_b","🚀 نموذج (ب)",S2+"Sci-Ch3B-G8/Sci-Ch3B-G8/story.html"),A("sci_g2_ch3_b_ans","💡 إجابة (ب)",D+"1AB2FUNEAsZ4OsSUU3jXl2cttAq7lxnTi/view?usp=drive_link")]},
-  {i:"🪐",t:"الفصل 4: استكشاف الفضاء",b:[M("sci_g2_ch4_a","🚀 ابدأ النموذج",S2+"Sci-Ch4A-G8/Sci-Ch4A-G8/story.html"),A("sci_g2_ch4_ans","💡 إجابة النموذج",D+"1yNyUPc_eOdly-_hM2OwvIuXvws5orCwU/view?usp=drive_link")]},
-  {i:"🌡️",t:"الفصل 5: المادة (سلوك الموائع والحرارة)",b:[M("sci_g2_ch5_a","🚀 ابدأ النموذج",S2+"Sci-Ch5A-G8/Sci-Ch5A-G8/story.html"),A("sci_g2_ch5_ans","💡 إجابة النموذج",D+"17yAdCwMQRN_RrfNDA-BjTglyh4Gr4D6d/view?usp=drive_link")]},
-  {i:"📚",t:"ملزمة العلوم الشاملة - الفصل الأول",x:1,b:[X("sci_g2_booklet","📖 تصفح الملزمة",D+"1vFZjenzNMjVAcaZ78gavKFAzdge8BPo4/view?usp=sharing")]},
-  {i:"🎮",t:"بوابة الأنشطة الإثرائية والألعاب العلمية",x:1,b:[X("sci_g2_activities","✨ ابدأ التحدي الآن","https://sabrysci.github.io/Science/")]},
-  {i:"🏆",t:"مسابقة على الفصل الرابع",x:1,b:[X("sci_g2_ch4_quiz","🏆 ابدأ المسابقة","https://sabrymohamed.github.io/4/")]}],
- "math1":[
-  {i:"⭕",t:"الفصل 1: المجموعات",b:[M("math_g1_ch1","🚀 ابدأ النموذج",M1+"G7-S1-Ch1/G7-S1-Ch1/story.html")]},
-  {i:"🧮",t:"الفصل 2: الجبر والدوال",b:[M("math_g1_ch2","🚀 ابدأ النموذج",M1+"G7-Unite-1%281%29/G7-Unite%201/story.html")]},
-  {i:"🔢",t:"الفصل 3: الأعداد الصحيحة",b:[M("math_g1_ch3","🚀 ابدأ النموذج",M1+"G7-Unite-2%281%29/G7-Unite%202/story.html")]},
-  {i:"📈",t:"الفصل 4: المعادلات الخطية والدوال",b:[M("math_g1_ch4","🚀 ابدأ النموذج",M1+"G7-Unite-3/G7-Unite%203/story.html")]},
-  {i:"⚖️",t:"الفصل 5: النسبة والتناسب",b:[M("math_g1_ch5","🚀 ابدأ النموذج",M1+"G7-Unite-4/G7-Unite%204/story.html")]},
-  {i:"💯",t:"الفصل 6: تطبيقات النسبة المئوية",b:[M("math_g1_ch6","🚀 ابدأ النموذج",M1+"G7-Unite-5/G7-Unite%205/story.html")]}],
- "math2":[
-  {i:"➗",t:"الفصل 2: الأعداد النسبية",b:[M("math_g2_ch2_a","نموذج (أ)",M2+"Math-Ch2A-G8/Math-Ch2A-G8/story.html"),M("math_g2_ch2_b","نموذج (ب)",M2+"Math-Ch2B-G8/Math-Ch2B-G8/story.html"),M("math_g2_ch2_c","نموذج (ج)",M2+"Math-Ch2C-G8/Math-Ch2C-G8/story.html"),M("math_g2_ch2_d","نموذج (د)",M2+"Math-Ch2D-G8/Math-Ch2D-G8/story.html")]},
-  {i:"📐",t:"الفصل 3: الأعداد الحقيقية وفيثاغورس",b:[M("math_g2_ch3_a","نموذج (أ)",M2+"Math-Ch3A-G8/Math-Ch3A-G8/story.html"),M("math_g2_ch3_b","نموذج (ب)",M2+"Math-Ch3B-G8/Math_Ch3B_G8/story.html")]},
-  {i:"⚖️",t:"الفصل 4: النسبة والتناسب",b:[M("math_g2_ch4_a","نموذج (أ)",M2+"Math-Ch4A-G8/Math-Ch4A-G8/story.html"),M("math_g2_ch4_b","نموذج (ب)",M2+"Math-Ch4B-G8/Math-Ch4B-G8/story.html")]},
-  {i:"💯",t:"الفصل 5: النسبة المئوية",b:[M("math_g2_ch5_a","نموذج (أ)",M2+"Math-Ch5A-G8/Math-Ch5A-G8/story.html"),M("math_g2_ch5_b","نموذج (ب)",M2+"Math-Ch5B-G8/Math-Ch5B-G8/story.html")]},
-  {i:"📏",t:"الفصل 6: الهندسة والاستدلال",b:[M("math_g2_ch6_a","نموذج (أ)",M2+"Math-Ch6A-G8-1/Math-Ch6A-G8/story.html"),M("math_g2_ch6_b","نموذج (ب)",M2+"Math-Ch6B-G8-1/Math-Ch6B-G8/story.html")]}]
-};
-// توحيد نطاق edunet.bh على www لتفادي الفتح المتقطع
-const fixUrl=u=>u&&u.replace(/^https?:\/\/edunet\.bh\//i,"https://www.edunet.bh/");
-const esc=s=>String(s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");
-// كتالوج مسطّح للإحصائيات
-const ITEMS=[];
-Object.keys(CH).forEach(k=>{const s=k.replace(/\d/,""),g=+k.slice(-1);
- CH[k].forEach(c=>c.b.forEach(b=>{b[2]=fixUrl(b[2]);if(!b[2])return;
-  const multi=c.b.filter(x=>x[2]).length>1||b[3]=="a";
-  b.name=(b[3]=="a"?"إجابة - ":"")+c.t+(multi?" - "+b[1].replace(/[^\u0600-\u06FF()\s]/g,"").trim():"");
-  b.cat=(b[3]=="a"?"إجابات ":b[3]=="x"?"مصادر إثرائية - ":"")+SUB[s].n+" - "+GR[g].n;
-  ITEMS.push({id:b[0],s,g,k:b[3],name:b.name});}));});
-const NAVID={sci:"nav_sci_main",math:"nav_math_main"};
-
-let stats={},logs=[],P="all",FS="all",FG="all",custom=false;
-const $=id=>document.getElementById(id);
-const badge=id=>`<span class="cc">👁️ <span class="cnt" data-c="${id}">${stats[id]||0}</span></span>`;
-
-function renderHome(){
- $("view-home").innerHTML=`<h2 class="prompt">👇 اختر المادة للبدء بالتدريب</h2><div class="grid">`+
- Object.keys(SUB).map(s=>`<div class="giant ${SUB[s].t}" role="button" tabindex="0" data-track-id="${NAVID[s]}" data-track-cat="تصفح الأقسام" data-track-name="دخول قسم ${SUB[s].n} الرئيسي" onclick="showView('grades','${s}')" onkeydown="if(event.key=='Enter')this.click()">
- <span class="cbadge">👁️ <span class="cnt" data-c="${NAVID[s]}">${stats[NAVID[s]]||0}</span></span>
- <div class="ic">${SUB[s].i}</div><div class="sic">${SUB[s].sub}</div><h2>مادة ${SUB[s].n}</h2><p>${SUB[s].d}</p></div>`).join("")+`</div>`;
-}
-function renderGrades(s){
- $("view-grades").innerHTML=`<div class="nav"><div class="nav-title" style="color:${s=="sci"?"var(--c1)":"var(--m1)"}">${SUB[s].i} مادة ${SUB[s].n} - اختر صفك الدراسي</div>
- <div class="nav-btns"><button class="btn-nav btn-home" onclick="showView('home')">🏠 الصفحة الرئيسية</button></div></div><div class="grid">`+
- [1,2].map(g=>{const id=`nav_${s}_g${g}`;return `<div class="giant ${GR[g].t}" role="button" tabindex="0" data-track-id="${id}" data-track-cat="تصفح الأقسام" data-track-name="دخول ${SUB[s].n} - ${GR[g].n}" onclick="showView('list','${s}',${g})" onkeydown="if(event.key=='Enter')this.click()">
- <span class="cbadge">👁️ <span class="cnt" data-c="${id}">${stats[id]||0}</span></span>
- <div class="ic">${GR[g].i[s]}</div><h2>الصف ${GR[g].n}</h2><p>نماذج تدريبية تفاعلية في ${SUB[s].n} - ${GR[g].n}</p><span class="pill">اضغط للدخول ⬅️</span></div>`}).join("")+`</div>`;
-}
-// إخفاء/إظهار نماذج الإجابات (PDF) للعلوم - الحالة مشتركة لكل الأجهزة عبر Google Sheets
-// الافتراضي: مخفية. الحالة = (عدد مرات "إظهار") أكبر من (عدد مرات "إخفاء")
-const CFG_SHOW="cfg_ans_show",CFG_HIDE="cfg_ans_hide";
-let hideAns=true,curS=null,curG=null;
-function calcHide(){return !((stats[CFG_SHOW]||0)>(stats[CFG_HIDE]||0))}
-function applyHide(){
- const h=calcHide();if(h===hideAns)return;hideAns=h;
- if(curS&&$("view-list").classList.contains("active"))renderList(curS,curG);
-}
-function sendCfg(id,n){
- for(let i=0;i<n;i++)fetch(`${URL_SHEET}?action=click&id=${id}&category=${encodeURIComponent("إعدادات")}&name=${encodeURIComponent(id==CFG_SHOW?"إظهار الإجابات":"إخفاء الإجابات")}`,{mode:"no-cors",keepalive:true}).catch(()=>{});
- stats[id]=(stats[id]||0)+n;
-}
-function setHideAns(v){
- load(d=>{
-  if(!d){alert("تعذر الاتصال بملف Google Sheets، حاول مرة أخرى.");return}
-  const sh=stats[CFG_SHOW]||0,hd=stats[CFG_HIDE]||0;
-  if(v&&sh>hd)sendCfg(CFG_HIDE,sh-hd);
-  if(!v&&!(sh>hd))sendCfg(CFG_SHOW,hd-sh+1);
-  hideAns=calcHide();
-  if(curS&&$("view-list").classList.contains("active"))renderList(curS,curG);
-  showAdminOptions();
- });
-}
-function openAdmin(){
- $("adminBox").innerHTML=`<h3>🔐 لوحة التحكم</h3><p>أدخل كلمة المرور</p>
- <input type="password" id="adminPw" autocomplete="off" placeholder="كلمة المرور">
- <p id="adminErr" style="color:#f87171;min-height:22px"></p>
- <div class="am-btns"><button class="btn-nav btn-home" onclick="checkAdmin()">دخول</button><button class="btn-nav" onclick="closeAdmin()">إلغاء</button></div>`;
- $("adminModal").classList.add("show");
- setTimeout(()=>$("adminPw").focus(),50);
- $("adminPw").onkeydown=e=>{if(e.key=="Enter")checkAdmin()};
-}
-async function sha256(t){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(t));return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("")}
-async function checkAdmin(){
- const v=$("adminPw").value;let ok=false;
- try{ok=(await sha256(v))===PW_HASH}catch(e){ok=false}
- if(!ok){$("adminErr").textContent="❌ كلمة المرور غير صحيحة";$("adminPw").value="";return}
- showAdminOptions();
-}
-function showAdminOptions(){
- $("adminBox").innerHTML=`<h3>⚙️ نماذج إجابات العلوم (PDF)</h3>
- <p>الحالة الحالية: <b style="color:${hideAns?"#f87171":"#34d399"}">${hideAns?"🙈 مخفية":"👁️ ظاهرة"}</b></p>
- <div class="am-btns">
-  <button class="btn-nav" style="background:#dc2626;border:0" onclick="setHideAns(true)">🙈 إخفاء نماذج الإجابات</button>
-  <button class="btn-nav" style="background:#059669;border:0" onclick="setHideAns(false)">👁️ إظهار نماذج الإجابات</button>
-  <button class="btn-nav" onclick="closeAdmin()">إغلاق</button></div>`;
-}
-function closeAdmin(){$("adminModal").classList.remove("show");$("adminBox").innerHTML=""}
-document.addEventListener("keydown",e=>{if(e.key=="Escape")closeAdmin()});
-function renderList(s,g){
- curS=s;curG=g;
- const cards=CH[s+g].map((c,i)=>{
-  const btns=c.b.filter(b=>!(hideAns&&s=="sci"&&b[3]=="a")).map(b=>b[2]?`<a href="${esc(b[2])}" target="_blank" rel="noopener" class="btn ${b[3]=="a"?"ans":""}" data-track-id="${b[0]}" data-track-cat="${esc(b.cat)}" data-track-name="${esc(b.name)}">${b[1]} ${badge(b[0])}</a>`:`<a href="#" class="btn off" aria-disabled="true">${b[1]}</a>`).join("");
-  return `<div class="card" style="animation-delay:${i*70}ms"><div class="mi">${c.i}</div><h3>${c.t}</h3><div class="btns">${btns}</div></div>`}).join("");
- $("view-list").innerHTML=`<div class="nav"><div class="nav-title ${GR[g].t}" style="color:var(--gc)">${SUB[s].i} ${SUB[s].n} - الصف ${GR[g].n}</div>
- <div class="nav-btns"><button class="btn-nav" onclick="showView('grades','${s}')">🔙 تغيير الصف</button><button class="btn-nav btn-home" onclick="showView('home')">🏠 الصفحة الرئيسية</button></div></div>
- <div class="models ${GR[g].t}">${cards}</div>`;
-}
-function showView(v,s,g){
- if(v=="grades")renderGrades(s);if(v=="list")renderList(s,g);if(v=="home")renderHome();
- document.querySelectorAll(".view").forEach(e=>e.classList.remove("active"));
- $("view-"+v).classList.add("active");
- window.scrollTo({top:Math.min(document.querySelector("header").offsetHeight,160),behavior:"smooth"});
-}
-function openAnalytics(){showView("analytics");fetchAnalytics()}
-function refreshBadges(){document.querySelectorAll(".cnt").forEach(e=>{const v=stats[e.dataset.c];if(v!==undefined)e.textContent=v})}
-
-// جلب الإحصائيات مع مهلة 12 ثانية حتى لا تتعلق الصفحة
-function load(cb){
- const ac=new AbortController(),tm=setTimeout(()=>ac.abort(),12000);
- fetch(URL_SHEET,{signal:ac.signal}).then(r=>r.json()).then(d=>{clearTimeout(tm);stats=d.stats||{};logs=d.logs||[];refreshBadges();applyHide();cb&&cb(d)}).catch(()=>{clearTimeout(tm);cb&&cb(null)});
-}
-function fetchAnalytics(){
- $("status").style.color="#fbbf24";$("status").textContent="⏳ جاري التحديث من Google Sheets...";
- load(d=>{
-  if(!d){$("status").style.color="#ef4444";$("status").textContent="❌ تعذر الاتصال بملف Google Sheets.";return}
-  if(d.logs){$("status").style.color="#34d399";$("status").textContent=`✅ تم التحديث (السجل الزمني: ${logs.length} عملية)`}
-  else{$("status").textContent="⚠️ فلترة التاريخ تحتاج سجلاً زمنياً (logs) من سكربت الشيت."}
-  render();});
-}
-// تتبع النقرات (لا يؤثر على فتح الرابط حتى لو فشل الإرسال)
-document.addEventListener("click",e=>{
- const t=e.target.closest("[data-track-id]");if(!t)return;
- const id=t.dataset.trackId,cat=t.dataset.trackCat||"عام",name=t.dataset.trackName||id;
- try{
-  stats[id]=(stats[id]||0)+1;
-  logs.push({timestamp:new Date().toISOString().slice(0,19).replace("T"," "),category:cat,name,id});
-  refreshBadges();
-  fetch(`${URL_SHEET}?action=click&id=${encodeURIComponent(id)}&category=${encodeURIComponent(cat)}&name=${encodeURIComponent(name)}`,{mode:"no-cors",keepalive:true}).catch(()=>{});
- }catch(err){}
-});
-
-// فلاتر
-function chipGroup(attr,cb){document.querySelectorAll(`.chip[data-${attr}]`).forEach(c=>c.onclick=()=>{
- document.querySelectorAll(`.chip[data-${attr}]`).forEach(x=>x.classList.remove("on"));c.classList.add("on");cb(c.dataset[attr]);render()})}
-chipGroup("p",v=>{P=v;custom=false;$("dFrom").value=$("dTo").value=""});
-chipGroup("s",v=>FS=v);chipGroup("g",v=>FG=v);
-["dFrom","dTo"].forEach(i=>$(i).onchange=()=>{custom=true;document.querySelectorAll(".chip[data-p]").forEach(x=>x.classList.remove("on"));render()});
-
-function parseD(s){if(!s)return null;const d=new Date(String(s).trim().replace(" ","T"));return isNaN(d)?null:d}
-function range(){
- const n=new Date(),day=o=>new Date(n.getFullYear(),n.getMonth(),n.getDate()+o);
- if(custom){const f=$("dFrom").value,t=$("dTo").value;return[f?new Date(f):new Date(2020,0,1),t?new Date(t):new Date(2100,0,1)]}
- if(P=="today")return[day(0),new Date(day(1)-1)];
- if(P=="yesterday")return[day(-1),new Date(day(0)-1)];
- if(P=="week")return[new Date(n-6048e5),n];
- return null;
-}
-function counts(){
- const r=range();if(!r)return{...stats};
- const c={};logs.forEach(l=>{const d=parseD(l.timestamp);if(d&&d>=r[0]&&d<=r[1])c[l.id]=(c[l.id]||0)+1});return c;
-}
-function anim(el,to){const from=+el.textContent||0,t0=performance.now();
- (function f(t){const k=Math.min((t-t0)/700,1);el.textContent=Math.round(from+(to-from)*(1-Math.pow(1-k,3)));if(k<1)requestAnimationFrame(f)})(t0)}
-function render(){
- const c=counts();
- const rows=ITEMS.filter(i=>(FS=="all"||i.s==FS)&&(FG=="all"||i.g==FG)).map(i=>({...i,c:c[i.id]||0})).sort((a,b)=>b.c-a.c);
- const sum=f=>rows.filter(f).reduce((a,r)=>a+r.c,0);
- const K=[["🌐 إجمالي الدخول",sum(()=>1),"big"],["📝 النماذج التدريبية",sum(r=>r.k=="m")],["💡 الإجابات",sum(r=>r.k=="a")],["✨ المصادر الإثرائية",sum(r=>r.k=="x")],
-  ["🔬 العلوم",sum(r=>r.s=="sci")],["📐 الرياضيات",sum(r=>r.s=="math")],["🌱 الأول الإعدادي",sum(r=>r.g==1)],["🚀 الثاني الإعدادي",sum(r=>r.g==2)]];
- $("kpis").innerHTML=K.map((k,i)=>`<div class="kpi ${k[2]||""}"><small>${k[0]}</small><div class="kpi-value" id="k${i}">0</div></div>`).join("");
- K.forEach((k,i)=>anim($("k"+i),k[1]));
- const mx=Math.max(1,...rows.map(r=>r.c));
- $("tbody").innerHTML=rows.map((r,i)=>`<tr><td>${i+1}</td><td style="font-weight:800">${esc(r.name)}</td><td>${SUB[r.s].n}</td><td>${GR[r.g].n}</td>
-  <td style="font-weight:900;color:${r.c?"#00f2fe":"#64748b"}">${r.c}</td><td class="bar"><div class="barw"><i data-w="${r.c/mx*100}"></i></div></td></tr>`).join("")||`<tr><td colspan="6">لا توجد بيانات</td></tr>`;
- requestAnimationFrame(()=>document.querySelectorAll(".barw i").forEach(b=>b.style.width=b.dataset.w+"%"));
- const pn={all:"كل الأوقات",today:"اليوم",yesterday:"أمس",week:"آخر 7 أيام"};
- $("repFilters").textContent=`الفترة: ${custom?("من "+($("dFrom").value||"البداية").replace("T"," ")+" إلى "+($("dTo").value||"الآن").replace("T"," ")):pn[P]} | المادة: ${FS=="all"?"الكل":SUB[FS].n} | الصف: ${FG=="all"?"الكل":GR[FG].n}`;
-}
-window.addEventListener("beforeprint",()=>{$("repDate").textContent="تاريخ الطباعة: "+new Date().toLocaleString("ar-BH");render()});
-
-// خلفية الجزيئات (خفيفة)
-const cv=$("bg"),cx=cv.getContext("2d");let W,H,ps=[],run=true;
-function init(){const dpr=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight;cv.width=W*dpr;cv.height=H*dpr;cx.setTransform(dpr,0,0,dpr,0,0);
- const n=W<650?36:75;ps=Array.from({length:n},()=>({x:Math.random()*W,y:Math.random()*H,r:Math.random()*2+.6,vx:Math.random()*.6-.3,vy:Math.random()*.6-.3,c:["#00f2fe","#4facfe","#f093fb","#10b981","#fbbf24","#fff"][Math.random()*6|0]}))}
-function frame(){if(!run)return;cx.clearRect(0,0,W,H);const L=W<650?90:120;
- for(let i=0;i<ps.length;i++){const p=ps[i];p.x+=p.vx;p.y+=p.vy;if(p.x>W)p.x=0;else if(p.x<0)p.x=W;if(p.y>H)p.y=0;else if(p.y<0)p.y=H;
-  cx.fillStyle=p.c;cx.beginPath();cx.arc(p.x,p.y,p.r,0,6.283);cx.fill();
-  for(let j=i+1;j<ps.length;j++){const q=ps[j],dx=p.x-q.x,dy=p.y-q.y,d=dx*dx+dy*dy;if(d<L*L){cx.strokeStyle=`rgba(0,242,254,${.18*(1-Math.sqrt(d)/L)})`;cx.lineWidth=.6;cx.beginPath();cx.moveTo(p.x,p.y);cx.lineTo(q.x,q.y);cx.stroke()}}}
- requestAnimationFrame(frame)}
-addEventListener("resize",init);
-document.addEventListener("visibilitychange",()=>{run=!document.hidden;if(run)frame()});
-init();frame();
-renderHome();load(()=>{refreshBadges()});
-</script>
-</body>
-</html>
+var b=document.body;
+function show(m){b.classList.toggle('in',m)}
+document.getElementById('enter').onclick=function(){show(true);try{history.replaceState(null,'','#menu')}catch(e){}};
+document.getElementById('back').onclick=function(){show(false);try{history.replaceState(null,'','#')}catch(e){}};
+if(location.hash==='#menu')show(true);
+document.querySelectorAll('.card').forEach(function(a){a.onclick=function(e){e.preventDefault();b.classList.add('leave');var h=a.href;setTimeout(function(){location.href=h},450)}});
+addEventListener('pageshow',function(){b.classList.remove('leave')});
+var c=document.getElementById('bg'),x=c.getContext('2d'),W,H,S=[];
+function rs(){W=c.width=innerWidth;H=c.height=innerHeight}rs();addEventListener('resize',rs);
+for(var i=0;i<140;i++)S.push({x:Math.random(),y:Math.random(),r:Math.random()*1.5+.3,z:Math.random()*.6+.1,p:Math.random()*6});
+(function f(t){if(!document.hidden){x.clearRect(0,0,W,H);S.forEach(function(s){s.x-=s.z*.00012;if(s.x<0)s.x=1;
+x.fillStyle='rgba(255,255,255,'+(.3+.6*Math.abs(Math.sin(t/900*s.z+s.p)))+')';x.beginPath();x.arc(s.x*W,s.y*H,s.r,0,6.3);x.fill()})}requestAnimationFrame(f)})(0);
+</script></body></html>
