@@ -70,6 +70,17 @@ header{text-align:center;margin-bottom:30px;animation:down .8s ease both}
 .card:hover{transform:translateY(-6px);border-color:var(--gc);box-shadow:0 0 28px var(--gs)}
 .card .mi{font-size:3rem;transition:.3s}.card:hover .mi{transform:scale(1.2) rotate(-6deg)}
 .card h3{font-size:1.25rem;line-height:1.55}
+.card.xc{--gc:#a78bfa;--gs:rgba(167,139,250,.4)}
+.card.xc::before{content:"";position:absolute;inset:0;border-radius:24px;pointer-events:none;background:radial-gradient(circle at 50% 0,var(--gs),transparent 65%)}
+.card.xc{position:relative;border-color:var(--gc)}
+.card.xc h3{color:var(--gc)}
+.models .card.xc .btn:not(.ans):not(.off){color:#fff;background:linear-gradient(45deg,var(--gc),var(--gc3,#6366f1))}
+.models .card.xc .btn .cc{color:#fff!important;background:rgba(0,0,0,.4)!important}
+.card.xc0{--gc:#a78bfa;--gc3:#4f46e5;--gs:rgba(167,139,250,.45)}
+.card.xc1{--gc:#2dd4bf;--gc3:#0d9488;--gs:rgba(45,212,191,.4)}
+.card.xc2{--gc:#f472b6;--gc3:#be185d;--gs:rgba(244,114,182,.4)}
+.card.xc3{--gc:#60a5fa;--gc3:#1d4ed8;--gs:rgba(96,165,250,.4)}
+.card.xc .mi{filter:drop-shadow(0 0 12px var(--gc))}
 .btns{display:flex;flex-wrap:wrap;gap:10px;width:100%}
 .btn{flex:1;min-width:120px;text-decoration:none;padding:12px;border-radius:16px;font-weight:900;font-size:.95rem;text-align:center;display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:.25s;position:relative;overflow:hidden;color:#000;background:linear-gradient(45deg,var(--gc),var(--gc2))}
 .t-g1 .btn{--gc2:#059669;color:#fff}.t-g2 .btn{--gc2:#d97706}
@@ -221,6 +232,7 @@ const CH={
   {i:"🫁",t:"الفصل 3: أجهزة الجسم (الهضم، التنفس، الإخراج)",b:[M("sci_g2_ch3_a","🚀 نموذج (أ)",S2+"Sci-Ch3A-G8/Sci-Ch3A-G8/story.html"),A("sci_g2_ch3_a_ans","💡 إجابة (أ)",D+"1aELVeMJzWay7tr9080deyWzEd24y7TqW/view?usp=drive_link"),M("sci_g2_ch3_b","🚀 نموذج (ب)",S2+"Sci-Ch3B-G8/Sci-Ch3B-G8/story.html"),A("sci_g2_ch3_b_ans","💡 إجابة (ب)",D+"1AB2FUNEAsZ4OsSUU3jXl2cttAq7lxnTi/view?usp=drive_link")]},
   {i:"🪐",t:"الفصل 4: استكشاف الفضاء",b:[M("sci_g2_ch4_a","🚀 ابدأ النموذج",S2+"Sci-Ch4A-G8/Sci-Ch4A-G8/story.html"),A("sci_g2_ch4_ans","💡 إجابة النموذج",D+"1yNyUPc_eOdly-_hM2OwvIuXvws5orCwU/view?usp=drive_link")]},
   {i:"🌡️",t:"الفصل 5: المادة (سلوك الموائع والحرارة)",b:[M("sci_g2_ch5_a","🚀 ابدأ النموذج",S2+"Sci-Ch5A-G8/Sci-Ch5A-G8/story.html"),A("sci_g2_ch5_ans","💡 إجابة النموذج",D+"17yAdCwMQRN_RrfNDA-BjTglyh4Gr4D6d/view?usp=drive_link")]},
+  {i:"🪐",t:"مختبر الأرض والكون الافتراضي",x:1,b:[X("sci_g2_lab","🚀 ادخل المختبر","lab/")]},
   {i:"📚",t:"ملزمة العلوم الشاملة - الفصل الأول",x:1,b:[X("sci_g2_booklet","📖 تصفح الملزمة",D+"1vFZjenzNMjVAcaZ78gavKFAzdge8BPo4/view?usp=sharing")]},
   {i:"🎮",t:"بوابة الأنشطة الإثرائية والألعاب العلمية",x:1,b:[X("sci_g2_activities","✨ ابدأ التحدي الآن","https://sabrysci.github.io/Science/")]},
   {i:"🏆",t:"مسابقة على الفصل الرابع",x:1,b:[X("sci_g2_ch4_quiz","🏆 ابدأ المسابقة","https://sabrymohamed.github.io/4/")]}],
@@ -322,9 +334,10 @@ function closeAdmin(){$("adminModal").classList.remove("show");$("adminBox").inn
 document.addEventListener("keydown",e=>{if(e.key=="Escape")closeAdmin()});
 function renderList(s,g){
  curS=s;curG=g;
+ let xi=0;
  const cards=CH[s+g].map((c,i)=>{
-  const btns=c.b.filter(b=>!(hideAns&&s=="sci"&&b[3]=="a")).map(b=>b[2]?`<a href="${esc(b[2])}" target="_blank" rel="noopener" class="btn ${b[3]=="a"?"ans":""}" data-track-id="${b[0]}" data-track-cat="${esc(b.cat)}" data-track-name="${esc(b.name)}">${b[1]} ${badge(b[0])}</a>`:`<a href="#" class="btn off" aria-disabled="true">${b[1]}</a>`).join("");
-  return `<div class="card" style="animation-delay:${i*70}ms"><div class="mi">${c.i}</div><h3>${c.t}</h3><div class="btns">${btns}</div></div>`}).join("");
+  const btns=c.b.filter(b=>!(hideAns&&s=="sci"&&b[3]=="a")).map(b=>b[2]?`<a href="${esc(b[2])}" ${/^https?:/.test(b[2])?'target="_blank" rel="noopener"':''} class="btn ${b[3]=="a"?"ans":""}" data-track-id="${b[0]}" data-track-cat="${esc(b.cat)}" data-track-name="${esc(b.name)}">${b[1]} ${badge(b[0])}</a>`:`<a href="#" class="btn off" aria-disabled="true">${b[1]}</a>`).join("");
+  return `<div class="card ${c.x?"xc xc"+((xi++)%4):""}" style="animation-delay:${i*70}ms"><div class="mi">${c.i}</div><h3>${c.t}</h3><div class="btns">${btns}</div></div>`}).join("");
  $("view-list").innerHTML=`<div class="nav"><div class="nav-title ${GR[g].t}" style="color:var(--gc)">${SUB[s].i} ${SUB[s].n} - الصف ${GR[g].n}</div>
  <div class="nav-btns"><button class="btn-nav" onclick="showView('grades','${s}')">🔙 تغيير الصف</button><button class="btn-nav btn-home" onclick="showView('home')">🏠 الصفحة الرئيسية</button></div></div>
  <div class="models ${GR[g].t}">${cards}</div>`;
