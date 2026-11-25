@@ -396,24 +396,27 @@ function counts(){
  const r=range();if(!r)return{...stats};
  const c={};logs.forEach(l=>{const d=parseD(l.timestamp);if(d&&d>=r[0]&&d<=r[1])c[l.id]=(c[l.id]||0)+1});return c;
 }
-function anim(el,to){const from=+el.textContent||0,t0=performance.now();
+function anim(el,to,now){if(now){el.textContent=to;return}const from=+el.textContent||0,t0=performance.now();
  (function f(t){const k=Math.min((t-t0)/700,1);el.textContent=Math.round(from+(to-from)*(1-Math.pow(1-k,3)));if(k<1)requestAnimationFrame(f)})(t0)}
-function render(){
+function render(instant){
+ instant=instant===true;
  const c=counts();
  const rows=ITEMS.filter(i=>(FS=="all"||i.s==FS)&&(FG=="all"||i.g==FG)).map(i=>({...i,c:c[i.id]||0})).sort((a,b)=>b.c-a.c);
  const sum=f=>rows.filter(f).reduce((a,r)=>a+r.c,0);
  const K=[["🌐 إجمالي الدخول",sum(()=>1),"big"],["📝 النماذج التدريبية",sum(r=>r.k=="m")],["💡 الإجابات",sum(r=>r.k=="a")],["✨ المصادر الإثرائية",sum(r=>r.k=="x")],
   ["🔬 العلوم",sum(r=>r.s=="sci")],["📐 الرياضيات",sum(r=>r.s=="math")],["🌱 الأول الإعدادي",sum(r=>r.g==1)],["🚀 الثاني الإعدادي",sum(r=>r.g==2)]];
  $("kpis").innerHTML=K.map((k,i)=>`<div class="kpi ${k[2]||""}"><small>${k[0]}</small><div class="kpi-value" id="k${i}">0</div></div>`).join("");
- K.forEach((k,i)=>anim($("k"+i),k[1]));
+ K.forEach((k,i)=>anim($("k"+i),k[1],instant));
  const mx=Math.max(1,...rows.map(r=>r.c));
  $("tbody").innerHTML=rows.map((r,i)=>`<tr><td>${i+1}</td><td style="font-weight:800">${esc(r.name)}</td><td>${SUB[r.s].n}</td><td>${GR[r.g].n}</td>
   <td style="font-weight:900;color:${r.c?"#00f2fe":"#64748b"}">${r.c}</td><td class="bar"><div class="barw"><i data-w="${r.c/mx*100}"></i></div></td></tr>`).join("")||`<tr><td colspan="6">لا توجد بيانات</td></tr>`;
- requestAnimationFrame(()=>document.querySelectorAll(".barw i").forEach(b=>b.style.width=b.dataset.w+"%"));
+ if(instant)document.querySelectorAll(".barw i").forEach(b=>{b.style.transition="none";b.style.width=b.dataset.w+"%"});
+ else requestAnimationFrame(()=>document.querySelectorAll(".barw i").forEach(b=>b.style.width=b.dataset.w+"%"));
  const pn={all:"كل الأوقات",today:"اليوم",yesterday:"أمس",week:"آخر 7 أيام"};
  $("repFilters").textContent=`الفترة: ${custom?("من "+($("dFrom").value||"البداية").replace("T"," ")+" إلى "+($("dTo").value||"الآن").replace("T"," ")):pn[P]} | المادة: ${FS=="all"?"الكل":SUB[FS].n} | الصف: ${FG=="all"?"الكل":GR[FG].n}`;
 }
-window.addEventListener("beforeprint",()=>{$("repDate").textContent="تاريخ الطباعة: "+new Date().toLocaleString("ar-BH");render()});
+window.addEventListener("beforeprint",()=>{$("repDate").textContent="تاريخ الطباعة: "+new Date().toLocaleString("ar-BH");render(true)});
+window.addEventListener("afterprint",()=>render());
 
 // خلفية الجزيئات (خفيفة)
 const cv=$("bg"),cx=cv.getContext("2d");let W,H,ps=[],run=true;
