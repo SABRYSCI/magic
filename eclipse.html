@@ -1,2837 +1,564 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>ظاهرة الكسوف والخسوف — استكشاف ثلاثي الأبعاد</title>
-
-  <!-- خط القاهرة العربي بأوزان عريضة وواضحة للسبورات الذكية والفصول الدراسية -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;700;800;900&display=swap" rel="stylesheet" />
-
-  <!-- Tailwind CSS للتصميم المتجاوب العصري -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            cairo: ['Cairo', 'sans-serif'],
-          },
-        },
-      },
-    };
-  </script>
-
-  <!-- مكتبة Three.js r128 وأداة OrbitControls من CDN موثوق -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-
-  <style>
-    /* الأساسيات والتنسيق الكوني الداكن عالي التباين */
-    * {
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    html, body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      font-family: 'Cairo', sans-serif;
-      background: radial-gradient(circle at 60% 45%, #0c142d 0%, #050918 55%, #030612 100%);
-      color: #f8fafc;
-      user-select: none;
-    }
-
-    #canvas-container {
-      position: fixed;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 1;
-      touch-action: none;
-    }
-
-    canvas.three-canvas {
-      display: block;
-      width: 100%;
-      height: 100%;
-      outline: none;
-    }
-
-    /* الألواح الزجاجية المتكيفة مع سمة الكسوف (ذهبي) والخسوف (قرمزي/نيلي) */
-    .glass-panel {
-      background: rgba(6, 11, 26, 0.8);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      border: 1.5px solid var(--theme-border, rgba(251, 191, 36, 0.32));
-      box-shadow: 0 12px 38px rgba(0, 0, 0, 0.58), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-      transition: border-color 0.35s ease;
-    }
-
-    .glass-card {
-      background: rgba(5, 10, 24, 0.93);
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
-      border: 2px solid var(--theme-border-strong, rgba(251, 191, 36, 0.5));
-      box-shadow: 0 20px 55px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.14);
-      transition: border-color 0.35s ease;
-    }
-
-    /* سمة كسوف الشمس (ذهبي وعنبري) مقابل سمة خسوف القمر (قرمزي ونيلي) */
-    body.theme-solar {
-      --theme-border: rgba(251, 191, 36, 0.34);
-      --theme-border-strong: rgba(251, 191, 36, 0.58);
-      --theme-glow: rgba(245, 158, 11, 0.32);
-    }
-
-    body.theme-lunar {
-      --theme-border: rgba(244, 63, 94, 0.38);
-      --theme-border-strong: rgba(244, 63, 94, 0.62);
-      --theme-glow: rgba(225, 29, 72, 0.32);
-    }
-
-    /* طبقة فقاعات المعلومات ثلاثية الأبعاد */
-    #bubbles-layer {
-      position: fixed;
-      inset: 0;
-      z-index: 15;
-      pointer-events: none;
-      overflow: hidden;
-    }
-
-    .info-pin-wrapper {
-      position: absolute;
-      top: 0;
-      left: 0;
-      pointer-events: none;
-      will-change: transform, opacity;
-      transition: opacity 0.25s ease;
-    }
-
-    .info-pin-btn {
-      pointer-events: auto;
-      transform: translate(-50%, -50%);
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.42rem 0.9rem 0.42rem 0.72rem;
-      border-radius: 9999px;
-      background: rgba(6, 11, 26, 0.9);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 2px solid rgba(255, 255, 255, 0.26);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.65);
-      color: #ffffff;
-      font-size: 15px;
-      font-weight: 800;
-      white-space: nowrap;
-      cursor: pointer;
-      transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
-    }
-
-    @media (max-width: 640px) {
-      .info-pin-btn {
-        font-size: 13px;
-        padding: 0.32rem 0.7rem;
-      }
-    }
-
-    .info-pin-btn:hover {
-      transform: translate(-50%, -50%) scale(1.08);
-      background: rgba(16, 26, 54, 0.98);
-      border-color: rgba(255, 255, 255, 0.65);
-    }
-
-    .info-pin-btn.active {
-      border-color: var(--accent-color, #fbbf24);
-      box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.25), 0 12px 28px rgba(0, 0, 0, 0.75);
-    }
-
-    .pin-dot {
-      position: relative;
-      width: 11px;
-      height: 11px;
-      border-radius: 9999px;
-      flex-shrink: 0;
-    }
-
-    .pin-dot::after {
-      content: '';
-      position: absolute;
-      inset: -5px;
-      border-radius: 9999px;
-      background: inherit;
-      opacity: 0.55;
-      animation: pinPulse 2s infinite ease-out;
-    }
-
-    @keyframes pinPulse {
-      0% { transform: scale(0.75); opacity: 0.75; }
-      75% { transform: scale(2.05); opacity: 0; }
-      100% { transform: scale(2.05); opacity: 0; }
-    }
-
-    /* بطاقة المعلومات المنبثقة للفقاعة */
-    .bubble-card {
-      position: fixed;
-      z-index: 28;
-      pointer-events: auto;
-      width: min(410px, calc(100vw - 24px));
-      border-radius: 1.35rem;
-      transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    .bubble-card.hidden-card {
-      opacity: 0;
-      pointer-events: none;
-      transform: scale(0.92) translateY(8px);
-    }
-
-    /* شريط مراحل الظاهرة (0% - 100%) */
-    input[type='range'].eclipse-slider {
-      -webkit-appearance: none;
-      appearance: none;
-      height: 10px;
-      border-radius: 999px;
-      background: linear-gradient(90deg, #38bdf8 0%, #f59e0b 50%, #38bdf8 100%);
-      outline: none;
-      cursor: pointer;
-    }
-
-    body.theme-lunar input[type='range'].eclipse-slider {
-      background: linear-gradient(90deg, #6366f1 0%, #ef4444 50%, #6366f1 100%);
-    }
-
-    input[type='range'].eclipse-slider::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      background: #ffffff;
-      border: 4px solid #f59e0b;
-      box-shadow: 0 0 16px rgba(251, 191, 36, 0.9);
-      cursor: pointer;
-      transition: transform 0.15s ease;
-    }
-
-    body.theme-lunar input[type='range'].eclipse-slider::-webkit-slider-thumb {
-      border-color: #f43f5e;
-      box-shadow: 0 0 16px rgba(244, 63, 94, 0.9);
-    }
-
-    input[type='range'].eclipse-slider::-webkit-slider-thumb:hover {
-      transform: scale(1.16);
-    }
-
-    input[type='range'].eclipse-slider::-moz-range-thumb {
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      background: #ffffff;
-      border: 4px solid #f59e0b;
-      box-shadow: 0 0 16px rgba(251, 191, 36, 0.9);
-      cursor: pointer;
-    }
-
-    /* شريط تمرير ناعم للنوافذ المنبثقة */
-    .custom-scroll::-webkit-scrollbar {
-      width: 8px;
-      height: 8px;
-    }
-    .custom-scroll::-webkit-scrollbar-track {
-      background: rgba(15, 23, 42, 0.55);
-      border-radius: 999px;
-    }
-    .custom-scroll::-webkit-scrollbar-thumb {
-      background: rgba(148, 163, 184, 0.45);
-      border-radius: 999px;
-    }
-
-    /* طي لوحة التحكم السفلية */
-    .dock-collapsed #controls-body {
-      display: none;
-    }
-
-    /* شاشة التحميل التمهيدية */
-    #loader-overlay {
-      transition: opacity 0.55s ease, visibility 0.55s ease;
-    }
-    #loader-overlay.fade-out {
-      opacity: 0;
-      visibility: hidden;
-      pointer-events: none;
-    }
-  </style>
-</head>
-<body class="font-cairo antialiased theme-solar selection:bg-amber-500/30 selection:text-white">
-
-  <!-- حاوية مشهد Three.js ثلاثي الأبعاد -->
-  <div id="canvas-container" aria-label="محاكاة ثلاثية الأبعاد لظاهرة الكسوف والخسوف"></div>
-
-  <!-- طبقة فقاعات المعلومات المرتبطة ثلاثياً بالأجرام ومخاريط الظل -->
-  <div id="bubbles-layer"></div>
-
-  <!-- طبقة بطاقات المعلومات المفتوحة -->
-  <div id="cards-layer" class="fixed inset-0 z-20 pointer-events-none"></div>
-
-  <!-- شاشة التحميل التمهيدية -->
-  <div id="loader-overlay" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#030612] px-4 text-center">
-    <div class="relative w-20 h-20 mb-5">
-      <div class="absolute inset-0 rounded-full border-4 border-amber-500/20"></div>
-      <div class="absolute inset-0 rounded-full border-4 border-t-amber-400 border-r-rose-500 animate-spin"></div>
-      <div class="absolute inset-4 rounded-full bg-slate-950 border-2 border-amber-300 shadow-[0_0_24px_rgba(251,191,36,0.85)]"></div>
-    </div>
-    <p class="text-2xl font-black text-white">جاري تجهيز محاكاة الكسوف والخسوف ثلاثية الأبعاد...</p>
-    <p class="text-base font-bold text-amber-200/80 mt-2">إنشاء الشمس والأرض والقمر ومخاريط الظل التام وشبه الظل</p>
-  </div>
-
-  <!-- ===================================================================== -->
-  <!-- الشريط العلوي: العنوان + زرا المقارنة والاختبار + اختصارات زاوية الكاميرا -->
-  <!-- ===================================================================== -->
-  <header class="fixed top-2.5 inset-x-2.5 sm:top-3.5 sm:inset-x-4 z-30 pointer-events-none flex flex-wrap items-center justify-between gap-2">
-
-    <!-- العنوان الرئيسي بخط كبير وواضح -->
-    <div class="glass-panel pointer-events-auto rounded-2xl px-3.5 py-2 sm:px-5 sm:py-2.5 flex items-center gap-3">
-      <div id="header-icon-box"
-        class="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-400 via-orange-500 to-rose-600 p-[2px] flex-shrink-0 shadow-lg shadow-amber-500/25">
-        <div class="w-full h-full rounded-[10px] bg-slate-950 flex items-center justify-center text-2xl">
-          ☀️
-        </div>
-      </div>
-      <div>
-        <h1 class="text-lg sm:text-xl md:text-2xl font-black text-white leading-tight">
-          ظاهرة الكسوف والخسوف — استكشاف ثلاثي الأبعاد
-        </h1>
-        <p id="header-subtitle" class="text-xs sm:text-sm font-bold text-amber-200/90 hidden md:block">
-          الكسوف الكلي والجزئي والحلقي، الخسوف الكلي والجزئي، ومناطق الظل وشبه الظل
-        </p>
-      </div>
-    </div>
-
-    <!-- أزرار الشريط العلوي: الكاميرا السريعة + جدول المقارنة + الاختبار التفاعلي -->
-    <div class="pointer-events-auto flex flex-wrap items-center gap-2">
-
-      <!-- اختصارات منظور الكاميرا -->
-      <div class="glass-panel hidden xl:flex items-center gap-1 rounded-2xl p-1">
-        <button data-cam-view="overview" type="button"
-          class="cam-view-btn px-3 py-1.5 rounded-xl text-sm font-extrabold bg-white/15 text-white hover:bg-white/25 transition cursor-pointer">
-          منظور عام
-        </button>
-        <button data-cam-view="top" type="button"
-          class="cam-view-btn px-3 py-1.5 rounded-xl text-sm font-extrabold text-slate-200 hover:bg-white/15 transition cursor-pointer">
-          منظور علوي
-        </button>
-        <button data-cam-view="shadow" type="button"
-          class="cam-view-btn px-3 py-1.5 rounded-xl text-sm font-extrabold text-slate-200 hover:bg-white/15 transition cursor-pointer">
-          تقريب للظل
-        </button>
-      </div>
-
-      <!-- زر جدول المقارنة الشامل -->
-      <button id="btn-compare-modal" type="button"
-        class="glass-panel px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-2xl text-sm sm:text-base font-extrabold flex items-center gap-2 text-sky-100 hover:bg-sky-500/25 hover:border-sky-300/60 active:scale-95 transition cursor-pointer">
-        <span>📊</span>
-        <span>جدول المقارنة الشامل</span>
-      </button>
-
-      <!-- زر الاختبار التفاعلي (10 أسئلة) البارز -->
-      <button id="btn-quiz-modal" type="button"
-        class="px-4 py-2 sm:px-5 sm:py-2.5 rounded-2xl text-sm sm:text-base font-black flex items-center gap-2 bg-gradient-to-l from-amber-400 via-amber-500 to-orange-500 text-slate-950 border-2 border-amber-200 shadow-lg shadow-amber-500/30 hover:brightness-110 active:scale-95 transition cursor-pointer">
-        <span>📝</span>
-        <span>اختبار تفاعلي (10 أسئلة)</span>
-      </button>
-    </div>
-  </header>
-
-  <!-- ===================================================================== -->
-  <!-- بطاقة "منظر من سطح الأرض" الحية + الشارات العلمية (الجانب الأيمن) -->
-  <!-- ===================================================================== -->
-  <section id="observer-hud"
-    class="fixed top-[78px] sm:top-[88px] right-2.5 sm:right-4 z-25 glass-card rounded-3xl p-3 sm:p-4 w-[285px] sm:w-[335px] transition-all duration-300">
-    <!-- رأس البطاقة مع زر تصغير -->
-    <div class="flex items-center justify-between gap-2 mb-2">
-      <div class="flex items-center gap-2">
-        <span id="hud-mode-emoji" class="text-xl">☀️</span>
-        <h2 id="hud-scenario-title" class="text-base sm:text-lg font-black text-amber-300 leading-tight">
-          كسوف كلي للشمس
-        </h2>
-      </div>
-      <button id="btn-toggle-hud" type="button"
-        class="px-2.5 py-1 rounded-xl bg-white/10 hover:bg-white/20 text-xs sm:text-sm font-extrabold text-slate-200 cursor-pointer transition">
-        تصغير
-      </button>
-    </div>
-
-    <div id="observer-hud-body" class="space-y-2.5">
-      <!-- الدائرة الحية للمنظر من سطح الأرض -->
-      <div class="flex items-center gap-3 bg-slate-950/75 border border-white/15 rounded-2xl p-2.5">
-        <div class="relative flex-shrink-0">
-          <canvas id="sky-view-canvas" width="170" height="170"
-            class="w-[88px] h-[88px] sm:w-[104px] sm:h-[104px] rounded-full border-2 border-amber-300/60 shadow-[0_0_24px_rgba(251,191,36,0.28)]"></canvas>
-          <span class="absolute -bottom-1.5 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-slate-900 border border-white/20 text-[10px] font-extrabold text-sky-200 whitespace-nowrap">
-            من سطح الأرض
-          </span>
-        </div>
-        <div class="min-w-0 flex-1 space-y-1">
-          <div class="text-xs font-bold text-slate-400">المرحلة الحالية</div>
-          <div id="hud-stage-label" class="text-base sm:text-lg font-black text-white leading-snug">
-            ذروة الكسوف الكلي
-          </div>
-          <div id="hud-shadow-zone" class="text-xs sm:text-sm font-extrabold text-amber-300 leading-snug">
-            الراصد داخل منطقة الظل التام
-          </div>
-        </div>
-      </div>
-
-      <!-- الشارات الأربع الواضحة (طور القمر، الترتيب، وقت الحدوث، سلامة الرؤية) -->
-      <div class="grid grid-cols-2 gap-2">
-        <div class="rounded-xl p-2 bg-white/5 border border-white/10">
-          <div class="text-[11px] font-bold text-slate-400">🌙 طور القمر</div>
-          <div id="badge-phase" class="text-sm sm:text-base font-black text-amber-300 mt-0.5">طور المحاق</div>
-        </div>
-        <div class="rounded-xl p-2 bg-white/5 border border-white/10">
-          <div class="text-[11px] font-bold text-slate-400">⏱️ وقت الحدوث</div>
-          <div id="badge-time" class="text-xs sm:text-sm font-extrabold text-white mt-0.5">نهاراً — دقائق معدودة</div>
-        </div>
-        <div class="col-span-2 rounded-xl px-2.5 py-2 bg-white/5 border border-white/10">
-          <div class="text-[11px] font-bold text-slate-400">🪐 ترتيب الأجرام السماوية</div>
-          <div id="badge-order" class="text-sm sm:text-base font-black text-sky-200 mt-0.5">
-            الشمس ⟵ القمر (الحضيض) ⟵ الأرض
-          </div>
-        </div>
-        <div id="badge-safety-box" class="col-span-2 rounded-xl px-2.5 py-2 bg-rose-500/20 border border-rose-400/50">
-          <div id="badge-safety" class="text-xs sm:text-sm font-extrabold text-rose-100 leading-snug">
-            ⚠️ لا تنظر مباشرة بدون نظارة كسوف خاصة
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ===================================================================== -->
-  <!-- أزرار التحكم الجانبية (الجانب الأيسر): التكبير/التصغير/التدوير/الأشعة/الفقاعات -->
-  <!-- ===================================================================== -->
-  <aside class="fixed left-2.5 sm:left-4 top-1/2 -translate-y-1/2 z-30 flex flex-col gap-2 pointer-events-auto">
-    <div class="glass-panel rounded-2xl p-1.5 flex flex-col gap-1.5">
-      <button id="btn-zoom-in" type="button" title="تكبير المشهد"
-        class="w-11 h-11 rounded-xl flex items-center justify-center text-white hover:bg-white/15 active:scale-90 transition cursor-pointer text-2xl font-black"
-        aria-label="تكبير">+</button>
-      <div class="h-px bg-white/15 mx-1.5"></div>
-      <button id="btn-zoom-out" type="button" title="تصغير المشهد"
-        class="w-11 h-11 rounded-xl flex items-center justify-center text-white hover:bg-white/15 active:scale-90 transition cursor-pointer text-2xl font-black"
-        aria-label="تصغير">−</button>
-      <div class="h-px bg-white/15 mx-1.5"></div>
-      <button id="btn-reset-view" type="button" title="إعادة العرض الافتراضي"
-        class="w-11 h-11 rounded-xl flex items-center justify-center text-sky-300 hover:bg-sky-500/25 active:scale-90 transition cursor-pointer"
-        aria-label="إعادة العرض">
-        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-        </svg>
-      </button>
-      <div class="h-px bg-white/15 mx-1.5"></div>
-      <button id="btn-auto-rotate" type="button" title="تدوير تلقائي للكاميرا"
-        class="w-11 h-11 rounded-xl flex items-center justify-center text-slate-300 hover:bg-white/15 active:scale-90 transition cursor-pointer"
-        aria-label="تدوير تلقائي">
-        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.1">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9" />
-        </svg>
-      </button>
-      <div class="h-px bg-white/15 mx-1.5"></div>
-      <button id="btn-toggle-rays-icon" type="button" title="إظهار / إخفاء أشعة الشمس"
-        class="w-11 h-11 rounded-xl flex items-center justify-center text-amber-300 bg-amber-500/15 hover:bg-amber-500/30 active:scale-90 transition cursor-pointer"
-        aria-label="أشعة الشمس">
-        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-        </svg>
-      </button>
-      <div class="h-px bg-white/15 mx-1.5"></div>
-      <button id="btn-toggle-bubbles-icon" type="button" title="إظهار / إخفاء فقاعات المعلومات"
-        class="w-11 h-11 rounded-xl flex items-center justify-center text-cyan-300 bg-cyan-500/15 hover:bg-cyan-500/30 active:scale-90 transition cursor-pointer"
-        aria-label="فقاعات المعلومات">
-        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M7 8h10M7 12h6m-2 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
-        </svg>
-      </button>
-    </div>
-  </aside>
-
-  <!-- ===================================================================== -->
-  <!-- لوحة التحكم السفلية: 5 حالات للكسوف والخسوف + شريط المراحل + أزرار العرض -->
-  <!-- ===================================================================== -->
-  <footer id="bottom-dock" class="fixed bottom-2.5 inset-x-2.5 sm:bottom-3.5 sm:inset-x-4 z-30 pointer-events-none flex justify-center">
-    <div class="glass-panel pointer-events-auto rounded-3xl px-3.5 py-2.5 sm:px-5 sm:py-3 w-full max-w-6xl">
-
-      <!-- شريط علوي مدمج لأزرار التحكم السريعة وطي اللوحة -->
-      <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
-        <div class="flex items-center gap-2 text-sm sm:text-base font-extrabold text-white">
-          <span id="dock-status-dot" class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
-          <span>اختر نوع الظاهرة وحرّك شريط المراحل للمعاينة</span>
-        </div>
-
-        <div class="flex flex-wrap items-center gap-1.5">
-          <!-- أزرار منظور الكاميرا للشاشات المتوسطة -->
-          <button data-cam-view="top" type="button"
-            class="xl:hidden px-2.5 py-1 rounded-xl bg-white/10 hover:bg-white/20 text-xs sm:text-sm font-extrabold text-sky-200 transition cursor-pointer">
-            منظور علوي
-          </button>
-          <button data-cam-view="shadow" type="button"
-            class="xl:hidden px-2.5 py-1 rounded-xl bg-white/10 hover:bg-white/20 text-xs sm:text-sm font-extrabold text-sky-200 transition cursor-pointer">
-            تقريب للظل
-          </button>
-          <button id="btn-toggle-rays" type="button"
-            class="px-3 py-1 rounded-xl bg-amber-500/20 border border-amber-400/50 hover:bg-amber-500/35 text-xs sm:text-sm font-extrabold text-amber-200 transition cursor-pointer">
-            ☀️ إخفاء أشعة الشمس
-          </button>
-          <button id="btn-toggle-bubbles" type="button"
-            class="px-3 py-1 rounded-xl bg-cyan-500/20 border border-cyan-400/50 hover:bg-cyan-500/35 text-xs sm:text-sm font-extrabold text-cyan-200 transition cursor-pointer">
-            💬 إخفاء الفقاعات
-          </button>
-          <button id="btn-collapse-dock" type="button"
-            class="px-3 py-1 rounded-xl bg-white/10 hover:bg-white/20 text-xs sm:text-sm font-extrabold text-slate-200 transition cursor-pointer">
-            إخفاء الشريط ▾
-          </button>
-        </div>
-      </div>
-
-      <!-- محتوى لوحة التحكم -->
-      <div id="controls-body" class="space-y-2.5">
-
-        <!-- الصف الأول: أزرار الحالات الخمس (3 كسوف + 2 خسوف) -->
-        <div class="flex flex-wrap items-center justify-center gap-2">
-          <button data-scenario="totalSolar" type="button"
-            class="scenario-btn px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-2xl text-sm sm:text-base font-extrabold border-2 border-amber-400/55 bg-amber-500/20 text-amber-100 hover:bg-amber-500/35 active:scale-95 transition cursor-pointer">
-            ☀️ كسوف كلي للشمس
-          </button>
-          <button data-scenario="partialSolar" type="button"
-            class="scenario-btn px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-2xl text-sm sm:text-base font-extrabold border-2 border-amber-400/40 bg-amber-500/12 text-amber-100 hover:bg-amber-500/30 active:scale-95 transition cursor-pointer">
-            🌗 كسوف جزئي للشمس
-          </button>
-          <button data-scenario="annularSolar" type="button"
-            class="scenario-btn px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-2xl text-sm sm:text-base font-extrabold border-2 border-orange-400/45 bg-orange-500/15 text-orange-100 hover:bg-orange-500/30 active:scale-95 transition cursor-pointer">
-            💍 كسوف حلقي للشمس
-          </button>
-
-          <div class="hidden md:block w-px h-8 bg-white/15 mx-0.5"></div>
-
-          <button data-scenario="totalLunar" type="button"
-            class="scenario-btn px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-2xl text-sm sm:text-base font-extrabold border-2 border-rose-400/50 bg-rose-500/15 text-rose-100 hover:bg-rose-500/30 active:scale-95 transition cursor-pointer">
-            🔴 خسوف كلي للقمر
-          </button>
-          <button data-scenario="partialLunar" type="button"
-            class="scenario-btn px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-2xl text-sm sm:text-base font-extrabold border-2 border-indigo-400/50 bg-indigo-500/15 text-indigo-100 hover:bg-indigo-500/30 active:scale-95 transition cursor-pointer">
-            🌓 خسوف جزئي للقمر
-          </button>
-        </div>
-
-        <!-- الصف الثاني: زر التشغيل/الإيقاف + شريط مراحل الظاهرة (0% - 100%) -->
-        <div class="flex flex-col sm:flex-row items-center gap-3 bg-white/5 border border-white/15 rounded-2xl px-3.5 py-2">
-          <button id="btn-play-pause" type="button"
-            class="px-4 py-2 rounded-xl text-sm sm:text-base font-black bg-emerald-500/25 border-2 border-emerald-400/60 text-emerald-100 hover:bg-emerald-500/40 active:scale-95 transition cursor-pointer flex items-center gap-2 whitespace-nowrap">
-            <span id="play-pause-icon">▶</span>
-            <span id="play-pause-label">تشغيل الحركة</span>
-          </button>
-
-          <div class="w-full flex-1 flex flex-col gap-1">
-            <div class="flex items-center justify-between text-xs sm:text-sm font-extrabold">
-              <span class="text-sky-200">بداية الظاهرة (0%)</span>
-              <span id="timeline-readout" class="text-amber-300 font-black">الذروة — 50%</span>
-              <span class="text-sky-200">نهاية الظاهرة (100%)</span>
-            </div>
-            <input id="eclipse-timeline" type="range" min="0" max="100" step="0.5" value="50"
-              class="eclipse-slider w-full" aria-label="شريط مراحل الظاهرة" />
-          </div>
-
-          <button id="btn-jump-peak" type="button"
-            class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-extrabold bg-white/10 hover:bg-white/20 border border-white/15 text-white whitespace-nowrap transition cursor-pointer">
-            🎯 الذروة (50%)
-          </button>
-        </div>
-
-      </div>
-    </div>
-  </footer>
-
-  <!-- ===================================================================== -->
-  <!-- نافذة جدول المقارنة الشامل (كسوف الشمس مقابل خسوف القمر + أنواع الكسوف) -->
-  <!-- ===================================================================== -->
-  <div id="compare-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-3 sm:p-6 bg-slate-950/82 backdrop-blur-md">
-    <div class="glass-card rounded-3xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden border-2 border-sky-400/50">
-      <div class="flex items-center justify-between px-6 py-4 border-b border-white/15 bg-white/5">
-        <div class="flex items-center gap-3">
-          <span class="text-3xl">📊</span>
-          <div>
-            <h2 class="text-xl sm:text-2xl md:text-3xl font-black text-white">جدول المقارنة الشامل: كسوف الشمس وخسوف القمر</h2>
-            <p class="text-sm sm:text-base font-bold text-sky-200">مقارنة علمية دقيقة للترتيب وأطوار القمر وأنواع الكسوف وإجراءات السلامة</p>
-          </div>
-        </div>
-        <button id="btn-close-compare" type="button"
-          class="w-11 h-11 rounded-2xl bg-white/10 hover:bg-rose-500/35 text-white flex items-center justify-center transition cursor-pointer text-xl font-black"
-          aria-label="إغلاق">✕</button>
-      </div>
-
-      <div class="p-5 sm:p-6 overflow-y-auto custom-scroll space-y-5">
-        <!-- جدول المقارنة الرئيسي -->
-        <div class="overflow-x-auto rounded-2xl border-2 border-white/15">
-          <table class="w-full text-right border-collapse min-w-[680px]">
-            <thead>
-              <tr class="bg-white/10 text-white text-base sm:text-lg font-black">
-                <th class="py-3.5 px-4 border-b border-white/15 w-[22%]">وجه المقارنة</th>
-                <th class="py-3.5 px-4 border-b border-white/15 text-amber-300 w-[39%]">☀️ كسوف الشمس (Solar Eclipse)</th>
-                <th class="py-3.5 px-4 border-b border-white/15 text-rose-300 w-[39%]">🔴 خسوف القمر (Lunar Eclipse)</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-white/10 text-base sm:text-lg font-bold text-slate-100 leading-relaxed">
-              <tr class="hover:bg-white/5">
-                <td class="py-3 px-4 text-sky-300 font-black">سبب الحدوث</td>
-                <td class="py-3 px-4">وقوع <span class="text-amber-300 font-black">القمر</span> بين الشمس والأرض فيحجب ضوء الشمس ويُلقي ظله على الأرض.</td>
-                <td class="py-3 px-4">وقوع <span class="text-rose-300 font-black">الأرض</span> بين الشمس والقمر فتحجب ضوء الشمس عن القمر ويدخل القمر ظل الأرض.</td>
-              </tr>
-              <tr class="hover:bg-white/5">
-                <td class="py-3 px-4 text-sky-300 font-black">ترتيب الأجرام</td>
-                <td class="py-3 px-4 font-black text-amber-200">الشمس ⟵ القمر ⟵ الأرض</td>
-                <td class="py-3 px-4 font-black text-rose-200">الشمس ⟵ الأرض ⟵ القمر</td>
-              </tr>
-              <tr class="hover:bg-white/5">
-                <td class="py-3 px-4 text-sky-300 font-black">طور القمر</td>
-                <td class="py-3 px-4">🌑 <span class="text-amber-300 font-black">طور المحاق</span></td>
-                <td class="py-3 px-4">🌕 <span class="text-rose-300 font-black">طور البدر</span></td>
-              </tr>
-              <tr class="hover:bg-white/5">
-                <td class="py-3 px-4 text-sky-300 font-black">وقت الشهر القمري</td>
-                <td class="py-3 px-4">بداية أو نهاية الشهر القمري (يوم 29 أو 30 أو 1).</td>
-                <td class="py-3 px-4">منتصف الشهر القمري (ليلة 14 أو 15).</td>
-              </tr>
-              <tr class="hover:bg-white/5">
-                <td class="py-3 px-4 text-sky-300 font-black">وقت اليوم</td>
-                <td class="py-3 px-4">يحدث <span class="text-white font-black">نهاراً فقط</span> في المناطق الواقعة ضمن ظل القمر.</td>
-                <td class="py-3 px-4">يحدث <span class="text-white font-black">ليلاً فقط</span> ويُرى من كامل النصف الليلي للأرض.</td>
-              </tr>
-              <tr class="hover:bg-white/5">
-                <td class="py-3 px-4 text-sky-300 font-black">مدة الحدوث</td>
-                <td class="py-3 px-4">قصيرة جداً (لا تتجاوز ذروة الكسوف الكلي نحو <span class="text-amber-300 font-black">7 دقائق ونصف</span>).</td>
-                <td class="py-3 px-4">طويلة نسبياً (قد تستمر مراحل الخسوف <span class="text-rose-300 font-black">ساعتين إلى ثلاث ساعات</span>).</td>
-              </tr>
-              <tr class="hover:bg-white/5">
-                <td class="py-3 px-4 text-sky-300 font-black">الأنواع الرئيسية</td>
-                <td class="py-3 px-4">كسوف كلي — كسوف جزئي — كسوف حلقي.</td>
-                <td class="py-3 px-4">خسوف كلي (القمر الدموي) — خسوف جزئي — خسوف شبه ظل.</td>
-              </tr>
-              <tr class="hover:bg-white/5">
-                <td class="py-3 px-4 text-sky-300 font-black">أمان المشاهدة</td>
-                <td class="py-3 px-4 text-rose-300 font-black">⚠️ خطير على العين! يجب استخدام نظارات كسوف معتمدة.</td>
-                <td class="py-3 px-4 text-emerald-300 font-black">✅ آمن تماماً للمشاهدة بالعين المجردة دون أي ضرر.</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- ملخص أنواع كسوف الشمس الثلاثة -->
-        <div class="rounded-2xl p-4 bg-amber-500/10 border-2 border-amber-400/40">
-          <h3 class="text-xl font-black text-amber-300 mb-3">☀️ مقارنة سريعة بين أنواع كسوف الشمس الثلاثة (جميعها في طور المحاق):</h3>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-base font-bold leading-relaxed">
-            <div class="rounded-xl p-3.5 bg-slate-950/75 border border-amber-400/35">
-              <div class="text-lg font-black text-amber-300 mb-1">1. الكسوف الكلي</div>
-              <p class="text-slate-100">يكون القمر قريباً من الأرض (الحضيض)، فيصل <span class="text-white font-black">الظل التام</span> لسطح الأرض ويُحجب قرص الشمس كلياً وتظهر الهالة الشمسية البيضاء.</p>
-            </div>
-            <div class="rounded-xl p-3.5 bg-slate-950/75 border border-sky-400/35">
-              <div class="text-lg font-black text-sky-300 mb-1">2. الكسوف الجزئي</div>
-              <p class="text-slate-100">يقع الراصد في <span class="text-white font-black">منطقة شبه الظل</span> فقط (أو يكون القمر مائلاً قليلاً عن الاستقامة التامة)، فيُحجب جزء فقط من قرص الشمس.</p>
-            </div>
-            <div class="rounded-xl p-3.5 bg-slate-950/75 border border-orange-400/35">
-              <div class="text-lg font-black text-orange-300 mb-1">3. الكسوف الحلقي</div>
-              <p class="text-slate-100">يكون القمر بعيداً عن الأرض (الأوج)، فينتهي <span class="text-white font-black">مخروط الظل التام قبل وصوله للأرض</span> وتظهر الشمس كـ «حلقة نارية مضيئة».</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===================================================================== -->
-  <!-- نافذة الاختبار التفاعلي (10 أسئلة اختيار من متعدد أ، ب، ج، د) -->
-  <!-- ===================================================================== -->
-  <div id="quiz-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-3 sm:p-5 bg-slate-950/86 backdrop-blur-md">
-    <div class="glass-card rounded-3xl w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden border-2 border-amber-400/60">
-
-      <!-- رأس نافذة الاختبار -->
-      <div class="flex flex-wrap items-center justify-between gap-3 px-5 sm:px-6 py-4 border-b border-white/15 bg-gradient-to-l from-amber-500/15 to-indigo-500/15">
-        <div class="flex items-center gap-3">
-          <span class="text-3xl">📝</span>
-          <div>
-            <h2 class="text-xl sm:text-2xl font-black text-white">اختبار ظاهرة الكسوف والخسوف</h2>
-            <p class="text-sm font-bold text-amber-200">10 أسئلة اختيار من متعدد (أ، ب، ج، د) مع التفسير العلمي الفوري</p>
-          </div>
-        </div>
-        <div class="flex items-center gap-3">
-          <div id="quiz-live-score"
-            class="px-4 py-1.5 rounded-2xl bg-emerald-500/20 border-2 border-emerald-400/50 text-base sm:text-lg font-black text-emerald-300">
-            النتيجة: 0 / 10
-          </div>
-          <button id="btn-close-quiz" type="button"
-            class="w-11 h-11 rounded-2xl bg-white/10 hover:bg-rose-500/35 text-white flex items-center justify-center transition cursor-pointer text-xl font-black"
-            aria-label="إغلاق الاختبار">✕</button>
-        </div>
-      </div>
-
-      <!-- جسم الاختبار القابل للتمرير -->
-      <div class="p-5 sm:p-6 overflow-y-auto custom-scroll flex-1">
-
-        <!-- واجهة عرض الأسئلة -->
-        <div id="quiz-question-view" class="space-y-5">
-          <!-- شريط التقدم + نقاط التنقل بين الأسئلة (1 إلى 10) -->
-          <div class="space-y-2.5">
-            <div class="flex items-center justify-between text-base sm:text-lg font-extrabold">
-              <span id="quiz-counter" class="text-amber-300 font-black">السؤال 1 من 10</span>
-              <span id="quiz-answered-count" class="text-sky-200 text-sm sm:text-base">تمت الإجابة على 0 من 10</span>
-            </div>
-            <div class="w-full h-3 rounded-full bg-slate-900 border border-white/15 overflow-hidden">
-              <div id="quiz-progress-bar" class="h-full bg-gradient-to-l from-amber-400 to-sky-400 transition-all duration-300" style="width: 10%"></div>
-            </div>
-            <!-- نقاط التنقل السريع بين الأسئلة -->
-            <div id="quiz-dots" class="flex flex-wrap items-center justify-center gap-2 pt-1"></div>
-          </div>
-
-          <!-- نص السؤال بخط كبير وواضح -->
-          <div class="rounded-2xl p-4 sm:p-5 bg-white/5 border-2 border-white/15">
-            <p id="quiz-question-text" class="text-xl sm:text-2xl font-black text-white leading-relaxed"></p>
-          </div>
-
-          <!-- الاختيارات الأربعة (أ، ب، ج، د) -->
-          <div id="quiz-options-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
-
-          <!-- صندوق التفسير العلمي الفوري (يظهر بعد الاختيار) -->
-          <div id="quiz-explanation-box" class="hidden rounded-2xl p-4 border-2 leading-relaxed">
-            <div id="quiz-feedback-title" class="text-lg sm:text-xl font-black mb-1"></div>
-            <p id="quiz-explanation-text" class="text-base sm:text-lg font-bold text-slate-100"></p>
-          </div>
-
-          <!-- أزرار التنقل (السابق / التالي / عرض النتيجة النهائية) -->
-          <div class="flex items-center justify-between gap-3 pt-2 border-t border-white/10">
-            <button id="btn-quiz-prev" type="button"
-              class="px-5 py-2.5 rounded-2xl text-base sm:text-lg font-extrabold bg-white/10 hover:bg-white/20 text-white disabled:opacity-35 disabled:cursor-not-allowed transition cursor-pointer">
-              ⟶ السؤال السابق
-            </button>
-
-            <button id="btn-quiz-next" type="button"
-              class="px-6 py-2.5 rounded-2xl text-base sm:text-lg font-black bg-gradient-to-l from-sky-500 to-blue-600 hover:brightness-110 text-white shadow-lg shadow-sky-500/25 transition cursor-pointer">
-              السؤال التالي ⟵
-            </button>
-          </div>
-        </div>
-
-        <!-- شاشة النتيجة النهائية -->
-        <div id="quiz-results-view" class="hidden text-center space-y-6 py-4">
-          <div id="quiz-result-emoji" class="text-6xl sm:text-7xl">🏆</div>
-          <div>
-            <h3 id="quiz-result-title" class="text-3xl sm:text-4xl font-black text-amber-300">ممتاز! عالم فلك رائع</h3>
-            <p id="quiz-result-subtitle" class="text-lg sm:text-xl font-bold text-slate-200 mt-2"></p>
-          </div>
-
-          <!-- بطاقة الدرجة والنسبة المئوية -->
-          <div class="max-w-md mx-auto rounded-3xl p-6 bg-white/5 border-2 border-amber-400/50 space-y-3">
-            <div id="quiz-final-score" class="text-5xl font-black text-white">10 / 10</div>
-            <div id="quiz-final-percent" class="text-2xl font-extrabold text-emerald-400">النسبة المئوية: 100%</div>
-            <div class="w-full h-4 rounded-full bg-slate-900 overflow-hidden border border-white/15">
-              <div id="quiz-final-bar" class="h-full bg-gradient-to-l from-emerald-400 to-amber-400 transition-all duration-700" style="width: 100%"></div>
-            </div>
-          </div>
-
-          <!-- أزرار المراجعة وإعادة الاختبار -->
-          <div class="flex flex-wrap items-center justify-center gap-3 pt-2">
-            <button id="btn-quiz-review" type="button"
-              class="px-6 py-3 rounded-2xl text-lg font-extrabold bg-sky-500/25 border-2 border-sky-400/60 text-sky-100 hover:bg-sky-500/40 transition cursor-pointer">
-              🔍 مراجعة إجاباتي
-            </button>
-            <button id="btn-quiz-restart" type="button"
-              class="px-7 py-3 rounded-2xl text-lg font-black bg-gradient-to-l from-amber-400 to-orange-500 text-slate-950 hover:brightness-110 shadow-lg shadow-amber-500/30 transition cursor-pointer">
-              🔄 إعادة الاختبار
-            </button>
-          </div>
-        </div>
-
-      </div>
-    </div>
-  </div>
-
-  <!-- رسالة خطأ بديلة بدون استخدام alert -->
-  <div id="error-banner" class="fixed top-24 left-1/2 -translate-x-1/2 z-50 hidden glass-card border-rose-500/70 rounded-2xl px-5 py-4 text-lg font-bold text-rose-200 max-w-lg text-center"></div>
-
-  <!-- ===================================================================== -->
-  <!-- السكربت الرئيسي للمشهد ثلاثي الأبعاد والفقاعات ومنظر السماء والاختبار -->
-  <!-- ===================================================================== -->
-  <script>
-    (function () {
-      'use strict';
-
-      // =========================================================================
-      // 1. تعريف الحالات الخمس للكسوف والخسوف وبياناتها العلمية الدقيقة
-      // =========================================================================
-      const SCENARIOS = {
-        totalSolar: {
-          id: 'totalSolar',
-          kind: 'solar',
-          emoji: '☀️',
-          title: 'كسوف كلي للشمس',
-          phase: 'طور المحاق',
-          order: 'الشمس ⟵ القمر (الحضيض / قريب) ⟵ الأرض',
-          time: 'نهاراً — دقائق معدودة',
-          safety: '⚠️ لا تنظر مباشرة بدون نظارة كسوف خاصة',
-          safe: false,
-          peakStageLabel: 'ذروة الكسوف الكلي',
-          shadowZoneLabel: 'الراصد داخل منطقة الظل التام (Umbra)',
-          // موقع القمر في الذروة (قريب من الأرض بحيث يلامس مخروط الظل التام سطح الأرض)
-          moonX: 7.4,
-          moonPeakY: 0.0,
-          moonSweepZ: 5.2,
-          umbraLength: 5.75, // يمتد من القمر (+7.4) ليخترق سطح الأرض (+2.1)
-          penumbraEndRadius: 3.15,
-          hasAntumbra: false,
-        },
-        partialSolar: {
-          id: 'partialSolar',
-          kind: 'solar',
-          emoji: '🌗',
-          title: 'كسوف جزئي للشمس',
-          phase: 'طور المحاق',
-          order: 'الشمس ⟵ القمر (بميل بسيط) ⟵ الأرض',
-          time: 'نهاراً — حتى بضع ساعات',
-          safety: '⚠️ لا تنظر مباشرة بدون نظارة كسوف خاصة',
-          safe: false,
-          peakStageLabel: 'ذروة الكسوف الجزئي',
-          shadowZoneLabel: 'الأرض داخل منطقة شبه الظل (Penumbra)',
-          moonX: 7.8,
-          moonPeakY: 1.55,
-          moonSweepZ: 5.2,
-          umbraLength: 5.65,
-          penumbraEndRadius: 3.45,
-          hasAntumbra: false,
-        },
-        annularSolar: {
-          id: 'annularSolar',
-          kind: 'solar',
-          emoji: '💍',
-          title: 'كسوف حلقي للشمس',
-          phase: 'طور المحاق',
-          order: 'الشمس ⟵ القمر (الأوج / بعيد) ⟵ الأرض',
-          time: 'نهاراً — دقائق معدودة',
-          safety: '⚠️ خطير دائماً! يلزم نظارة كسوف خاصة',
-          safe: false,
-          peakStageLabel: 'ذروة الكسوف الحلقي (حلقة النار)',
-          shadowZoneLabel: 'الأرض في امتداد الظل (Antumbra) — الظل التام لا يصل',
-          moonX: 10.6,
-          moonPeakY: 0.0,
-          moonSweepZ: 5.4,
-          umbraLength: 5.55, // ينتهي مخروط الظل التام عند x ≈ +5.05 قبل سطح الأرض (+2.1)!
-          penumbraEndRadius: 3.7,
-          hasAntumbra: true,
-        },
-        totalLunar: {
-          id: 'totalLunar',
-          kind: 'lunar',
-          emoji: '🔴',
-          title: 'خسوف كلي للقمر',
-          phase: 'طور البدر (ليلة 14–15)',
-          order: 'الشمس ⟵ الأرض ⟵ القمر',
-          time: 'ليلاً — قد يستمر لساعات',
-          safety: '✅ آمن تماماً للمشاهدة بالعين المجردة',
-          safe: true,
-          peakStageLabel: 'ذروة الخسوف الكلي (القمر الدموي)',
-          shadowZoneLabel: 'القمر بالكامل داخل ظل الأرض التام (Umbra)',
-          moonX: -8.2,
-          moonPeakY: 0.0,
-          moonSweepZ: 6.2,
-          umbraLength: 14.5,
-          penumbraEndRadius: 5.2,
-          hasAntumbra: false,
-        },
-        partialLunar: {
-          id: 'partialLunar',
-          kind: 'lunar',
-          emoji: '🌓',
-          title: 'خسوف جزئي للقمر',
-          phase: 'طور البدر (ليلة 14–15)',
-          order: 'الشمس ⟵ الأرض ⟵ القمر (بميل بسيط)',
-          time: 'ليلاً — يستمر لساعة أو أكثر',
-          safety: '✅ آمن تماماً للمشاهدة بالعين المجردة',
-          safe: true,
-          peakStageLabel: 'ذروة الخسوف الجزئي للقمر',
-          shadowZoneLabel: 'جزء من القمر داخل الظل التام والباقي في شبه الظل',
-          moonX: -8.2,
-          moonPeakY: 1.55,
-          moonSweepZ: 6.2,
-          umbraLength: 14.5,
-          penumbraEndRadius: 5.2,
-          hasAntumbra: false,
-        },
-      };
-
-      // =========================================================================
-      // 2. بيانات فقاعات المعلومات ثلاثية الأبعاد
-      // =========================================================================
-      const INFO_BUBBLES = [
-        {
-          id: 'sun',
-          title: 'الشمس (مصدر الضوء)',
-          accent: '#fbbf24',
-          badge: 'نجم متوهج',
-          getContent: (sc) =>
-            sc.kind === 'solar'
-              ? 'تُصدر الشمس أشعة ضوئية مستقيمة نحو الأرض والقمر. أثناء كسوف الشمس، يحجب القمر ضوءها كلياً أو جزئياً عن مناطق محددة على الأرض. ⚠️ تنبيه هام: النظر المباشر للشمس أثناء الكسوف يسبب تلفاً دائماً لشبكية العين ويجب استخدام نظارات كسوف معتمدة.'
-              : 'تُضيء الشمس نصف الكرة الأرضية المواجه لها، وتُلقي الأرض خلفها مخروطاً ضخماً من الظل التام وشبه الظل في الفضاء؛ وعندما يعبر القمر البدر خلال هذا الظل يحدث خسوف القمر.',
-        },
-        {
-          id: 'moon',
-          title: 'القمر',
-          accent: '#38bdf8',
-          badge: 'يدور حول الأرض بمدار مائل 5°',
-          getContent: (sc) => {
-            if (sc.id === 'totalSolar') {
-              return 'يقع القمر في طور «المحاق» ويكون قريباً من الأرض (نقطة الحضيض)، فيبدو حجمه الظاهري كافياً لتغطية كامل قرص الشمس. لماذا لا يحدث الكسوف كل شهر؟ لأن مدار القمر مائل بنحو 5 درجات عن مدار الأرض حول الشمس فلا تصطف الأجرام الثلاثة إلا في أوقات محددة.';
-            }
-            if (sc.id === 'annularSolar') {
-              return 'يقع القمر في طور «المحاق» لكنه يكون في أبعد نقطة عن الأرض (الأوج)، لذلك يبدو قرصه أصغر قليلاً من قرص الشمس ولا يصل رأس مخروط ظله التام إلى سطح الأرض، فتظهر حوله «حلقة نارية مضيئة».';
-            }
-            if (sc.id === 'partialSolar') {
-              return 'يقع القمر في طور «المحاق» لكنه يميل قليلاً عن خط الاستقامة التام بين الشمس والأرض، فيحجب جزءاً فقط من قرص الشمس للراصد على الأرض.';
-            }
-            if (sc.id === 'totalLunar') {
-              return 'يقع القمر في طور «البدر» (منتصف الشهر القمري ليلة 14–15) ويدخل بالكامل في ظل الأرض التام؛ لكنه لا يختفي تماماً بل يظهر بلون أحمر نحاسي «القمر الدموي» لأن الغلاف الجوي للأرض يكسر أشعة الشمس الحمراء ويوجهها نحوه.';
-            }
-            return 'يقع القمر في طور «البدر» ويدخل جزء منه فقط داخل منطقة الظل التام للأرض بينما يبقى جزؤه الآخر في شبه الظل، فيظهر ظل الأرض المقوّس فوق سطح القمر بوضوح.';
-          },
-        },
-        {
-          id: 'earth',
-          title: 'الأرض',
-          accent: '#34d399',
-          badge: 'موقع الراصد',
-          getContent: (sc) =>
-            sc.kind === 'solar'
-              ? 'الأرض أكبر من القمر بنحو أربع مرات، لذلك يكون ظل القمر الساقط عليها صغيراً ومحدود المساحة؛ ومن ثم لا يُرى الكسوف الكلي إلا في شريط جغرافي ضيق على سطح الأرض لبضع دقائق فقط.'
-              : 'تقع الأرض في المنتصف تماماً بين الشمس والقمر؛ وبسبب كبر حجمها مقارنة بالقمر فإن مخروط ظلها التام كبير جداً، ولذلك قد يستمر خسوف القمر لساعات ويُرى من كامل النصف الليلي للأرض بأمان تام بالعين المجردة.',
-        },
-        {
-          id: 'umbra',
-          title: 'منطقة الظل التام (Umbra)',
-          accent: '#f43f5e',
-          badge: 'حجب كامل للضوء',
-          getContent: (sc) => {
-            if (sc.id === 'annularSolar') {
-              return 'في الكسوف الحلقي ينتهي مخروط الظل التام للقمر في الفضاء قبل أن يلامس سطح الأرض بسبب بُعد القمر (الأوج)، وتمتد بعده منطقة «امتداد الظل» (Antumbra) حيث يرى الراصد حلقة مضيئة من الشمس حول القمر.';
-            }
-            return sc.kind === 'solar'
-              ? 'المنطقة الداكنة المركزية التي يُحجب فيها ضوء الشمس بالكامل. كل راصد يتواجد داخل هذه البقعة المظلمة على سطح الأرض يشاهد «كسوفاً كلياً للشمس» وتنكشف له الهالة الشمسية البيضاء.'
-              : 'المخروط المظلم الداخلي الذي تُلقيه الأرض خلفها؛ وعندما يدخل القمر كلياً داخل هذا المخروط يحدث «الخسوف الكلي للقمر»، وعندما يدخل جزء منه فقط يحدث «الخسوف الجزئي».';
-          },
-        },
-        {
-          id: 'penumbra',
-          title: 'منطقة شبه الظل (Penumbra)',
-          accent: '#a78bfa',
-          badge: 'حجب جزئي للضوء',
-          getContent: (sc) =>
-            sc.kind === 'solar'
-              ? 'المنطقة الأوسع والأخف إعتاماً التي تحيط بمخروط الظل التام؛ يصل إليها جزء من أشعة الشمس ويُحجب الجزء الآخر، لذلك يشاهد الراصد الموجود فيها «كسوفاً جزئياً للشمس».'
-              : 'المنطقة الخارجية الأوسع حول ظل الأرض التام؛ عندما يعبر القمر فيها ينخفض سطوعه قليلاً فقط، وعندما يعبر بينها وبين الظل التام يحدث الخسوف الجزئي للقمر.',
-        },
-      ];
-
-      // =========================================================================
-      // 3. بنك أسئلة الاختبار التفاعلي (10 أسئلة دقيقة — اختيارات أ، ب، ج، د)
-      // =========================================================================
-      const ARABIC_LETTERS = ['أ', 'ب', 'ج', 'د'];
-
-      const QUIZ_QUESTIONS = [
-        {
-          question: 'ما هو الترتيب الصحيح للأجرام السماوية عند حدوث ظاهرة كسوف الشمس؟',
-          options: [
-            'الشمس ⟵ الأرض ⟵ القمر',
-            'الشمس ⟵ القمر ⟵ الأرض',
-            'القمر ⟵ الشمس ⟵ الأرض',
-            'الأرض ⟵ الشمس ⟵ القمر',
-          ],
-          correct: 1,
-          explanation:
-            'يحدث كسوف الشمس عندما يقع القمر في المنتصف بين الشمس والأرض على استقامة واحدة، فيحجب ضوء الشمس ويُلقي ظله على سطح الأرض.',
-        },
-        {
-          question: 'في أي طور من أطوار القمر تحدث ظاهرة كسوف الشمس (بأنواعه الكلي والجزئي والحلقي)؟',
-          options: [
-            'طور البدر',
-            'طور التربيع الأول',
-            'طور المحاق',
-            'طور التربيع الأخير',
-          ],
-          correct: 2,
-          explanation:
-            'يحدث كسوف الشمس دائماً عندما يكون القمر في طور «المحاق» (بداية أو نهاية الشهر القمري)، حيث يكون وجهه المظلم مواجهاً للأرض.',
-        },
-        {
-          question: 'في أي طور من أطوار القمر تحدث ظاهرة خسوف القمر؟',
-          options: [
-            'طور البدر',
-            'طور المحاق',
-            'طور الهلال المتزايد',
-            'طور التربيع الأول',
-          ],
-          correct: 0,
-          explanation:
-            'يحدث خسوف القمر دائماً في منتصف الشهر القمري (ليلة 14 أو 15) عندما يكون القمر في طور «البدر» وتقع الأرض بينه وبين الشمس.',
-        },
-        {
-          question: 'ما السبب العلمي لحدوث الكسوف الحلقي للشمس وظهور الشمس كحلقة نارية مضيئة؟',
-          options: [
-            'دوران الأرض بسرعة أكبر من المعتاد',
-            'كون القمر في أبعد نقطة عن الأرض (الأوج) فلا يصل رأس مخروط ظله التام إلى سطح الأرض',
-            'وقوع الأرض بين الشمس والقمر في منتصف الشهر',
-            'تمدد الغلاف الجوي للشمس وزيادة حرارتها فجأة',
-          ],
-          correct: 1,
-          explanation:
-            'في الكسوف الحلقي يكون القمر في أبعد نقطة في مداره عن الأرض (الأوج)، فيبدو حجمه الظاهري أصغر قليلاً من الشمس ولا يصل مخروط ظله التام إلى سطح الأرض، فتبقى حافة الشمس ظاهرة كحلقة مضيئة.',
-        },
-        {
-          question: 'في أي منطقة يجب أن يتواجد الراصد على سطح الأرض ليشاهد كسوفاً كلياً للشمس؟',
-          options: [
-            'منطقة شبه الظل فقط',
-            'النصف الليلي من الكرة الأرضية',
-            'منطقة الظل التام (مخروط الظل) للقمر',
-            'المنطقة القطبية الشمالية دائماً',
-          ],
-          correct: 2,
-          explanation:
-            'لا يُرى الكسوف الكلي للشمس إلا للراصد الموجود داخل منطقة «الظل التام» (Umbra) للقمر، حيث يُحجب قرص الشمس بالكامل وتظهر الهالة الشمسية.',
-        },
-        {
-          question: 'ماذا يشاهد الراصد إذا كان موجوداً في منطقة «شبه الظل» (Penumbra) للقمر أثناء ظاهرة الكسوف؟',
-          options: [
-            'كسوفاً كلياً للشمس',
-            'خسوفاً كلياً للقمر',
-            'لا يشاهد أي ظاهرة فلكية إطلاقاً',
-            'كسوفاً جزئياً للشمس',
-          ],
-          correct: 3,
-          explanation:
-            'تصل إلى منطقة «شبه الظل» بعض أشعة الشمس ويُحجب بعضها الآخر، لذلك يرى الراصد المتواجد فيها «كسوفاً جزئياً للشمس».',
-        },
-        {
-          question: 'ما هو الترتيب الصحيح للأجرام السماوية عند حدوث ظاهرة خسوف القمر؟',
-          options: [
-            'الشمس ⟵ الأرض ⟵ القمر',
-            'الشمس ⟵ القمر ⟵ الأرض',
-            'القمر ⟵ الشمس ⟵ الأرض',
-            'الشمس والأرض والقمر بزاوية قائمة 90°',
-          ],
-          correct: 0,
-          explanation:
-            'يحدث خسوف القمر عندما تقع الأرض في المنتصف بين الشمس والقمر، فتحجب ضوء الشمس المباشر عن القمر ويدخل القمر في منطقة ظل الأرض.',
-        },
-        {
-          question: 'لماذا يظهر القمر بلون أحمر نحاسي (القمر الدموي) أثناء الخسوف الكلي بدلاً من اختفائه تماماً؟',
-          options: [
-            'لأن سطح القمر يحتوي على براكين حمم نشطة تضيء ليلاً',
-            'لأن الغلاف الجوي للأرض يكسر أشعة الشمس الحمراء ويوجهها نحو سطح القمر',
-            'لأن القمر يصبح نجماً مضيئاً بذاته أثناء الخسوف',
-            'بسبب انعكاس ضوء كوكب المريخ الأحمر على القمر',
-          ],
-          correct: 1,
-          explanation:
-            'يعمل الغلاف الجوي للأرض كعدسة تشتّت الضوء الأزرق وتكسر أشعة الشمس ذات الطول الموجي الأحمر لتصل إلى القمر المظلم، فيتوهج بلون أحمر نحاسي جميل.',
-        },
-        {
-          question: 'لماذا لا تحدث ظاهرتا كسوف الشمس وخسوف القمر في كل شهر قمري رغم تكرار طوري المحاق والبدر؟',
-          options: [
-            'لأن الشمس تتوقف عن إصدار الضوء في بعض الأشهر',
-            'لأن القمر يدور حول الأرض مرة واحدة فقط كل سنة',
-            'لأن مدار القمر حول الأرض مائل بنحو 5 درجات عن مستوى مدار الأرض حول الشمس',
-            'لأن السحب تغطي القمر طوال أشهر السنة',
-          ],
-          correct: 2,
-          explanation:
-            'بسبب ميل مستوى مدار القمر بنحو 5 درجات عن مستوى مدار الأرض حول الشمس، يمر القمر عادةً أعلى أو أسفل ظل الأرض (أو يمر ظله بعيداً عن الأرض) ولا يحدث الاصطفاف التام إلا مرتين أو أكثر قليلاً في العام.',
-        },
-        {
-          question: 'أي العبارات التالية صحيحة تماماً بخصوص إجراءات السلامة عند مشاهدة الكسوف والخسوف؟',
-          options: [
-            'النظر المباشر لكسوف الشمس بالعين المجردة آمن تماماً مثل الخسوف',
-            'خسوف القمر يسبب أضراراً خطيرة للعين ويتطلب نظارات خاصة',
-            'يمكن استخدام النظارات الشمسية العادية لمشاهدة كسوف الشمس بأمان',
-            'مشاهدة خسوف القمر آمنة تماماً بالعين المجردة، بينما تتطلب مشاهدة كسوف الشمس نظارات كسوف معتمدة',
-          ],
-          correct: 3,
-          explanation:
-            'النظر إلى خسوف القمر آمن 100% بالعين المجردة لأنه ضوء منعكس خافت، أما النظر إلى كسوف الشمس (ولو جزئياً أو حلقياً) دون نظارات كسوف معتمدة فيعرّض شبكية العين لأشعة حارقة وخطيرة.',
-        },
-      ];
-
-      // =========================================================================
-      // 4. دوال الضوضاء الإجرائية لتوليد خامات ثلاثية الأبعاد واقعية (بدون روابط خارجية)
-      // =========================================================================
-      function hash2D(x, y, seed) {
-        let n = Math.imul(x, 374761393) + Math.imul(y, 668265263) + Math.imul(seed, 1442695041);
-        n = (n ^ (n >>> 13)) * 1274126177;
-        return ((n ^ (n >>> 16)) >>> 0) / 4294967295;
-      }
-
-      function valueNoise2D(x, y, periodX, seed) {
-        const xi = Math.floor(x);
-        const yi = Math.floor(y);
-        const xf = x - xi;
-        const yf = y - yi;
-        const u = xf * xf * (3 - 2 * xf);
-        const v = yf * yf * (3 - 2 * yf);
-        const x0 = ((xi % periodX) + periodX) % periodX;
-        const x1 = (x0 + 1) % periodX;
-        const a = hash2D(x0, yi, seed);
-        const b = hash2D(x1, yi, seed);
-        const c = hash2D(x0, yi + 1, seed);
-        const d = hash2D(x1, yi + 1, seed);
-        return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
-      }
-
-      function fbm2D(x, y, periodX, octaves, seed) {
-        let val = 0;
-        let amp = 0.5;
-        let freq = 1;
-        let norm = 0;
-        for (let i = 0; i < octaves; i++) {
-          val += amp * valueNoise2D(x * freq, y * freq, Math.max(1, Math.round(periodX * freq)), seed + i * 73);
-          norm += amp;
-          amp *= 0.5;
-          freq *= 2;
-        }
-        return val / norm;
-      }
-
-      function createGlowTexture(c0, c1, c2) {
-        const s = 256;
-        const c = document.createElement('canvas');
-        c.width = c.height = s;
-        const ctx = c.getContext('2d');
-        const g = ctx.createRadialGradient(s / 2, s / 2, 4, s / 2, s / 2, s / 2);
-        g.addColorStop(0, c0);
-        g.addColorStop(0.36, c1);
-        g.addColorStop(0.75, c2);
-        g.addColorStop(1, 'rgba(0,0,0,0)');
-        ctx.fillStyle = g;
-        ctx.fillRect(0, 0, s, s);
-        return new THREE.CanvasTexture(c);
-      }
-
-      function generateSunTexture() {
-        const s = 512;
-        const c = document.createElement('canvas');
-        c.width = c.height = s;
-        const ctx = c.getContext('2d');
-        const img = ctx.createImageData(s, s);
-        for (let y = 0; y < s; y++) {
-          for (let x = 0; x < s; x++) {
-            const u = x / s;
-            const v = y / s;
-            const w = fbm2D(u * 8, v * 8, 8, 4, 811);
-            const n = fbm2D(u * 14 + w, v * 14 - w, 14, 4, 823);
-            const idx = (y * s + x) * 4;
-            img.data[idx] = 255;
-            img.data[idx + 1] = Math.min(255, 138 + n * 116);
-            img.data[idx + 2] = Math.min(255, 16 + Math.pow(n, 2) * 155);
-            img.data[idx + 3] = 255;
-          }
-        }
-        ctx.putImageData(img, 0, 0);
-        const tex = new THREE.CanvasTexture(c);
-        tex.encoding = THREE.sRGBEncoding;
-        tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-        return tex;
-      }
-
-      function generateEarthTexture() {
-        const w = 1024;
-        const h = 512;
-        const c = document.createElement('canvas');
-        c.width = w;
-        c.height = h;
-        const ctx = c.getContext('2d');
-        const img = ctx.createImageData(w, h);
-
-        const seeds = [
-          { lon: 22, lat: 8, rx: 24, ry: 26, w: 0.52 },
-          { lon: 25, lat: -18, rx: 14, ry: 18, w: 0.44 },
-          { lon: 46, lat: 23, rx: 13, ry: 10, w: 0.48 },
-          { lon: 18, lat: 50, rx: 24, ry: 14, w: 0.48 },
-          { lon: 80, lat: 52, rx: 46, ry: 20, w: 0.55 },
-          { lon: 102, lat: 30, rx: 26, ry: 18, w: 0.5 },
-          { lon: -100, lat: 46, rx: 32, ry: 20, w: 0.54 },
-          { lon: -60, lat: -15, rx: 17, ry: 24, w: 0.52 },
-          { lon: 134, lat: -25, rx: 17, ry: 11, w: 0.48 },
-        ];
-
-        for (let y = 0; y < h; y++) {
-          const v = y / (h - 1);
-          const lat = 90 - v * 180;
-          const absLat = Math.abs(lat);
-          for (let x = 0; x < w; x++) {
-            const u = x / w;
-            const lon = u * 360 - 180;
-            const coast = fbm2D(u * 8, v * 4, 8, 5, 42);
-            const detail = fbm2D(u * 22, v * 11, 22, 3, 777);
-
-            let land = 0;
-            for (let i = 0; i < seeds.length; i++) {
-              const s = seeds[i];
-              let dLon = lon - s.lon;
-              if (dLon > 180) dLon -= 360;
-              if (dLon < -180) dLon += 360;
-              const dLat = lat - s.lat;
-              const d2 = (dLon * dLon) / (s.rx * s.rx) + (dLat * dLat) / (s.ry * s.ry);
-              if (d2 < 2.2) land += s.w * Math.exp(-d2 * 1.15);
-            }
-            if (lat < -65) land += ((-65 - lat) / 22) * 0.85;
-
-            const elev = land + (coast - 0.47) * 0.7 + (detail - 0.5) * 0.14;
-            const idx = (y * w + x) * 4;
-            let r, g, b;
-
-            if (absLat + (coast - 0.5) * 14 > 79) {
-              r = 238; g = 247; b = 255;
-            } else if (elev > 0.34) {
-              const hN = Math.min(1, (elev - 0.34) / 0.55);
-              const desert = Math.exp(-Math.pow((absLat - 24) / 13, 2)) * fbm2D(u * 9, v * 5, 9, 3, 211);
-              if (desert > 0.34 && absLat < 40) {
-                r = 198 + detail * 24; g = 166 + detail * 20; b = 108 + detail * 16;
-              } else {
-                r = 42 + hN * 68 + detail * 20;
-                g = 118 + (1 - hN) * 44 + detail * 24;
-                b = 54 + detail * 18;
-              }
-            } else {
-              const d = Math.min(1, (0.34 - elev) / 0.4);
-              r = 18 * (1 - d) + 7 * d;
-              g = 98 * (1 - d) + 36 * d;
-              b = 178 * (1 - d) + 104 * d;
-            }
-            img.data[idx] = Math.min(255, Math.max(0, r));
-            img.data[idx + 1] = Math.min(255, Math.max(0, g));
-            img.data[idx + 2] = Math.min(255, Math.max(0, b));
-            img.data[idx + 3] = 255;
-          }
-        }
-        ctx.putImageData(img, 0, 0);
-        const tex = new THREE.CanvasTexture(c);
-        tex.encoding = THREE.sRGBEncoding;
-        tex.anisotropy = 8;
-        return tex;
-      }
-
-      function generateCloudsTexture() {
-        const w = 512;
-        const h = 256;
-        const c = document.createElement('canvas');
-        c.width = w;
-        c.height = h;
-        const ctx = c.getContext('2d');
-        const img = ctx.createImageData(w, h);
-        for (let y = 0; y < h; y++) {
-          for (let x = 0; x < w; x++) {
-            const u = x / w;
-            const v = y / h;
-            const n = fbm2D(u * 9, v * 5, 9, 4, 515);
-            const a = Math.max(0, Math.min(1, (n - 0.53) * 3.1));
-            const idx = (y * w + x) * 4;
-            img.data[idx] = 248;
-            img.data[idx + 1] = 252;
-            img.data[idx + 2] = 255;
-            img.data[idx + 3] = Math.round(a * 190);
-          }
-        }
-        ctx.putImageData(img, 0, 0);
-        const tex = new THREE.CanvasTexture(c);
-        tex.encoding = THREE.sRGBEncoding;
-        return tex;
-      }
-
-      function generateMoonTextures() {
-        const w = 512;
-        const h = 256;
-        const cCol = document.createElement('canvas');
-        cCol.width = w;
-        cCol.height = h;
-        const ctxCol = cCol.getContext('2d');
-        const imgCol = ctxCol.createImageData(w, h);
-
-        const cBump = document.createElement('canvas');
-        cBump.width = w;
-        cBump.height = h;
-        const ctxBump = cBump.getContext('2d');
-        const imgBump = ctxBump.createImageData(w, h);
-
-        const craters = [];
-        for (let i = 0; i < 48; i++) {
-          craters.push({
-            u: hash2D(i, 1, 901),
-            v: 0.1 + hash2D(i, 2, 901) * 0.8,
-            r: 0.016 + hash2D(i, 3, 901) * 0.056,
-          });
-        }
-
-        for (let y = 0; y < h; y++) {
-          const v = y / h;
-          for (let x = 0; x < w; x++) {
-            const u = x / w;
-            const maria = fbm2D(u * 5, v * 3, 5, 4, 313);
-            const grain = fbm2D(u * 26, v * 13, 26, 3, 617);
-
-            let shade = 165 + (maria - 0.5) * 82 + (grain - 0.5) * 30;
-            let bump = 128 + (grain - 0.5) * 50;
-
-            for (let i = 0; i < craters.length; i++) {
-              const cr = craters[i];
-              let du = Math.abs(u - cr.u);
-              if (du > 0.5) du = 1 - du;
-              const dv = (v - cr.v) * 0.55;
-              const dist = Math.hypot(du, dv) / cr.r;
-              if (dist < 1.25) {
-                if (dist < 0.85) {
-                  const depth = 1 - (dist / 0.85) * (dist / 0.85);
-                  shade -= depth * 32;
-                  bump -= depth * 72;
-                } else {
-                  const rim = Math.sin(((dist - 0.85) / 0.4) * Math.PI);
-                  shade += rim * 24;
-                  bump += rim * 48;
-                }
-              }
-            }
-
-            const idx = (y * w + x) * 4;
-            const sCol = Math.min(248, Math.max(66, shade));
-            imgCol.data[idx] = sCol;
-            imgCol.data[idx + 1] = sCol * 0.99;
-            imgCol.data[idx + 2] = sCol * 0.96;
-            imgCol.data[idx + 3] = 255;
-
-            const bVal = Math.min(255, Math.max(0, bump));
-            imgBump.data[idx] = imgBump.data[idx + 1] = imgBump.data[idx + 2] = bVal;
-            imgBump.data[idx + 3] = 255;
-          }
-        }
-        ctxCol.putImageData(imgCol, 0, 0);
-        ctxBump.putImageData(imgBump, 0, 0);
-
-        const map = new THREE.CanvasTexture(cCol);
-        map.encoding = THREE.sRGBEncoding;
-        const bumpMap = new THREE.CanvasTexture(cBump);
-        return { map, bumpMap };
-      }
-
-      // =========================================================================
-      // 5. المتغيرات العامة للمشهد والحالة التفاعلية
-      // =========================================================================
-      const SUN_POS = new THREE.Vector3(21.5, 0, 0);
-      const SUN_RADIUS = 3.55;
-      const EARTH_RADIUS = 2.1;
-      const MOON_RADIUS = 0.86;
-
-      let scene, camera, renderer, controls;
-      let starsMesh, sunMesh, sunTex, sunCorona;
-      let earthGroup, earthMesh, cloudsMesh, atmosphereMesh, earthShadowOverlay;
-      let moonGroup, moonMesh, moonShadowOverlay, bloodMoonGlow;
-      let shadowConesGroup, umbraMesh, penumbraMesh, antumbraMesh;
-      let lightRaysGroup, alignmentLine, moonOrbitPathLine;
-      let clickableBodies = [];
-
-      const state = {
-        scenarioId: 'totalSolar',
-        timeline: 50, // 0 إلى 100 (50 = الذروة)
-        isPlaying: false,
-        autoRotate: false,
-        showRays: true,
-        showBubbles: true,
-        openCards: new Set(),
-        camAnim: null,
-        // مواقع مخاريط الظل المحسوبة لإسقاط فقاعات المعلومات عليها بدقة
-        umbraAnchor: new THREE.Vector3(4.5, 0.7, 0),
-        penumbraAnchor: new THREE.Vector3(4.2, -1.9, 0),
-        // حالة الاختبار التفاعلي
-        quizIndex: 0,
-        quizAnswers: new Array(QUIZ_QUESTIONS.length).fill(null),
-      };
-
-      // مراجع DOM
-      const dom = {
-        container: document.getElementById('canvas-container'),
-        bubblesLayer: document.getElementById('bubbles-layer'),
-        cardsLayer: document.getElementById('cards-layer'),
-        loader: document.getElementById('loader-overlay'),
-        headerIconBox: document.getElementById('header-icon-box'),
-        hudModeEmoji: document.getElementById('hud-mode-emoji'),
-        hudTitle: document.getElementById('hud-scenario-title'),
-        hudBody: document.getElementById('observer-hud-body'),
-        btnToggleHud: document.getElementById('btn-toggle-hud'),
-        skyViewCanvas: document.getElementById('sky-view-canvas'),
-        hudStageLabel: document.getElementById('hud-stage-label'),
-        hudShadowZone: document.getElementById('hud-shadow-zone'),
-        badgePhase: document.getElementById('badge-phase'),
-        badgeTime: document.getElementById('badge-time'),
-        badgeOrder: document.getElementById('badge-order'),
-        badgeSafetyBox: document.getElementById('badge-safety-box'),
-        badgeSafety: document.getElementById('badge-safety'),
-        bottomDock: document.getElementById('bottom-dock'),
-        dockStatusDot: document.getElementById('dock-status-dot'),
-        btnCollapseDock: document.getElementById('btn-collapse-dock'),
-        btnPlayPause: document.getElementById('btn-play-pause'),
-        playPauseIcon: document.getElementById('play-pause-icon'),
-        playPauseLabel: document.getElementById('play-pause-label'),
-        timelineSlider: document.getElementById('eclipse-timeline'),
-        timelineReadout: document.getElementById('timeline-readout'),
-        btnJumpPeak: document.getElementById('btn-jump-peak'),
-        btnToggleRays: document.getElementById('btn-toggle-rays'),
-        btnToggleRaysIcon: document.getElementById('btn-toggle-rays-icon'),
-        btnToggleBubbles: document.getElementById('btn-toggle-bubbles'),
-        btnToggleBubblesIcon: document.getElementById('btn-toggle-bubbles-icon'),
-        btnAutoRotate: document.getElementById('btn-auto-rotate'),
-        btnZoomIn: document.getElementById('btn-zoom-in'),
-        btnZoomOut: document.getElementById('btn-zoom-out'),
-        btnResetView: document.getElementById('btn-reset-view'),
-        btnCompare: document.getElementById('btn-compare-modal'),
-        compareModal: document.getElementById('compare-modal'),
-        btnCloseCompare: document.getElementById('btn-close-compare'),
-        btnQuiz: document.getElementById('btn-quiz-modal'),
-        quizModal: document.getElementById('quiz-modal'),
-        btnCloseQuiz: document.getElementById('btn-close-quiz'),
-        quizLiveScore: document.getElementById('quiz-live-score'),
-        quizQuestionView: document.getElementById('quiz-question-view'),
-        quizResultsView: document.getElementById('quiz-results-view'),
-        quizCounter: document.getElementById('quiz-counter'),
-        quizAnsweredCount: document.getElementById('quiz-answered-count'),
-        quizProgressBar: document.getElementById('quiz-progress-bar'),
-        quizDots: document.getElementById('quiz-dots'),
-        quizQuestionText: document.getElementById('quiz-question-text'),
-        quizOptionsGrid: document.getElementById('quiz-options-grid'),
-        quizExplanationBox: document.getElementById('quiz-explanation-box'),
-        quizFeedbackTitle: document.getElementById('quiz-feedback-title'),
-        quizExplanationText: document.getElementById('quiz-explanation-text'),
-        btnQuizPrev: document.getElementById('btn-quiz-prev'),
-        btnQuizNext: document.getElementById('btn-quiz-next'),
-        quizResultEmoji: document.getElementById('quiz-result-emoji'),
-        quizResultTitle: document.getElementById('quiz-result-title'),
-        quizResultSubtitle: document.getElementById('quiz-result-subtitle'),
-        quizFinalScore: document.getElementById('quiz-final-score'),
-        quizFinalPercent: document.getElementById('quiz-final-percent'),
-        quizFinalBar: document.getElementById('quiz-final-bar'),
-        btnQuizReview: document.getElementById('btn-quiz-review'),
-        btnQuizRestart: document.getElementById('btn-quiz-restart'),
-        errorBanner: document.getElementById('error-banner'),
-      };
-
-      const pinElements = {};
-      const cardElements = {};
-
-      // =========================================================================
-      // 6. بناء مشهد Three.js (الشمس، الأرض، القمر، الظلال الدقيقة، الأشعة)
-      // =========================================================================
-      function initThree() {
-        const w = dom.container.clientWidth || window.innerWidth;
-        const h = dom.container.clientHeight || window.innerHeight;
-
-        scene = new THREE.Scene();
-
-        camera = new THREE.PerspectiveCamera(44, w / h, 0.1, 450);
-        const isMobile = w < 720;
-        camera.position.set(5.5, isMobile ? 12.5 : 8.2, isMobile ? 29.0 : 22.8);
-
-        renderer = new THREE.WebGLRenderer({
-          antialias: true,
-          alpha: true,
-          powerPreference: 'high-performance',
-        });
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        renderer.setSize(w, h);
-        renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.15;
-        renderer.outputEncoding = THREE.sRGBEncoding;
-        renderer.domElement.className = 'three-canvas';
-        dom.container.appendChild(renderer.domElement);
-
-        controls = new THREE.OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true;
-        controls.dampingFactor = 0.065;
-        controls.enablePan = true;
-        controls.minDistance = 6.5;
-        controls.maxDistance = 58;
-        controls.target.set(5.0, 0, 0);
-        controls.addEventListener('start', () => {
-          state.camAnim = null;
-        });
-
-        // الإضاءة الفضائية القادمة من الشمس
-        const ambLight = new THREE.AmbientLight(0x94a3b8, 0.42);
-        const sunDirLight = new THREE.DirectionalLight(0xfffbeb, 2.55);
-        sunDirLight.position.set(30, 2, 2);
-        const sunPointLight = new THREE.PointLight(0xffd075, 2.2, 80, 0.8);
-        sunPointLight.position.copy(SUN_POS);
-        scene.add(ambLight, sunDirLight, sunPointLight);
-
-        // خلفية النجوم اللامعة
-        buildStarfield();
-
-        // 1) الشمس
-        sunTex = generateSunTexture();
-        sunMesh = new THREE.Mesh(
-          new THREE.SphereGeometry(SUN_RADIUS, 60, 44),
-          new THREE.MeshBasicMaterial({ map: sunTex })
-        );
-        sunMesh.position.copy(SUN_POS);
-        sunMesh.userData.bubbleId = 'sun';
-        scene.add(sunMesh);
-        clickableBodies.push(sunMesh);
-
-        sunCorona = new THREE.Sprite(
-          new THREE.SpriteMaterial({
-            map: createGlowTexture('rgba(255,252,220,0.98)', 'rgba(255,180,45,0.52)', 'rgba(255,90,0,0.06)'),
-            blending: THREE.AdditiveBlending,
-            transparent: true,
-            depthWrite: false,
-          })
-        );
-        sunCorona.scale.set(14.5, 14.5, 1);
-        sunMesh.add(sunCorona);
-
-        // 2) الأرض + السحب + الغلاف الجوي (Fresnel) + طبقة إسقاط بقعة ظل الكسوف الحية
-        earthGroup = new THREE.Group();
-        scene.add(earthGroup);
-
-        earthMesh = new THREE.Mesh(
-          new THREE.SphereGeometry(EARTH_RADIUS, 64, 48),
-          new THREE.MeshStandardMaterial({
-            map: generateEarthTexture(),
-            roughness: 0.72,
-            metalness: 0.08,
-          })
-        );
-        earthMesh.userData.bubbleId = 'earth';
-        earthGroup.add(earthMesh);
-        clickableBodies.push(earthMesh);
-
-        cloudsMesh = new THREE.Mesh(
-          new THREE.SphereGeometry(EARTH_RADIUS + 0.045, 48, 36),
-          new THREE.MeshStandardMaterial({
-            map: generateCloudsTexture(),
-            transparent: true,
-            opacity: 0.65,
-            depthWrite: false,
-          })
-        );
-        earthGroup.add(cloudsMesh);
-
-        // غلاف جوي أزرق بتأثير Fresnel
-        atmosphereMesh = new THREE.Mesh(
-          new THREE.SphereGeometry(EARTH_RADIUS + 0.19, 48, 36),
-          new THREE.ShaderMaterial({
-            uniforms: { uColor: { value: new THREE.Color('#38bdf8') } },
-            vertexShader: `
-              varying vec3 vNormal;
-              varying vec3 vViewDir;
-              void main() {
-                vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
-                vNormal = normalize(normalMatrix * normal);
-                vViewDir = normalize(-mvPos.xyz);
-                gl_Position = projectionMatrix * mvPos;
-              }
-            `,
-            fragmentShader: `
-              uniform vec3 uColor;
-              varying vec3 vNormal;
-              varying vec3 vViewDir;
-              void main() {
-                float f = pow(1.0 - max(0.0, dot(vNormal, vViewDir)), 3.1);
-                gl_FragColor = vec4(uColor, f * 0.72);
-              }
-            `,
-            transparent: true,
-            blending: THREE.AdditiveBlending,
-            depthWrite: false,
-          })
-        );
-        earthGroup.add(atmosphereMesh);
-
-        // طبقة إسقاط بقعة الظل التام وشبه الظل على وجه الأرض النهاري أثناء كسوف الشمس
-        earthShadowOverlay = new THREE.Mesh(
-          new THREE.SphereGeometry(EARTH_RADIUS + 0.068, 64, 48),
-          new THREE.ShaderMaterial({
-            uniforms: {
-              uActive: { value: 1.0 },
-              uSunPos: { value: SUN_POS.clone() },
-              uMoonPos: { value: new THREE.Vector3(7.4, 0, 0) },
-              uUmbraRadius: { value: 0.42 },
-              uPenumbraRadius: { value: 1.55 },
-              uUmbraDarkness: { value: 0.92 },
-            },
-            vertexShader: `
-              varying vec3 vWorldPos;
-              void main() {
-                vec4 wp = modelMatrix * vec4(position, 1.0);
-                vWorldPos = wp.xyz;
-                gl_Position = projectionMatrix * viewMatrix * wp;
-              }
-            `,
-            fragmentShader: `
-              uniform float uActive;
-              uniform vec3 uSunPos;
-              uniform vec3 uMoonPos;
-              uniform float uUmbraRadius;
-              uniform float uPenumbraRadius;
-              uniform float uUmbraDarkness;
-              varying vec3 vWorldPos;
-
-              void main() {
-                if (uActive < 0.5 || vWorldPos.x < 0.0) discard;
-                // حساب بعد نقطة سطح الأرض عن محور أشعة (الشمس -> القمر)
-                vec3 rayDir = normalize(uMoonPos - uSunPos);
-                vec3 toFrag = vWorldPos - uSunPos;
-                float proj = dot(toFrag, rayDir);
-                vec3 closest = uSunPos + rayDir * proj;
-                float dist = length(vWorldPos - closest);
-
-                float penumbra = 1.0 - smoothstep(uUmbraRadius, uPenumbraRadius, dist);
-                float umbra = 1.0 - smoothstep(max(0.01, uUmbraRadius * 0.55), max(0.05, uUmbraRadius), dist);
-
-                float alpha = clamp(penumbra * 0.48 + umbra * (uUmbraDarkness - 0.35), 0.0, 0.94);
-                if (alpha < 0.02) discard;
-                vec3 col = mix(vec3(0.05, 0.07, 0.16), vec3(0.01, 0.01, 0.03), umbra);
-                gl_FragColor = vec4(col, alpha);
-              }
-            `,
-            transparent: true,
-            depthWrite: false,
-          })
-        );
-        earthGroup.add(earthShadowOverlay);
-
-        // 3) القمر + طبقة ظل الأرض النحاسية الحمراء الديناميكية أثناء الخسوف
-        moonGroup = new THREE.Group();
-        scene.add(moonGroup);
-
-        const moonTex = generateMoonTextures();
-        moonMesh = new THREE.Mesh(
-          new THREE.SphereGeometry(MOON_RADIUS, 56, 42),
-          new THREE.MeshStandardMaterial({
-            map: moonTex.map,
-            bumpMap: moonTex.bumpMap,
-            bumpScale: 0.04,
-            roughness: 0.9,
-            metalness: 0.03,
-          })
-        );
-        moonMesh.userData.bubbleId = 'moon';
-        moonGroup.add(moonMesh);
-        clickableBodies.push(moonMesh);
-
-        // طبقة شيدر دقيقة تُظهر ظل الأرض المقوّس ولون «القمر الدموي» النحاسي على سطح القمر ثلاثي الأبعاد
-        moonShadowOverlay = new THREE.Mesh(
-          new THREE.SphereGeometry(MOON_RADIUS + 0.018, 56, 42),
-          new THREE.ShaderMaterial({
-            uniforms: {
-              uActive: { value: 0.0 },
-              uUmbraRadius: { value: 1.52 },
-              uPenumbraRadius: { value: 2.85 },
-            },
-            vertexShader: `
-              varying vec3 vWorldPos;
-              void main() {
-                vec4 wp = modelMatrix * vec4(position, 1.0);
-                vWorldPos = wp.xyz;
-                gl_Position = projectionMatrix * viewMatrix * wp;
-              }
-            `,
-            fragmentShader: `
-              uniform float uActive;
-              uniform float uUmbraRadius;
-              uniform float uPenumbraRadius;
-              varying vec3 vWorldPos;
-              void main() {
-                if (uActive < 0.5) discard;
-                // محور ظل الأرض يمتد على طول محور -X (y=0, z=0)
-                float radialDist = length(vWorldPos.yz);
-                float inUmbra = 1.0 - smoothstep(uUmbraRadius - 0.18, uUmbraRadius + 0.18, radialDist);
-                float inPenumbra = 1.0 - smoothstep(uUmbraRadius, uPenumbraRadius, radialDist);
-
-                // اللون النحاسي المحمر المميز للخسوف الكلي مع حافة داكنة للظل المقوّس
-                vec3 bloodColor = vec3(0.72, 0.14, 0.04);
-                vec3 darkEdge = vec3(0.08, 0.03, 0.05);
-                vec3 col = mix(darkEdge, bloodColor, smoothstep(0.15, 0.85, inUmbra));
-
-                float alpha = clamp(inPenumbra * 0.28 + inUmbra * 0.78, 0.0, 0.86);
-                if (alpha < 0.02) discard;
-                gl_FragColor = vec4(col, alpha);
-              }
-            `,
-            transparent: true,
-            depthWrite: false,
-          })
-        );
-        moonGroup.add(moonShadowOverlay);
-
-        // هالة حمراء ناعمة حول القمر الدموي أثناء ذروة الخسوف الكلي
-        bloodMoonGlow = new THREE.Sprite(
-          new THREE.SpriteMaterial({
-            map: createGlowTexture('rgba(239,68,68,0.85)', 'rgba(185,28,28,0.38)', 'rgba(127,29,29,0)'),
-            blending: THREE.AdditiveBlending,
-            transparent: true,
-            opacity: 0,
-            depthWrite: false,
-          })
-        );
-        bloodMoonGlow.scale.set(3.4, 3.4, 1);
-        moonGroup.add(bloodMoonGlow);
-
-        // 4) مجموعة مخاريط الظل التام وشبه الظل وامتداد الظل (Umbra / Penumbra / Antumbra)
-        shadowConesGroup = new THREE.Group();
-        scene.add(shadowConesGroup);
-
-        // 5) خط الاستقامة الذهبي المتقطع + مسار القمر + أشعة الشمس
-        const alignGeo = new THREE.BufferGeometry().setFromPoints([
-          new THREE.Vector3(-13.5, 0, 0),
-          new THREE.Vector3(SUN_POS.x - SUN_RADIUS, 0, 0),
-        ]);
-        const alignMat = new THREE.LineDashedMaterial({
-          color: 0xfbbf24,
-          dashSize: 0.7,
-          gapSize: 0.45,
-          transparent: true,
-          opacity: 0.75,
-        });
-        alignmentLine = new THREE.Line(alignGeo, alignMat);
-        alignmentLine.computeLineDistances();
-        scene.add(alignmentLine);
-
-        lightRaysGroup = new THREE.Group();
-        scene.add(lightRaysGroup);
-
-        moonOrbitPathLine = new THREE.Line(
-          new THREE.BufferGeometry(),
-          new THREE.LineBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.35 })
-        );
-        scene.add(moonOrbitPathLine);
-      }
-
-      function buildStarfield() {
-        const count = 2300;
-        const pos = new Float32Array(count * 3);
-        for (let i = 0; i < count; i++) {
-          const r = 70 + Math.random() * 140;
-          const th = Math.random() * Math.PI * 2;
-          const ph = Math.acos(2 * Math.random() - 1);
-          pos[i * 3] = r * Math.sin(ph) * Math.cos(th);
-          pos[i * 3 + 1] = r * Math.cos(ph);
-          pos[i * 3 + 2] = r * Math.sin(ph) * Math.sin(th);
-        }
-        const geo = new THREE.BufferGeometry();
-        geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-        starsMesh = new THREE.Points(
-          geo,
-          new THREE.PointsMaterial({
-            color: 0xe2e8f0,
-            size: 0.75,
-            map: createGlowTexture('rgba(255,255,255,1)', 'rgba(191,219,254,0.65)', 'rgba(0,0,0,0)'),
-            transparent: true,
-            opacity: 0.9,
-            depthWrite: false,
-            blending: THREE.AdditiveBlending,
-          })
-        );
-        scene.add(starsMesh);
-      }
-
-      /**
-       * إنشاء مخروط/أسطوانة ناقصة ممتدة من نقطة البداية إلى نقطة النهاية بدقة هندسية
-       */
-      function createOrientedFrustum(startPos, endPos, rStart, rEnd, material) {
-        const dir = new THREE.Vector3().subVectors(endPos, startPos);
-        const len = dir.length();
-        if (len < 0.05) return new THREE.Group();
-
-        const geo = new THREE.CylinderGeometry(rEnd, rStart, len, 44, 1, true);
-        const mesh = new THREE.Mesh(geo, material);
-        const mid = new THREE.Vector3().addVectors(startPos, endPos).multiplyScalar(0.5);
-        mesh.position.copy(mid);
-        mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
-        return mesh;
-      }
-
-      /**
-       * تحديث موضع القمر ومخاريط الظل التام وشبه الظل وأشعة الشمس بناءً على السيناريو والشريط الزمني
-       */
-      function updateEclipseGeometry() {
-        const sc = SCENARIOS[state.scenarioId];
-        // تحويل الشريط (0..100) إلى معامل انحراف (-1..+1) حيث 0 هو الذروة عند 50%
-        const u = (state.timeline - 50) / 50;
-
-        // حساب موقع القمر السلس على مساره المداري
-        const moonZ = u * sc.moonSweepZ;
-        const moonY = sc.moonPeakY + u * 0.45;
-        const moonX = sc.moonX - Math.abs(u) * (sc.kind === 'solar' ? 0.35 : -0.35);
-        moonGroup.position.set(moonX, moonY, moonZ);
-
-        // تحديث خط مسار القمر التوضيحي
-        const pathPts = [];
-        for (let i = -20; i <= 20; i++) {
-          const tu = i / 20;
-          pathPts.push(
-            new THREE.Vector3(
-              sc.moonX - Math.abs(tu) * (sc.kind === 'solar' ? 0.35 : -0.35),
-              sc.moonPeakY + tu * 0.45,
-              tu * sc.moonSweepZ
-            )
-          );
-        }
-        moonOrbitPathLine.geometry.dispose();
-        moonOrbitPathLine.geometry = new THREE.BufferGeometry().setFromPoints(pathPts);
-
-        // تنظيف مخاريط الظل والأشعة السابقة لإعادة بنائها بدقة عالية
-        while (shadowConesGroup.children.length) {
-          const ch = shadowConesGroup.children[0];
-          if (ch.geometry) ch.geometry.dispose();
-          if (ch.material) ch.material.dispose();
-          shadowConesGroup.remove(ch);
-        }
-        while (lightRaysGroup.children.length) {
-          const ch = lightRaysGroup.children[0];
-          if (ch.geometry) ch.geometry.dispose();
-          if (ch.material) ch.material.dispose();
-          lightRaysGroup.remove(ch);
-        }
-
-        const umbraMat = new THREE.MeshBasicMaterial({
-          color: 0x050816,
-          transparent: true,
-          opacity: 0.62,
-          side: THREE.DoubleSide,
-          depthWrite: false,
-        });
-        const penumbraMat = new THREE.MeshBasicMaterial({
-          color: sc.kind === 'solar' ? 0x6366f1 : 0x4f46e5,
-          transparent: true,
-          opacity: 0.17,
-          side: THREE.DoubleSide,
-          depthWrite: false,
-        });
-        const antumbraMat = new THREE.MeshBasicMaterial({
-          color: 0xf97316,
-          transparent: true,
-          opacity: 0.24,
-          side: THREE.DoubleSide,
-          depthWrite: false,
-        });
-
-        // اتجاه محور الظل (من الشمس عبر الجسم الحاجب)
-        const occluderPos = sc.kind === 'solar' ? moonGroup.position.clone() : new THREE.Vector3(0, 0, 0);
-        const occluderR = sc.kind === 'solar' ? MOON_RADIUS : EARTH_RADIUS;
-        const axisDir = new THREE.Vector3().subVectors(occluderPos, SUN_POS).normalize();
-
-        if (sc.kind === 'solar') {
-          // مخروط الظل التام للقمر (Umbra)
-          const umbraEnd = occluderPos.clone().addScaledVector(axisDir, sc.umbraLength);
-          umbraMesh = createOrientedFrustum(occluderPos, umbraEnd, occluderR * 0.96, 0.03, umbraMat);
-          shadowConesGroup.add(umbraMesh);
-
-          // مخروط شبه الظل للقمر (Penumbra) الممتد نحو الأرض
-          const penLen = occluderPos.length() + 1.8;
-          const penEnd = occluderPos.clone().addScaledVector(axisDir, penLen);
-          penumbraMesh = createOrientedFrustum(occluderPos, penEnd, occluderR * 1.02, sc.penumbraEndRadius, penumbraMat);
-          shadowConesGroup.add(penumbraMesh);
-
-          // في الكسوف الحلقي: إظهار مخروط «امتداد الظل» (Antumbra) بوضوح من رأس الظل التام إلى سطح الأرض
-          if (sc.hasAntumbra) {
-            const antLen = Math.max(1.2, occluderPos.length() - sc.umbraLength - EARTH_RADIUS + 0.6);
-            const antEnd = umbraEnd.clone().addScaledVector(axisDir, antLen);
-            antumbraMesh = createOrientedFrustum(umbraEnd, antEnd, 0.04, 0.78, antumbraMat);
-            shadowConesGroup.add(antumbraMesh);
-          }
-
-          // تحديث نقاط تثبيت فقاعتي الظل التام وشبه الظل
-          state.umbraAnchor.copy(occluderPos).addScaledVector(axisDir, sc.umbraLength * 0.56).add(new THREE.Vector3(0, 0.6, 0));
-          state.penumbraAnchor.copy(occluderPos).addScaledVector(axisDir, penLen * 0.62).add(new THREE.Vector3(0, -1.75, 0));
-
-          // تحديث إسقاط بقعة الظل على وجه الأرض النهاري
-          const earthUniforms = earthShadowOverlay.material.uniforms;
-          earthUniforms.uActive.value = 1.0;
-          earthUniforms.uMoonPos.value.copy(moonGroup.position);
-          if (sc.id === 'totalSolar') {
-            earthUniforms.uUmbraRadius.value = 0.52;
-            earthUniforms.uPenumbraRadius.value = 1.75;
-            earthUniforms.uUmbraDarkness.value = 0.94;
-          } else if (sc.id === 'annularSolar') {
-            earthUniforms.uUmbraRadius.value = 0.56;
-            earthUniforms.uPenumbraRadius.value = 1.95;
-            earthUniforms.uUmbraDarkness.value = 0.58; // أقل إعتاماً بسبب الحلقة المضيئة
-          } else {
-            earthUniforms.uUmbraRadius.value = 0.35;
-            earthUniforms.uPenumbraRadius.value = 1.9;
-            earthUniforms.uUmbraDarkness.value = 0.85;
-          }
-
-          // تعطيل ظل الخسوف على القمر
-          moonShadowOverlay.material.uniforms.uActive.value = 0.0;
-          bloodMoonGlow.material.opacity = 0;
-          moonMesh.material.emissive.setHex(0x000000);
-          moonMesh.material.emissiveIntensity = 0;
-        } else {
-          // حالات خسوف القمر: الأرض تُلقي مخروط الظل التام وشبه الظل خلفها (-X)
-          const umbraEnd = occluderPos.clone().addScaledVector(axisDir, sc.umbraLength);
-          umbraMesh = createOrientedFrustum(occluderPos, umbraEnd, occluderR * 0.98, 0.25, umbraMat);
-          shadowConesGroup.add(umbraMesh);
-
-          const penEnd = occluderPos.clone().addScaledVector(axisDir, sc.umbraLength);
-          penumbraMesh = createOrientedFrustum(occluderPos, penEnd, occluderR * 1.02, sc.penumbraEndRadius, penumbraMat);
-          shadowConesGroup.add(penumbraMesh);
-
-          state.umbraAnchor.set(-5.2, 0.85, 0);
-          state.penumbraAnchor.set(-5.8, -2.65, 0);
-
-          // تعطيل بقعة الكسوف على الأرض وتفعيل ظل الأرض النحاسي على القمر
-          earthShadowOverlay.material.uniforms.uActive.value = 0.0;
-          moonShadowOverlay.material.uniforms.uActive.value = 1.0;
-
-          // حساب مدى دخول القمر داخل مخروط ظل الأرض لإشعال توهج «القمر الدموي»
-          const radialDist = Math.hypot(moonGroup.position.y, moonGroup.position.z);
-          const umbraRAtMoon = 1.52;
-          const immersion = THREE.MathUtils.clamp(1 - (radialDist - 0.35) / (umbraRAtMoon + 0.45), 0, 1);
-
-          bloodMoonGlow.material.opacity = immersion * 0.78;
-          moonMesh.material.emissive.setRGB(0.55 * immersion, 0.09 * immersion, 0.02 * immersion);
-          moonMesh.material.emissiveIntensity = immersion * 0.85;
-        }
-
-        // رسم أشعة الشمس المماسية الأربع التي تشرح هندسياً تكوّن الظل التام وشبه الظل
-        buildTangentLightRays(occluderPos, occluderR, sc.kind === 'solar' ? sc.umbraLength + 3.2 : sc.umbraLength);
-        lightRaysGroup.visible = state.showRays;
-
-        // تحديث شريط القراءة والـ HUD ومعاينة السماء
-        updateObserverHUDAndSkyView(sc, u);
-      }
-
-      /**
-       * رسم الأشعة الذهبية المماسية (أعلى وأسفل) لإيضاح تكوّن الظل التام وشبه الظل هندسياً
-       */
-      function buildTangentLightRays(occPos, occR, extendLen) {
-        const rayMatOuter = new THREE.LineBasicMaterial({ color: 0xfde047, transparent: true, opacity: 0.55 });
-        const rayMatCross = new THREE.LineBasicMaterial({ color: 0x93c5fd, transparent: true, opacity: 0.35 });
-
-        const offsets = [
-          { sy: SUN_RADIUS * 0.92, oy: occR * 0.96, mat: rayMatOuter },
-          { sy: -SUN_RADIUS * 0.92, oy: -occR * 0.96, mat: rayMatOuter },
-          { sy: SUN_RADIUS * 0.92, oy: -occR * 0.96, mat: rayMatCross },
-          { sy: -SUN_RADIUS * 0.92, oy: occR * 0.96, mat: rayMatCross },
-        ];
-
-        offsets.forEach((o) => {
-          const p0 = new THREE.Vector3(SUN_POS.x, o.sy, 0);
-          const p1 = new THREE.Vector3(occPos.x, occPos.y + o.oy, occPos.z);
-          const dir = new THREE.Vector3().subVectors(p1, p0).normalize();
-          const p2 = p1.clone().addScaledVector(dir, extendLen);
-          const geo = new THREE.BufferGeometry().setFromPoints([p0, p2]);
-          lightRaysGroup.add(new THREE.Line(geo, o.mat));
-        });
-      }
-
-      // =========================================================================
-      // 7. رسم "منظر من سطح الأرض" الحي (2D HTML5 Canvas) وتحديث البطاقة
-      // =========================================================================
-      function updateObserverHUDAndSkyView(sc, u) {
-        const pct = Math.round(state.timeline);
-        const absU = Math.abs(u);
-
-        let stageText = sc.peakStageLabel;
-        if (absU > 0.62) {
-          stageText = u < 0 ? 'بداية دخول الظاهرة' : 'نهاية الظاهرة والانجلاء';
-        } else if (absU > 0.22) {
-          stageText = u < 0 ? 'تزايد الاحتجاب تدريجياً' : 'تناقص الاحتجاب تدريجياً';
-        }
-
-        dom.hudStageLabel.textContent = stageText;
-        dom.timelineReadout.textContent =
-          absU < 0.08 ? `الذروة — ${pct}%` : `${stageText} — ${pct}%`;
-
-        drawSkyViewCanvas(sc, u);
-      }
-
-      function drawSkyViewCanvas(sc, u) {
-        const canvas = dom.skyViewCanvas;
-        const ctx = canvas.getContext('2d');
-        const w = canvas.width;
-        const h = canvas.height;
-        const cx = w / 2;
-        const cy = h / 2;
-        const R = w * 0.31; // نصف قطر الشمس أو القمر الأساسي
-
-        ctx.clearRect(0, 0, w, h);
-
-        // قص دائري نظيف لمنظر السماء
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(cx, cy, w * 0.49, 0, Math.PI * 2);
-        ctx.clip();
-
-        if (sc.kind === 'solar') {
-          // إظلام السماء تدريجياً عند اقتراب الكسوف الكلي من الذروة
-          const totality = sc.id === 'totalSolar' ? Math.max(0, 1 - Math.abs(u) * 3.8) : 0;
-          const skyGrad = ctx.createRadialGradient(cx, cy, 4, cx, cy, w * 0.55);
-          if (totality > 0.35) {
-            skyGrad.addColorStop(0, '#091026');
-            skyGrad.addColorStop(1, '#02040b');
-          } else {
-            skyGrad.addColorStop(0, '#1e4e8c');
-            skyGrad.addColorStop(1, '#081b3b');
-          }
-          ctx.fillStyle = skyGrad;
-          ctx.fillRect(0, 0, w, h);
-
-          // نجوم خافتة تظهر في السماء لحظة ذروة الكسوف الكلي
-          if (totality > 0.45) {
-            ctx.fillStyle = `rgba(255,255,255,${(totality - 0.45) * 1.5})`;
-            [
-              [22, 34], [142, 28], [34, 134], [136, 138], [86, 18], [148, 86], [20, 82],
-            ].forEach(([sx, sy]) => {
-              ctx.beginPath();
-              ctx.arc(sx, sy, 1.5, 0, Math.PI * 2);
-              ctx.fill();
-            });
-          }
-
-          // الهالة الشمسية البيضاء المتوهجة في ذروة الكسوف الكلي
-          if (totality > 0.2) {
-            const corona = ctx.createRadialGradient(cx, cy, R * 0.9, cx, cy, R * 2.15);
-            corona.addColorStop(0, `rgba(255,255,255,${totality * 0.92})`);
-            corona.addColorStop(0.35, `rgba(186,230,253,${totality * 0.42})`);
-            corona.addColorStop(1, 'rgba(0,0,0,0)');
-            ctx.fillStyle = corona;
-            ctx.beginPath();
-            ctx.arc(cx, cy, R * 2.15, 0, Math.PI * 2);
-            ctx.fill();
-          }
-
-          // توهج الشمس الذهبي المحيط
-          const sunHalo = ctx.createRadialGradient(cx, cy, R * 0.7, cx, cy, R * 1.55);
-          sunHalo.addColorStop(0, 'rgba(253, 224, 71, 0.85)');
-          sunHalo.addColorStop(0.55, 'rgba(249, 115, 22, 0.35)');
-          sunHalo.addColorStop(1, 'rgba(249, 115, 22, 0)');
-          ctx.fillStyle = sunHalo;
-          ctx.beginPath();
-          ctx.arc(cx, cy, R * 1.55, 0, Math.PI * 2);
-          ctx.fill();
-
-          // قرص الشمس المتوهج
-          const sunDisc = ctx.createRadialGradient(cx - 6, cy - 6, 4, cx, cy, R);
-          sunDisc.addColorStop(0, '#fffbeb');
-          sunDisc.addColorStop(0.75, '#facc15');
-          sunDisc.addColorStop(1, '#f97316');
-          ctx.fillStyle = sunDisc;
-          ctx.beginPath();
-          ctx.arc(cx, cy, R, 0, Math.PI * 2);
-          ctx.fill();
-
-          // قرص القمر المظلم المتحرك أمام الشمس
-          const moonR = sc.id === 'annularSolar' ? R * 0.82 : sc.id === 'totalSolar' ? R * 1.03 : R * 0.98;
-          const offsetX = u * (R * 2.25);
-          const offsetY = sc.id === 'partialSolar' ? -R * 0.78 : 0;
-
-          ctx.fillStyle = '#040712';
-          ctx.beginPath();
-          ctx.arc(cx + offsetX, cy + offsetY, moonR, 0, Math.PI * 2);
-          ctx.fill();
-
-          // وميض «خاتم الماس» قبيل/بعيد ذروة الكسوف الكلي
-          if (sc.id === 'totalSolar' && Math.abs(u) > 0.04 && Math.abs(u) < 0.14) {
-            const flashX = cx + (u > 0 ? -R * 0.98 : R * 0.98);
-            const flash = ctx.createRadialGradient(flashX, cy, 1, flashX, cy, 16);
-            flash.addColorStop(0, 'rgba(255,255,255,1)');
-            flash.addColorStop(0.4, 'rgba(253,224,71,0.7)');
-            flash.addColorStop(1, 'rgba(255,255,255,0)');
-            ctx.fillStyle = flash;
-            ctx.beginPath();
-            ctx.arc(flashX, cy, 16, 0, Math.PI * 2);
-            ctx.fill();
-          }
-        } else {
-          // سماء ليلية مرصعة بالنجوم لخسوف القمر
-          const nightGrad = ctx.createRadialGradient(cx, cy, 6, cx, cy, w * 0.55);
-          nightGrad.addColorStop(0, '#0f172a');
-          nightGrad.addColorStop(1, '#020617');
-          ctx.fillStyle = nightGrad;
-          ctx.fillRect(0, 0, w, h);
-
-          ctx.fillStyle = 'rgba(226, 232, 240, 0.75)';
-          [
-            [24, 28], [140, 32], [30, 140], [138, 134], [84, 16], [150, 82], [18, 92], [116, 22],
-          ].forEach(([sx, sy]) => {
-            ctx.beginPath();
-            ctx.arc(sx, sy, 1.3, 0, Math.PI * 2);
-            ctx.fill();
-          });
-
-          // قرص القمر البدر المفصّل
-          const moonGrad = ctx.createRadialGradient(cx - 8, cy - 8, 4, cx, cy, R);
-          moonGrad.addColorStop(0, '#f8fafc');
-          moonGrad.addColorStop(0.7, '#cbd5e1');
-          moonGrad.addColorStop(1, '#94a3b8');
-          ctx.fillStyle = moonGrad;
-          ctx.beginPath();
-          ctx.arc(cx, cy, R, 0, Math.PI * 2);
-          ctx.fill();
-
-          // فوهات قمرية لطيفة
-          ctx.fillStyle = 'rgba(71, 85, 105, 0.28)';
-          [
-            [-14, -10, 9], [12, -6, 11], [-4, 15, 8], [14, 14, 6], [-18, 8, 5],
-          ].forEach(([fx, fy, fr]) => {
-            ctx.beginPath();
-            ctx.arc(cx + fx, cy + fy, fr, 0, Math.PI * 2);
-            ctx.fill();
-          });
-
-          // قص دائرة القمر لتطبيق ظل الأرض المقوّس ولون القمر الدموي بدقة
-          ctx.save();
-          ctx.beginPath();
-          ctx.arc(cx, cy, R, 0, Math.PI * 2);
-          ctx.clip();
-
-          const shadowR = R * 1.9;
-          const shX = cx + u * (R * 3.15);
-          const shY = sc.id === 'partialLunar' ? cy - R * 1.65 : cy;
-
-          const shGrad = ctx.createRadialGradient(shX, shY, shadowR * 0.25, shX, shY, shadowR * 1.08);
-          shGrad.addColorStop(0, 'rgba(185, 42, 16, 0.88)');
-          shGrad.addColorStop(0.72, 'rgba(127, 25, 14, 0.86)');
-          shGrad.addColorStop(0.92, 'rgba(20, 8, 12, 0.78)');
-          shGrad.addColorStop(1, 'rgba(15, 23, 42, 0)');
-
-          ctx.fillStyle = shGrad;
-          ctx.beginPath();
-          ctx.arc(shX, shY, shadowR * 1.08, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.restore();
-        }
-
-        ctx.restore();
-      }
-
-      // =========================================================================
-      // 8. تبديل السيناريوهات وتحديث السمات والألوان
-      // =========================================================================
-      function selectScenario(scenarioId) {
-        const sc = SCENARIOS[scenarioId];
-        if (!sc) return;
-        state.scenarioId = scenarioId;
-        state.timeline = 50;
-        dom.timelineSlider.value = '50';
-
-        const isSolar = sc.kind === 'solar';
-        document.body.classList.toggle('theme-solar', isSolar);
-        document.body.classList.toggle('theme-lunar', !isSolar);
-
-        // تحديث أيقونة الشريط العلوي
-        dom.headerIconBox.querySelector('div').textContent = sc.emoji;
-        dom.dockStatusDot.className = isSolar
-          ? 'w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse'
-          : 'w-2.5 h-2.5 rounded-full bg-rose-400 animate-pulse';
-
-        // تحديث بطاقة المنظر من سطح الأرض والشارات الأربع
-        dom.hudModeEmoji.textContent = sc.emoji;
-        dom.hudTitle.textContent = sc.title;
-        dom.hudTitle.className = isSolar
-          ? 'text-base sm:text-lg font-black text-amber-300 leading-tight'
-          : 'text-base sm:text-lg font-black text-rose-300 leading-tight';
-        dom.hudShadowZone.textContent = sc.shadowZoneLabel;
-        dom.hudShadowZone.className = isSolar
-          ? 'text-xs sm:text-sm font-extrabold text-amber-300 leading-snug'
-          : 'text-xs sm:text-sm font-extrabold text-rose-300 leading-snug';
-
-        dom.badgePhase.textContent = sc.phase;
-        dom.badgePhase.className = isSolar
-          ? 'text-sm sm:text-base font-black text-amber-300 mt-0.5'
-          : 'text-sm sm:text-base font-black text-rose-300 mt-0.5';
-        dom.badgeTime.textContent = sc.time;
-        dom.badgeOrder.textContent = sc.order;
-        dom.badgeSafety.textContent = sc.safety;
-
-        if (sc.safe) {
-          dom.badgeSafetyBox.className = 'col-span-2 rounded-xl px-2.5 py-2 bg-emerald-500/20 border border-emerald-400/50';
-          dom.badgeSafety.className = 'text-xs sm:text-sm font-extrabold text-emerald-200 leading-snug';
-        } else {
-          dom.badgeSafetyBox.className = 'col-span-2 rounded-xl px-2.5 py-2 bg-rose-500/20 border border-rose-400/50';
-          dom.badgeSafety.className = 'text-xs sm:text-sm font-extrabold text-rose-100 leading-snug';
-        }
-
-        // تمييز زر الحالة النشطة
-        document.querySelectorAll('.scenario-btn').forEach((btn) => {
-          const active = btn.dataset.scenario === scenarioId;
-          btn.classList.toggle('ring-2', active);
-          btn.classList.toggle('ring-white', active);
-          btn.classList.toggle('scale-[1.03]', active);
-          btn.classList.toggle('brightness-125', active);
-        });
-
-        updateEclipseGeometry();
-        refreshOpenBubbleCards();
-        setCameraPreset('overview');
-      }
-
-      /**
-       * اختصارات منظور الكاميرا (منظور عام / منظور علوي / تقريب للظل)
-       */
-      function setCameraPreset(viewName) {
-        const sc = SCENARIOS[state.scenarioId];
-        const isSolar = sc.kind === 'solar';
-        const isMobile = window.innerWidth < 720;
-
-        let target, pos;
-        if (viewName === 'top') {
-          target = new THREE.Vector3(isSolar ? 6.2 : 1.5, 0, 0);
-          pos = new THREE.Vector3(isSolar ? 6.2 : 1.5, isMobile ? 34 : 27, 2.2);
-        } else if (viewName === 'shadow') {
-          target = isSolar ? new THREE.Vector3(4.2, 0, 0) : new THREE.Vector3(-4.5, 0, 0);
-          pos = isSolar
-            ? new THREE.Vector3(4.8, 3.2, isMobile ? 16.5 : 12.8)
-            : new THREE.Vector3(-4.2, 3.5, isMobile ? 17.5 : 13.8);
-        } else {
-          // منظور عام مثالي
-          target = new THREE.Vector3(isSolar ? 5.6 : 1.8, 0, 0);
-          pos = isSolar
-            ? new THREE.Vector3(5.8, isMobile ? 12.0 : 7.8, isMobile ? 29.0 : 22.8)
-            : new THREE.Vector3(1.5, isMobile ? 13.0 : 8.5, isMobile ? 31.5 : 24.8);
-        }
-
-        state.camAnim = { pos, target };
-
-        document.querySelectorAll('.cam-view-btn').forEach((btn) => {
-          const active = btn.dataset.camView === viewName;
-          btn.classList.toggle('bg-white/20', active);
-          btn.classList.toggle('text-white', active);
-        });
-      }
-
-      // =========================================================================
-      // 9. إنشاء وإدارة فقاعات المعلومات ثلاثية الأبعاد
-      // =========================================================================
-      function buildInfoBubbles() {
-        dom.bubblesLayer.innerHTML = '';
-        dom.cardsLayer.innerHTML = '';
-
-        const sc = SCENARIOS[state.scenarioId];
-
-        INFO_BUBBLES.forEach((item) => {
-          const wrap = document.createElement('div');
-          wrap.className = 'info-pin-wrapper';
-
-          const btn = document.createElement('button');
-          btn.type = 'button';
-          btn.className = 'info-pin-btn';
-          btn.style.setProperty('--accent-color', item.accent);
-          btn.innerHTML = `
-            <span class="pin-dot" style="background:${item.accent}; box-shadow:0 0 11px ${item.accent};"></span>
-            <span>${item.title}</span>
-          `;
-          btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            toggleBubbleCard(item.id);
-          });
-
-          wrap.appendChild(btn);
-          dom.bubblesLayer.appendChild(wrap);
-          pinElements[item.id] = { wrap, btn, item };
-
-          const card = document.createElement('div');
-          card.className = 'bubble-card glass-card hidden-card p-5';
-          card.style.borderColor = `${item.accent}99`;
-          card.innerHTML = `
-            <div class="flex items-start justify-between gap-3 mb-3">
-              <div class="flex items-center gap-2.5">
-                <span class="w-4 h-4 rounded-full flex-shrink-0" style="background:${item.accent}; box-shadow:0 0 14px ${item.accent};"></span>
-                <div>
-                  <h3 class="text-xl font-black text-white leading-tight">${item.title}</h3>
-                  <span class="inline-block mt-1 px-2.5 py-0.5 rounded-lg text-xs font-extrabold bg-white/10" style="color:${item.accent}">${item.badge}</span>
-                </div>
-              </div>
-              <button type="button" data-close-card="${item.id}"
-                class="w-9 h-9 rounded-xl bg-white/10 hover:bg-rose-500/35 text-white flex items-center justify-center transition cursor-pointer font-black text-lg flex-shrink-0"
-                aria-label="إغلاق">✕</button>
-            </div>
-            <p data-card-body="${item.id}" class="text-[17px] sm:text-[18px] font-bold text-slate-100 leading-[1.75]">
-              ${item.getContent(sc)}
-            </p>
-          `;
-
-          card.querySelector(`[data-close-card="${item.id}"]`).addEventListener('click', (e) => {
-            e.stopPropagation();
-            state.openCards.delete(item.id);
-            refreshOpenBubbleCards();
-          });
-
-          dom.cardsLayer.appendChild(card);
-          cardElements[item.id] = card;
-        });
-      }
-
-      function toggleBubbleCard(id) {
-        if (!state.showBubbles) setBubblesVisible(true);
-        if (state.openCards.has(id)) {
-          state.openCards.delete(id);
-        } else {
-          if (window.innerWidth < 1024) state.openCards.clear();
-          state.openCards.add(id);
-        }
-        refreshOpenBubbleCards();
-      }
-
-      function refreshOpenBubbleCards() {
-        const sc = SCENARIOS[state.scenarioId];
-        Object.entries(pinElements).forEach(([id, obj]) => {
-          const isOpen = state.openCards.has(id) && state.showBubbles;
-          const card = cardElements[id];
-          if (isOpen) {
-            const body = card.querySelector(`[data-card-body="${id}"]`);
-            if (body) body.textContent = obj.item.getContent(sc);
-            card.classList.remove('hidden-card');
-            obj.btn.classList.add('active');
-          } else {
-            card.classList.add('hidden-card');
-            obj.btn.classList.remove('active');
-          }
-        });
-      }
-
-      const _proj = new THREE.Vector3();
-
-      function updateBubblesProjection() {
-        const w = window.innerWidth;
-        const h = window.innerHeight;
-        const isSmall = w < 820;
-
-        Object.entries(pinElements).forEach(([id, obj]) => {
-          if (!state.showBubbles) {
-            obj.wrap.style.opacity = '0';
-            obj.btn.style.pointerEvents = 'none';
-            return;
-          }
-
-          if (id === 'sun') _proj.set(SUN_POS.x, SUN_RADIUS + 1.0, 0);
-          else if (id === 'earth') _proj.set(0, EARTH_RADIUS + 1.15, 0);
-          else if (id === 'moon') _proj.copy(moonGroup.position).add(new THREE.Vector3(0, MOON_RADIUS + 1.05, 0));
-          else if (id === 'umbra') _proj.copy(state.umbraAnchor);
-          else if (id === 'penumbra') _proj.copy(state.penumbraAnchor);
-
-          _proj.project(camera);
-          const behind = _proj.z > 1;
-          const sx = (_proj.x * 0.5 + 0.5) * w;
-          const sy = (-_proj.y * 0.5 + 0.5) * h;
-
-          const cx = Math.max(82, Math.min(w - 82, sx));
-          const cy = Math.max(86, Math.min(h - 168, sy));
-
-          obj.wrap.style.opacity = behind ? '0' : '1';
-          obj.btn.style.pointerEvents = behind ? 'none' : 'auto';
-          obj.wrap.style.transform = `translate3d(${cx.toFixed(1)}px, ${cy.toFixed(1)}px, 0)`;
-
-          if (state.openCards.has(id)) {
-            const card = cardElements[id];
-            const cw = card.offsetWidth || 380;
-            const ch = card.offsetHeight || 220;
-            let lx, ly;
-            if (isSmall) {
-              lx = (w - cw) / 2;
-              ly = 86;
-            } else {
-              lx = cx < w * 0.5 ? cx + 28 : cx - cw - 28;
-              ly = cy - ch * 0.42;
-              lx = Math.max(70, Math.min(w - cw - 22, lx));
-              ly = Math.max(92, Math.min(h - ch - 180, ly));
-            }
-            card.style.left = `${lx.toFixed(1)}px`;
-            card.style.top = `${ly.toFixed(1)}px`;
-          }
-        });
-      }
-
-      // =========================================================================
-      // 10. نظام الاختبار التفاعلي (10 أسئلة أ، ب، ج، د مع التقييم والشرح الفوري)
-      // =========================================================================
-      function getQuizScore() {
-        return state.quizAnswers.reduce((acc, ans, idx) => acc + (ans === QUIZ_QUESTIONS[idx].correct ? 1 : 0), 0);
-      }
-
-      function renderQuizQuestion() {
-        dom.quizQuestionView.classList.remove('hidden');
-        dom.quizResultsView.classList.add('hidden');
-
-        const idx = state.quizIndex;
-        const q = QUIZ_QUESTIONS[idx];
-        const chosen = state.quizAnswers[idx];
-        const answeredTotal = state.quizAnswers.filter((a) => a !== null).length;
-        const score = getQuizScore();
-
-        dom.quizLiveScore.textContent = `النتيجة: ${score} / ${QUIZ_QUESTIONS.length}`;
-        dom.quizCounter.textContent = `السؤال ${idx + 1} من ${QUIZ_QUESTIONS.length}`;
-        dom.quizAnsweredCount.textContent = `تمت الإجابة على ${answeredTotal} من ${QUIZ_QUESTIONS.length}`;
-        dom.quizProgressBar.style.width = `${((idx + 1) / QUIZ_QUESTIONS.length) * 100}%`;
-        dom.quizQuestionText.textContent = `${idx + 1}. ${q.question}`;
-
-        // بناء نقاط التنقل بين الأسئلة العشرة
-        dom.quizDots.innerHTML = '';
-        QUIZ_QUESTIONS.forEach((item, i) => {
-          const dot = document.createElement('button');
-          dot.type = 'button';
-          const ans = state.quizAnswers[i];
-          let cls = 'w-9 h-9 rounded-xl font-black text-sm border-2 transition cursor-pointer ';
-          if (i === idx) {
-            cls += 'ring-2 ring-white scale-110 ';
-          }
-          if (ans === null) {
-            cls += 'bg-white/10 border-white/20 text-slate-200 hover:bg-white/20';
-          } else if (ans === item.correct) {
-            cls += 'bg-emerald-500/30 border-emerald-400 text-emerald-200';
-          } else {
-            cls += 'bg-rose-500/30 border-rose-400 text-rose-200';
-          }
-          dot.className = cls;
-          dot.textContent = `${i + 1}`;
-          dot.addEventListener('click', () => {
-            state.quizIndex = i;
-            renderQuizQuestion();
-          });
-          dom.quizDots.appendChild(dot);
-        });
-
-        // بناء الاختيارات الأربعة (أ، ب، ج، د)
-        dom.quizOptionsGrid.innerHTML = '';
-        q.options.forEach((optText, optIdx) => {
-          const btn = document.createElement('button');
-          btn.type = 'button';
-          const isAnswered = chosen !== null;
-          const isSelected = chosen === optIdx;
-          const isCorrect = optIdx === q.correct;
-
-          let cardClass =
-            'w-full text-right p-4 rounded-2xl border-2 flex items-center gap-3.5 transition text-base sm:text-lg font-extrabold leading-snug ';
-          let badgeClass =
-            'w-10 h-10 rounded-xl flex items-center justify-center font-black text-lg flex-shrink-0 border-2 ';
-
-          if (!isAnswered) {
-            cardClass += 'bg-white/5 border-white/15 text-slate-100 hover:bg-sky-500/20 hover:border-sky-400/60 cursor-pointer active:scale-[0.99]';
-            badgeClass += 'bg-amber-500/20 border-amber-400/55 text-amber-300';
-          } else if (isCorrect) {
-            cardClass += 'bg-emerald-500/25 border-emerald-400 text-white shadow-lg shadow-emerald-500/20 cursor-default';
-            badgeClass += 'bg-emerald-500 border-emerald-300 text-slate-950';
-          } else if (isSelected && !isCorrect) {
-            cardClass += 'bg-rose-500/25 border-rose-400 text-rose-100 cursor-default';
-            badgeClass += 'bg-rose-500 border-rose-300 text-white';
-          } else {
-            cardClass += 'bg-white/5 border-white/10 text-slate-400 opacity-65 cursor-default';
-            badgeClass += 'bg-white/10 border-white/15 text-slate-400';
-          }
-
-          btn.className = cardClass;
-          btn.innerHTML = `
-            <span class="${badgeClass}">${ARABIC_LETTERS[optIdx]}</span>
-            <span class="flex-1">${optText}</span>
-            ${isAnswered && isCorrect ? '<span class="text-2xl flex-shrink-0">✅</span>' : ''}
-            ${isAnswered && isSelected && !isCorrect ? '<span class="text-2xl flex-shrink-0">❌</span>' : ''}
-          `;
-
-          if (!isAnswered) {
-            btn.addEventListener('click', () => {
-              state.quizAnswers[idx] = optIdx;
-              renderQuizQuestion();
-            });
-          }
-
-          dom.quizOptionsGrid.appendChild(btn);
-        });
-
-        // إظهار التفسير العلمي فور الإجابة
-        if (chosen !== null) {
-          const right = chosen === q.correct;
-          dom.quizExplanationBox.classList.remove('hidden');
-          dom.quizExplanationBox.className = right
-            ? 'rounded-2xl p-4 border-2 bg-emerald-500/15 border-emerald-400/60 leading-relaxed'
-            : 'rounded-2xl p-4 border-2 bg-rose-500/15 border-rose-400/60 leading-relaxed';
-          dom.quizFeedbackTitle.textContent = right
-            ? '✅ أحسنت! إجابة صحيحة — التفسير العلمي:'
-            : `❌ إجابة غير صحيحة (الصواب هو «${ARABIC_LETTERS[q.correct]}») — التفسير العلمي:`;
-          dom.quizFeedbackTitle.className = right
-            ? 'text-lg sm:text-xl font-black mb-1 text-emerald-300'
-            : 'text-lg sm:text-xl font-black mb-1 text-rose-300';
-          dom.quizExplanationText.textContent = q.explanation;
-        } else {
-          dom.quizExplanationBox.classList.add('hidden');
-        }
-
-        // أزرار السابق والتالي / عرض النتيجة
-        dom.btnQuizPrev.disabled = idx === 0;
-        const isLast = idx === QUIZ_QUESTIONS.length - 1;
-        if (isLast) {
-          dom.btnQuizNext.textContent = '🏆 عرض النتيجة النهائية';
-          dom.btnQuizNext.className =
-            'px-6 py-2.5 rounded-2xl text-base sm:text-lg font-black bg-gradient-to-l from-amber-400 to-orange-500 text-slate-950 hover:brightness-110 shadow-lg shadow-amber-500/30 transition cursor-pointer';
-        } else {
-          dom.btnQuizNext.textContent = 'السؤال التالي ⟵';
-          dom.btnQuizNext.className =
-            'px-6 py-2.5 rounded-2xl text-base sm:text-lg font-black bg-gradient-to-l from-sky-500 to-blue-600 hover:brightness-110 text-white shadow-lg shadow-sky-500/25 transition cursor-pointer';
-        }
-      }
-
-      function showQuizResults() {
-        dom.quizQuestionView.classList.add('hidden');
-        dom.quizResultsView.classList.remove('hidden');
-
-        const score = getQuizScore();
-        const total = QUIZ_QUESTIONS.length;
-        const pct = Math.round((score / total) * 100);
-
-        dom.quizFinalScore.textContent = `${score} / ${total}`;
-        dom.quizFinalPercent.textContent = `النسبة المئوية: ${pct}%`;
-        dom.quizFinalBar.style.width = `${pct}%`;
-
-        if (score >= 9) {
-          dom.quizResultEmoji.textContent = '🏆';
-          dom.quizResultTitle.textContent = 'ممتاز! أنت عالم فلك مبدع';
-          dom.quizResultTitle.className = 'text-3xl sm:text-4xl font-black text-amber-300';
-          dom.quizResultSubtitle.textContent = 'إتقان رائع لجميع مفاهيم الكسوف والخسوف وأطوار القمر ومناطق الظل!';
-        } else if (score >= 7) {
-          dom.quizResultEmoji.textContent = '🌟';
-          dom.quizResultTitle.textContent = 'رائع جداً!';
-          dom.quizResultTitle.className = 'text-3xl sm:text-4xl font-black text-emerald-300';
-          dom.quizResultSubtitle.textContent = 'أداء قوي ومميز، يمكنك مراجعة الأسئلة القليلة لتصل للدرجة الكاملة.';
-        } else if (score >= 5) {
-          dom.quizResultEmoji.textContent = '👍';
-          dom.quizResultTitle.textContent = 'جيد جداً — بداية موفقة';
-          dom.quizResultTitle.className = 'text-3xl sm:text-4xl font-black text-sky-300';
-          dom.quizResultSubtitle.textContent = 'جرّب استكشاف المحاكاة ثلاثية الأبعاد وجدول المقارنة ثم أعد الاختبار.';
-        } else {
-          dom.quizResultEmoji.textContent = '🔭';
-          dom.quizResultTitle.textContent = 'حاول مجدداً لتتقن الدرس!';
-          dom.quizResultTitle.className = 'text-3xl sm:text-4xl font-black text-rose-300';
-          dom.quizResultSubtitle.textContent = 'استعرض حالات الكسوف والخسوف في النموذج ثلاثي الأبعاد ثم أعد المحاولة وستتفوق!';
-        }
-      }
-
-      function resetQuiz() {
-        state.quizIndex = 0;
-        state.quizAnswers.fill(null);
-        renderQuizQuestion();
-      }
-
-      // =========================================================================
-      // 11. ربط جميع الأحداث والتفاعلات
-      // =========================================================================
-      function setRaysVisible(visible) {
-        state.showRays = visible;
-        if (lightRaysGroup) lightRaysGroup.visible = visible;
-        dom.btnToggleRays.textContent = visible ? '☀️ إخفاء أشعة الشمس' : '☀️ إظهار أشعة الشمس';
-        dom.btnToggleRaysIcon.classList.toggle('text-amber-300', visible);
-        dom.btnToggleRaysIcon.classList.toggle('bg-amber-500/15', visible);
-        dom.btnToggleRaysIcon.classList.toggle('text-slate-400', !visible);
-      }
-
-      function setBubblesVisible(visible) {
-        state.showBubbles = visible;
-        dom.btnToggleBubbles.textContent = visible ? '💬 إخفاء الفقاعات' : '💬 إظهار الفقاعات';
-        dom.btnToggleBubblesIcon.classList.toggle('text-cyan-300', visible);
-        dom.btnToggleBubblesIcon.classList.toggle('bg-cyan-500/15', visible);
-        dom.btnToggleBubblesIcon.classList.toggle('text-slate-400', !visible);
-        refreshOpenBubbleCards();
-      }
-
-      function updatePlayButtonUI() {
-        dom.playPauseIcon.textContent = state.isPlaying ? '⏸' : '▶';
-        dom.playPauseLabel.textContent = state.isPlaying ? 'إيقاف الحركة' : 'تشغيل الحركة';
-      }
-
-      function bindEvents() {
-        // أزرار الحالات الخمس
-        document.querySelectorAll('.scenario-btn').forEach((btn) => {
-          btn.addEventListener('click', () => selectScenario(btn.dataset.scenario));
-        });
-
-        // اختصارات منظور الكاميرا
-        document.querySelectorAll('[data-cam-view]').forEach((btn) => {
-          btn.addEventListener('click', () => setCameraPreset(btn.dataset.camView));
-        });
-
-        // شريط مراحل الظاهرة (0% إلى 100%)
-        dom.timelineSlider.addEventListener('input', (e) => {
-          state.isPlaying = false;
-          updatePlayButtonUI();
-          state.timeline = parseFloat(e.target.value);
-          updateEclipseGeometry();
-        });
-
-        dom.btnJumpPeak.addEventListener('click', () => {
-          state.isPlaying = false;
-          updatePlayButtonUI();
-          state.timeline = 50;
-          dom.timelineSlider.value = '50';
-          updateEclipseGeometry();
-        });
-
-        dom.btnPlayPause.addEventListener('click', () => {
-          state.isPlaying = !state.isPlaying;
-          if (state.isPlaying && state.timeline >= 99) state.timeline = 0;
-          updatePlayButtonUI();
-        });
-
-        // أزرار الأشعة والفقاعات وطيّ البطاقات
-        dom.btnToggleRays.addEventListener('click', () => setRaysVisible(!state.showRays));
-        dom.btnToggleRaysIcon.addEventListener('click', () => setRaysVisible(!state.showRays));
-
-        dom.btnToggleBubbles.addEventListener('click', () => setBubblesVisible(!state.showBubbles));
-        dom.btnToggleBubblesIcon.addEventListener('click', () => setBubblesVisible(!state.showBubbles));
-
-        dom.btnToggleHud.addEventListener('click', () => {
-          const hidden = dom.hudBody.classList.toggle('hidden');
-          dom.btnToggleHud.textContent = hidden ? 'توسيع' : 'تصغير';
-        });
-
-        dom.btnCollapseDock.addEventListener('click', () => {
-          const collapsed = dom.bottomDock.classList.toggle('dock-collapsed');
-          dom.btnCollapseDock.textContent = collapsed ? 'إظهار الشريط ▴' : 'إخفاء الشريط ▾';
-        });
-
-        // أزرار الكاميرا الجانبية
-        const zoomBy = (factor) => {
-          state.camAnim = null;
-          const offset = camera.position.clone().sub(controls.target);
-          const nextLen = THREE.MathUtils.clamp(offset.length() * factor, controls.minDistance, controls.maxDistance);
-          offset.setLength(nextLen);
-          camera.position.copy(controls.target).add(offset);
-          controls.update();
-        };
-        dom.btnZoomIn.addEventListener('click', () => zoomBy(0.8));
-        dom.btnZoomOut.addEventListener('click', () => zoomBy(1.25));
-        dom.btnResetView.addEventListener('click', () => setCameraPreset('overview'));
-
-        dom.btnAutoRotate.addEventListener('click', () => {
-          state.autoRotate = !state.autoRotate;
-          controls.autoRotate = state.autoRotate;
-          controls.autoRotateSpeed = 1.1;
-          dom.btnAutoRotate.classList.toggle('text-sky-300', state.autoRotate);
-          dom.btnAutoRotate.classList.toggle('bg-sky-500/25', state.autoRotate);
-          dom.btnAutoRotate.classList.toggle('text-slate-300', !state.autoRotate);
-        });
-
-        // النقر المباشر على الأجرام ثلاثية الأبعاد (الشمس، الأرض، القمر) لفتح فقاعاتها
-        const raycaster = new THREE.Raycaster();
-        const ptr = new THREE.Vector2();
-        let downPos = { x: 0, y: 0 };
-
-        renderer.domElement.addEventListener('pointerdown', (e) => {
-          downPos = { x: e.clientX, y: e.clientY };
-        });
-
-        renderer.domElement.addEventListener('pointerup', (e) => {
-          if (Math.hypot(e.clientX - downPos.x, e.clientY - downPos.y) > 7) return;
-          const rect = renderer.domElement.getBoundingClientRect();
-          ptr.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-          ptr.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-          raycaster.setFromCamera(ptr, camera);
-          const hits = raycaster.intersectObjects(clickableBodies, false);
-          if (hits.length > 0 && hits[0].object.userData.bubbleId) {
-            toggleBubbleCard(hits[0].object.userData.bubbleId);
-          }
-        });
-
-        // نافذة جدول المقارنة
-        dom.btnCompare.addEventListener('click', () => {
-          dom.compareModal.classList.remove('hidden');
-          dom.compareModal.classList.add('flex');
-        });
-        dom.btnCloseCompare.addEventListener('click', () => {
-          dom.compareModal.classList.add('hidden');
-          dom.compareModal.classList.remove('flex');
-        });
-        dom.compareModal.addEventListener('click', (e) => {
-          if (e.target === dom.compareModal) {
-            dom.compareModal.classList.add('hidden');
-            dom.compareModal.classList.remove('flex');
-          }
-        });
-
-        // نافذة الاختبار التفاعلي (10 أسئلة)
-        dom.btnQuiz.addEventListener('click', () => {
-          dom.quizModal.classList.remove('hidden');
-          dom.quizModal.classList.add('flex');
-          renderQuizQuestion();
-        });
-        dom.btnCloseQuiz.addEventListener('click', () => {
-          dom.quizModal.classList.add('hidden');
-          dom.quizModal.classList.remove('flex');
-        });
-        dom.quizModal.addEventListener('click', (e) => {
-          if (e.target === dom.quizModal) {
-            dom.quizModal.classList.add('hidden');
-            dom.quizModal.classList.remove('flex');
-          }
-        });
-
-        dom.btnQuizPrev.addEventListener('click', () => {
-          if (state.quizIndex > 0) {
-            state.quizIndex--;
-            renderQuizQuestion();
-          }
-        });
-        dom.btnQuizNext.addEventListener('click', () => {
-          if (state.quizIndex < QUIZ_QUESTIONS.length - 1) {
-            state.quizIndex++;
-            renderQuizQuestion();
-          } else {
-            showQuizResults();
-          }
-        });
-        dom.btnQuizReview.addEventListener('click', () => {
-          state.quizIndex = 0;
-          renderQuizQuestion();
-        });
-        dom.btnQuizRestart.addEventListener('click', resetQuiz);
-
-        // استجابة المشهد لتغيير أبعاد الشاشة
-        window.addEventListener('resize', () => {
-          const w = dom.container.clientWidth || window.innerWidth;
-          const h = dom.container.clientHeight || window.innerHeight;
-          camera.aspect = w / h;
-          camera.updateProjectionMatrix();
-          renderer.setSize(w, h);
-        });
-      }
-
-      // =========================================================================
-      // 12. حلقة التحريك الرئيسية السلسة (60fps)
-      // =========================================================================
-      const clock = new THREE.Clock();
-
-      function animate() {
-        requestAnimationFrame(animate);
-        const dt = Math.min(clock.getDelta(), 0.05);
-        const elapsed = clock.getElapsedTime();
-
-        // دوران لطيف مستمر للشمس والأرض والسحب والنجوم
-        sunTex.offset.x += dt * 0.024;
-        sunTex.offset.y += dt * 0.008;
-        const coronaPulse = 14.4 + Math.sin(elapsed * 2.4) * 0.45;
-        sunCorona.scale.set(coronaPulse, coronaPulse, 1);
-
-        earthMesh.rotation.y += dt * 0.16;
-        cloudsMesh.rotation.y += dt * 0.21;
-        starsMesh.rotation.y += dt * 0.006;
-
-        // تحريك مراحل الظاهرة تلقائياً عند تفعيل زر التشغيل
-        if (state.isPlaying) {
-          // تباطؤ خفيف عند الذروة (45% - 55%) لتوضيح لحظة الاصطفاف للطلاب
-          const distFromPeak = Math.abs(state.timeline - 50);
-          const speed = distFromPeak < 6 ? 5.5 : 13.5;
-          state.timeline += dt * speed;
-          if (state.timeline >= 100) state.timeline = 0;
-          dom.timelineSlider.value = state.timeline.toFixed(1);
-          updateEclipseGeometry();
-        }
-
-        // تحريك الكاميرا بسلاسة نحو المنظور المختار
-        if (state.camAnim) {
-          const k = 1 - Math.exp(-5.0 * dt);
-          camera.position.lerp(state.camAnim.pos, k);
-          controls.target.lerp(state.camAnim.target, k);
-          if (camera.position.distanceTo(state.camAnim.pos) < 0.08) {
-            state.camAnim = null;
-          }
-        }
-
-        controls.update();
-        renderer.render(scene, camera);
-        updateBubblesProjection();
-      }
-
-      // =========================================================================
-      // 13. بدء التشغيل بعد اكتمال تحميل الصفحة
-      // =========================================================================
-      window.addEventListener('load', () => {
-        try {
-          if (typeof THREE === 'undefined') {
-            throw new Error('لم يتم تحميل مكتبة Three.js.');
-          }
-          initThree();
-          buildInfoBubbles();
-          bindEvents();
-          selectScenario('totalSolar');
-          setRaysVisible(true);
-          setBubblesVisible(true);
-          updatePlayButtonUI();
-          animate();
-
-          setTimeout(() => {
-            dom.loader.classList.add('fade-out');
-          }, 350);
-        } catch (err) {
-          console.error('خطأ في تهيئة المشهد ثلاثي الأبعاد:', err);
-          dom.loader.classList.add('fade-out');
-          dom.errorBanner.textContent =
-            'تعذّر تشغيل الرسوميات ثلاثية الأبعاد (WebGL). يرجى التأكد من تفعيل تسريع الرسوميات في المتصفح وإعادة المحاولة.';
-          dom.errorBanner.classList.remove('hidden');
-        }
-      });
-    })();
-  </script>
-<!-- ===== تحسينات الفريق الإلكتروني: طبقة موحدة ===== -->
-<style id="sci-enh">
-:where(button,select,input,a,.chip,.cd){transition:transform .18s ease,box-shadow .25s ease,border-color .25s ease,background-color .25s ease,filter .25s ease}
-:where(button):hover{filter:brightness(1.15);box-shadow:0 0 14px rgba(255,204,0,.28)}
-:where(button):active{transform:scale(.95)}
-*{scrollbar-width:thin;scrollbar-color:#ffcc0088 transparent}
-::selection{background:#ffcc0066;color:#fff}
-#sci-home{position:fixed;right:0;top:34%;z-index:99990;display:flex;flex-direction:column;gap:6px;direction:rtl;font:900 .85rem Cairo,system-ui,sans-serif}#sci-home a{display:flex;align-items:center;gap:8px;padding:9px 12px 9px 16px;text-decoration:none;color:#120e00;background:linear-gradient(135deg,#ffe27a,#ffb300);border-radius:14px 0 0 14px;box-shadow:0 4px 18px #0008,0 0 18px #ffcc0055;transform:translateX(calc(100% - 44px));transition:transform .35s cubic-bezier(.2,.9,.3,1.2)}#sci-home a+a{background:linear-gradient(135deg,#7df9ff,#00b4d8)}
-#sci-home a:hover,#sci-home a:focus{transform:none}
-#sci-home b{font-size:1.25rem;animation:sciBob 2.4s ease-in-out infinite}
-@keyframes sciBob{50%{transform:translateY(-3px) scale(1.12)}}
-#sci-fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:2;mix-blend-mode:screen;opacity:.85}
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>ظاهرة الكسوف والخسوف — محاكاة ثلاثية الأبعاد | سحر العلوم</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<style>
+:root{--g:#ffc83d;--bg:rgba(2,10,24,.86);--ln:rgba(70,150,235,.35)}
+*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent;scrollbar-width:thin;scrollbar-color:#ffc83d88 transparent}
+html,body{height:100%;overflow:hidden;background:#000;color:#eef3ff;font-family:Cairo,system-ui,sans-serif;user-select:none}
+#stage{position:fixed;inset:0}
+.pn{background:var(--bg);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--ln);border-radius:16px;box-shadow:0 10px 36px #0009}
+button{font:inherit;color:inherit;cursor:pointer;border:1px solid var(--ln);background:rgba(255,255,255,.07);border-radius:10px;padding:7px 8px;font-weight:700;font-size:.82rem;transition:.2s}
+button:hover{background:rgba(255,200,61,.2);border-color:var(--g)}
+button:active{transform:scale(.95)}
+button.on{background:linear-gradient(135deg,#ffd45e,#ff9d2e);color:#1a1100;border-color:#ffe08a}
+#top{position:fixed;top:10px;left:10px;right:10px;display:flex;gap:8px;align-items:center;z-index:7;pointer-events:none}
+#top>*{pointer-events:auto}
+h1{font-size:clamp(.95rem,2.2vw,1.35rem);font-weight:900;padding:8px 16px;margin-left:auto;background:linear-gradient(90deg,#ffe27a,#fff,#7fd8ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+#top .pn{padding:2px 14px 2px}
+#top button{padding:9px 14px;font-size:.88rem}
+#menu{position:fixed;top:62px;right:10px;bottom:42px;width:272px;z-index:6;padding:6px 12px 12px;overflow:auto;transition:transform .35s}
+#menu.h{transform:translateX(125%)}
+h3{font-size:.92rem;font-weight:900;color:var(--g);margin:12px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--ln)}
+h4{font-size:.78rem;color:#9bb0dc;margin:6px 0 2px}
+.g3,.g4{display:grid;gap:6px;margin:4px 0}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
+.sw{display:flex;justify-content:space-between;align-items:center;padding:6px 2px;font-size:.84rem;font-weight:700;border-bottom:1px solid rgba(255,255,255,.07)}
+input[type=checkbox]{accent-color:#ffc83d;width:18px;height:18px;cursor:pointer}
+input[type=range]{width:100%;accent-color:#ffc83d;cursor:pointer}
+#data{position:fixed;left:10px;bottom:42px;width:272px;z-index:6;padding:10px 12px;max-height:calc(100vh - 110px);overflow:auto}
+#data.h{display:none}
+.hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-weight:900}
+.hd button{padding:3px 10px;font-size:.75rem}
+#res{font-size:1.08rem;font-weight:900;text-align:center;padding:7px;border-radius:10px;background:rgba(255,255,255,.06)}
+.am{color:#ffc83d}.rs{color:#ff7a6b}.dim{color:#9bb0dc}
+#zone{font-size:.76rem;font-weight:700;text-align:center;color:#cfe0ff;margin:5px 0}
+#skyw{display:flex;justify-content:center;margin:6px 0;position:relative}
+#sky{width:112px;height:112px;border-radius:50%;border:2px solid #ffc83d88;box-shadow:0 0 22px #ffc83d33}
+#skyw span{position:absolute;bottom:-4px;font-size:.66rem;font-weight:900;background:#0b1226;border:1px solid var(--ln);border-radius:99px;padding:1px 8px}
+table{width:100%;font-size:.76rem;border-collapse:collapse;margin-top:8px}
+td{padding:4px 2px;border-bottom:1px solid var(--ln)}td:last-child{text-align:left;font-weight:900;color:#ffe08a}
+#sf{font-size:.75rem;font-weight:900;text-align:center;padding:5px;border-radius:8px;margin-top:6px}
+.note{font-size:.66rem;color:#8fa3cf;margin-top:7px;line-height:1.6}
+.lb{position:fixed;left:0;top:0;z-index:4;pointer-events:none;white-space:nowrap;font-weight:900;font-size:.8rem;padding:3px 11px;border-radius:99px;background:rgba(5,9,22,.88);border:1.5px solid #fff4;transition:opacity .25s;text-align:center;line-height:1.4}
+.lb small{display:block;font-size:.72rem;font-weight:700;color:#ffd98a}
+.um{border-color:#9fb0ff}.pe{border-color:#c4b5fd}.an{border-color:#ffb454}
+#cr{position:fixed;bottom:9px;left:0;right:0;text-align:center;z-index:5;pointer-events:none;font-weight:900;font-size:.95rem}
+#cr b{background:linear-gradient(90deg,#ffe27a,#fff,#7fd8ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+@media(max-width:900px){#menu,#data{width:calc(100vw - 20px)}#data{max-height:46vh}}
+.wide{display:block;width:100%;margin:6px 0;padding:9px}
+#top i{font-style:normal}
+#nav{position:fixed;left:50%;transform:translateX(-50%);bottom:40px;z-index:5;display:flex;gap:5px;padding:6px;direction:ltr;max-width:calc(100vw - 16px)}
+#nav button,.tools button{min-width:38px;height:38px;font-size:1rem;padding:4px 8px}
+#nav #mv{font-size:.8rem;white-space:nowrap}
+.ov{position:fixed;inset:0;z-index:20;background:#000;display:none;flex-direction:column}
+.ov.on{display:flex}
+.bar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:8px 10px;border-bottom:1px solid var(--ln);background:#020a18}
+.bar strong{margin-left:auto;font-size:1rem;color:var(--g)}
+.tools{display:flex;gap:6px;direction:ltr}
+#dgv{flex:1;min-height:0;width:100%;touch-action:none;cursor:grab;direction:ltr}
+#dgv:active{cursor:grabbing}
+#dgv text{font-family:Cairo,system-ui,sans-serif;font-weight:700;font-size:27px;fill:#fff;direction:rtl;text-anchor:middle}
+.hint{font-size:.72rem;color:#8fa3cf;text-align:center;padding:5px}
+#obw{flex:1;min-height:0;position:relative}
+#obc{position:absolute;inset:0;width:100%;height:100%}
+#obi{padding:8px 12px;text-align:center;background:#020a18;border-top:1px solid var(--ln)}
+#obi p{font-size:.84rem;line-height:1.7;margin-bottom:4px}
+#obi .ctr{display:flex;gap:8px;align-items:center;max-width:620px;margin:auto;direction:ltr}
+@media(max-width:600px){#nav{flex-wrap:wrap;justify-content:center;width:calc(100vw - 16px)}#nav button{flex:1;min-width:34px}#nav #mv{flex-basis:100%;height:32px}.bar button{font-size:.74rem;padding:6px 7px}.tools button{min-width:34px;height:34px}}
+@media(max-width:900px){#menu,#data{bottom:140px}#top i{display:none}#top h1{font-size:.72rem;padding:6px 8px}#top button{padding:8px 9px}}
+/* طبقة منصة سحر العلوم */
+#sci-home{position:fixed;right:0;top:34%;z-index:99990;display:flex;flex-direction:column;gap:6px;direction:rtl;font:900 .85rem Cairo,system-ui,sans-serif}#sci-home a{display:flex;align-items:center;gap:8px;padding:9px 12px 9px 16px;text-decoration:none;color:#120e00;background:linear-gradient(135deg,#ffe27a,#ffb300);border-radius:14px 0 0 14px;box-shadow:0 4px 18px #0008;transform:translateX(calc(100% - 44px));transition:transform .35s cubic-bezier(.2,.9,.3,1.2)}#sci-home a+a{background:linear-gradient(135deg,#7df9ff,#00b4d8)}#sci-home a:hover,#sci-home a:focus{transform:none}#sci-home b{font-size:1.25rem}
 #sci-splash{position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;direction:rtl;font-family:Cairo,system-ui,sans-serif;color:#fff;background:radial-gradient(circle at 50% 45%,#10204a,#02040a 70%);transition:opacity .9s ease .2s,visibility 0s 1.2s}
 #sci-splash.out{opacity:0;visibility:hidden;pointer-events:none}
-#sci-splash .ring{width:84px;height:84px;border-radius:50%;border:4px solid #ffffff22;border-top-color:#ffcc00;border-right-color:#4dc3ff;animation:sciSpin 1s linear infinite}
-#sci-splash h2{margin:6px 0 0;font-size:clamp(1.3rem,5vw,2rem);font-weight:900;background:linear-gradient(90deg,#ffe27a,#fff,#7fd8ff);-webkit-background-clip:text;background-clip:text;color:transparent}
-#sci-splash p{margin:0;color:#9bb0dc;font-weight:700;font-size:.9rem}
-@keyframes sciSpin{to{transform:rotate(360deg)}}
-body{animation:sciIn .8s ease both}
-@keyframes sciIn{from{opacity:0}to{opacity:1}}
+#sci-splash .ring{width:84px;height:84px;border-radius:50%;border:4px solid #ffffff22;border-top-color:#ffcc00;border-right-color:#4dc3ff;animation:sp 1s linear infinite}
+#sci-splash h2{font-size:clamp(1.3rem,5vw,2rem);font-weight:900;background:linear-gradient(90deg,#ffe27a,#fff,#7fd8ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+#sci-splash p{color:#9bb0dc;font-weight:700;font-size:.9rem}
+@keyframes sp{to{transform:rotate(360deg)}}
 </style>
-<div id="sci-home"><a href="index.html#menu" title="العودة لقائمة المختبر"><b>🧪</b><span>قائمة المختبر</span></a><a href="../" title="العودة للصفحة الرئيسية لمنصة سحر العلوم"><b>🏠</b><span>منصة سحر العلوم</span></a></div>
+</head>
+<body>
+<div id="stage"></div>
+<div id="labels"></div>
+
+<div id="top">
+  <h1>ظاهرة الكسوف والخسوف — محاكاة ثلاثية الأبعاد</h1>
+  <button class="pn" data-open="dg">🗺️ <i>الرسم التخطيطي</i></button>
+  <button class="pn" data-open="ob">👥 <i>كاميرا السكان</i></button>
+  <button id="bm" class="pn">☰ القائمة</button>
+  <button id="bd" class="pn">📊 البيانات</button>
+</div>
+
+<aside id="menu" class="pn">
+  <h3>🌑 نوع الظاهرة</h3>
+  <h4>كسوف الشمس (القمر في طور المحاق)</h4>
+  <div class="g3"><button data-sc="tS">☀️ كلي</button><button data-sc="pS">🌗 جزئي</button><button data-sc="aS">💍 حلقي</button></div>
+  <h4>خسوف القمر (القمر في طور البدر)</h4>
+  <div class="g3"><button data-sc="tL">🔴 كلي</button><button data-sc="pL">🌓 جزئي</button><button data-sc="nL">🌕 شبه ظلي</button></div>
+
+  <h3>📚 استكشف</h3>
+  <button class="wide" data-open="dg">🗺️ الرسم التخطيطي</button>
+  <button class="wide" data-open="ob">👥 كاميرا سكان الأرض</button>
+
+  <h3>🎛️ التحكم بالحركة</h3>
+  <label class="sw">تحريك القمر حول الأرض<input type="checkbox" id="tMoon"></label>
+  <label class="sw">تحريك الأرض (دورانها حول محورها)<input type="checkbox" id="tEarth"></label>
+  <label class="sw">تحريك الشمس (دورانها حول محورها)<input type="checkbox" id="tSun"></label>
+  <h4>موضع القمر في مداره: <b id="lamv">0°</b></h4>
+  <input type="range" id="lam" min="0" max="360" step=".5" value="0">
+  <h4>سرعة المحاكاة (يوم حقيقي / ثانية)</h4>
+  <div class="g4" id="spd"><button data-s=".1">0.1</button><button data-s=".5">0.5</button><button data-s="2">2</button><button data-s="6">6</button></div>
+
+  <h3>👁️ العرض</h3>
+  <label class="sw">انطلاق أشعة الضوء من الشمس<input type="checkbox" id="tRays"></label>
+  <label class="sw">حزمة ضوء الشمس الزرقاء<input type="checkbox" id="tBeam"></label>
+  <label class="sw">مخاريط الظل وشبه الظل<input type="checkbox" id="tCones"></label>
+  <label class="sw">مدار القمر<input type="checkbox" id="tPath"></label>
+  <label class="sw">التسميات والأسماء<input type="checkbox" id="tLbl"></label>
+
+  <h3>🎥 الكاميرا</h3>
+  <div class="g4" style="grid-template-columns:1fr 1fr"><button data-cam="all">منظور عام</button><button data-cam="em">الأرض والقمر</button><button data-cam="top">علوي</button><button data-cam="side">جانبي</button></div>
+</aside>
+
+<section id="data" class="pn">
+  <div class="hd"><span>📊 لوحة البيانات</span><button id="xd">إخفاء</button></div>
+  <div id="res"></div><div id="zone"></div>
+  <div id="skyw"><canvas id="sky" width="140" height="140"></canvas><span id="skyt">المنظر من الأرض</span></div>
+  <div id="sf"></div>
+  <table id="tb"></table>
+  <p class="note">⚠️ المسافات والأحجام مبالغ فيها لوضوح العرض (الشمس أكبر من القمر بنحو 400 مرة وأبعد عنه بنحو 400 مرة)، أما معدلات الدوران فحقيقية ومتناسبة، وميل مدار القمر مبالغ فيه (5° في الواقع).</p>
+</section>
+
+<div id="nav" class="pn">
+  <button data-nav="l" title="تحريك لليسار">◀</button>
+  <button data-nav="r" title="تحريك لليمين">▶</button>
+  <button data-nav="u" title="تحريك للأعلى">▲</button>
+  <button data-nav="d" title="تحريك للأسفل">▼</button>
+  <button data-nav="in" title="تكبير">➕</button>
+  <button data-nav="out" title="تصغير">➖</button>
+  <button data-nav="home" title="إعادة الضبط">⟲</button>
+  <button id="mv" title="تبديل وظيفة السحب">🔄 السحب: تدوير</button>
+</div>
+
+<div id="dg" class="ov">
+  <div class="bar"><strong>🗺️ الرسم التخطيطي للكسوف والخسوف</strong>
+    <button data-v="0">الكل</button><button data-v="1">الكسوف</button><button data-v="2">الخسوف</button>
+    <span class="tools"><button data-z="in">➕</button><button data-z="out">➖</button></span>
+    <button data-close>✖ إغلاق</button></div>
+  <svg id="dgv" viewBox="0 0 1268 1408"></svg>
+  <div class="hint">اسحب للتحريك • عجلة الفأرة أو إصبعان للتكبير والتصغير • نقرتان للتكبير</div>
+</div>
+
+<div id="ob" class="ov">
+  <div class="bar"><strong>👥 المنظر من سكان الأرض</strong>
+    <button data-ob="total">🌑 منطقة ظل القمر</button>
+    <button data-ob="partial">🌗 منطقة شبه الظل</button>
+    <button data-ob="annular">💍 الكسوف الحلقي</button>
+    <button data-ob="all">▦ مقارنة الثلاثة</button>
+    <button data-close>✖ إغلاق</button></div>
+  <div id="obw"><canvas id="obc"></canvas></div>
+  <div id="obi"><p id="obt"></p>
+    <div class="ctr"><button id="obp">⏸</button><input type="range" id="obr" min="0" max="1" step=".001" value=".5" aria-label="مراحل الكسوف"><button id="obm">الذروة</button></div>
+    <p class="hint">⚠️ لا تنظر إلى الشمس أبداً دون نظارات كسوف معتمدة</p></div>
+</div>
+
+<footer id="cr">تصميم <b>صبري محمد حمد</b></footer>
+
+<div id="sci-home"><a href="index.html#menu"><b>🧪</b><span>قائمة المختبر</span></a><a href="../"><b>🏠</b><span>منصة سحر العلوم</span></a></div>
 <div id="sci-splash"><div class="ring"></div><h2>الكسوف والخسوف</h2><p>الفريق الإلكتروني • مدرسة البلاد القديم الابتدائية الإعدادية للبنين</p></div>
-<canvas id="sci-fx"></canvas>
+
 <script>
-(function(){
-var MODE="space";
-setTimeout(function(){var s=document.getElementById('sci-splash');if(s)s.classList.add('out')},1500);
-var c=document.getElementById('sci-fx'),x=c.getContext('2d'),W,H,P=[],S=null,t0=0;
-function rs(){W=c.width=innerWidth;H=c.height=innerHeight}rs();addEventListener('resize',rs);
-var n=MODE==='water'?22:80;
-for(var i=0;i<n;i++)P.push(MODE==='water'?{x:Math.random()*W,y:Math.random()*H,r:2+Math.random()*7,v:.25+Math.random()*.8,ph:Math.random()*6}:{x:Math.random()*W,y:Math.random()*H,r:.4+Math.random()*1.3,ph:Math.random()*6,sp:.5+Math.random()*2});
-function loop(t){
- if(document.hidden){requestAnimationFrame(loop);return}
- x.clearRect(0,0,W,H);
- if(MODE==='water'){
-  P.forEach(function(p){p.y-=p.v;p.x+=Math.sin(t/900+p.ph)*.4;if(p.y<-20){p.y=H+20;p.x=Math.random()*W}
-   var g=x.createRadialGradient(p.x-p.r*.3,p.y-p.r*.3,p.r*.1,p.x,p.y,p.r);
-   g.addColorStop(0,'rgba(255,255,255,.55)');g.addColorStop(.6,'rgba(120,210,255,.12)');g.addColorStop(1,'rgba(120,210,255,.38)');
-   x.fillStyle=g;x.beginPath();x.arc(p.x,p.y,p.r,0,6.3);x.fill()});
- }else{
-  P.forEach(function(p){var a=.25+.55*Math.abs(Math.sin(t/1000*p.sp+p.ph));x.fillStyle='rgba(255,255,255,'+a+')';x.beginPath();x.arc(p.x,p.y,p.r,0,6.3);x.fill()});
-  if(!S&&t-t0>5500+Math.random()*4000){S={x:Math.random()*W*.8+W*.2,y:Math.random()*H*.35,l:0};t0=t}
-  if(S){S.x-=14;S.y+=6;S.l++;var g2=x.createLinearGradient(S.x,S.y,S.x+90,S.y-40);g2.addColorStop(0,'rgba(255,255,255,.9)');g2.addColorStop(1,'rgba(255,255,255,0)');
-   x.strokeStyle=g2;x.lineWidth=2;x.beginPath();x.moveTo(S.x,S.y);x.lineTo(S.x+90,S.y-40);x.stroke();if(S.l>40)S=null}
- }
- requestAnimationFrame(loop)}
-requestAnimationFrame(loop);
+(function(){'use strict';
+const V=THREE.Vector3,PI=Math.PI,$=s=>document.querySelector(s);
+setTimeout(()=>$('#sci-splash').classList.add('out'),1700);
+
+/* ثوابت المشهد (أحجام ومسافات مبالغ فيها) */
+const D=44,RS=5,RE=1.6,RM=.55,A=6.2,EC=.0968,INC=.35,TILT=.4084;
+/* دورات حقيقية بالأيام */
+const SYN=29.53,PE=.9973,PS=25.4;
+const SUN=new V(D,0,0);
+let W=innerWidth,H=innerHeight;
+
+const SC={
+ tS:{k:'s',lam:0,peri:0,node:0},
+ pS:{k:'s',lam:0,peri:1.57,node:-.98},
+ aS:{k:'s',lam:0,peri:PI,node:0},
+ tL:{k:'l',lam:PI,peri:1.57,node:0},
+ pL:{k:'l',lam:PI,peri:1.57,node:.535},
+ nL:{k:'l',lam:PI,peri:1.57,node:1.35}};
+const st={sc:'tS',lam:0,peri:0,node:0,moon:false,earth:true,sun:true,speed:.5,rays:true,beam:true,cones:true,labels:true,path:true,menu:W>900};
+st.data=W>900;
+
+/* ---------- خامات إجرائية ---------- */
+const hs=(x,y,s)=>{let n=Math.imul(x,374761393)+Math.imul(y,668265263)+Math.imul(s,1442695041);n=(n^(n>>>13))*1274126177;return((n^(n>>>16))>>>0)/4294967295};
+function vn(x,y,p,s){const xi=Math.floor(x),yi=Math.floor(y),xf=x-xi,yf=y-yi,u=xf*xf*(3-2*xf),v=yf*yf*(3-2*yf),x0=((xi%p)+p)%p,x1=(x0+1)%p,a=hs(x0,yi,s),b=hs(x1,yi,s),c=hs(x0,yi+1,s),d=hs(x1,yi+1,s);return a+(b-a)*u+(c-a)*v+(a-b-c+d)*u*v}
+function fb(x,y,p,o,s){let v=0,a=.5,f=1,n=0;for(let i=0;i<o;i++){v+=a*vn(x*f,y*f,p*f,s+i*73);n+=a;a/=2;f*=2}return v/n}
+function tex(w,h,fn){const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d'),im=x.createImageData(w,h);
+ for(let j=0;j<h;j++)for(let i=0;i<w;i++){const o=(j*w+i)*4,r=fn(i/w,j/h);im.data[o]=r[0];im.data[o+1]=r[1];im.data[o+2]=r[2];im.data[o+3]=r[3]===undefined?255:r[3]}
+ x.putImageData(im,0,0);const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;t.anisotropy=8;return t}
+function glow(c0,c1,c2){const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d'),g=x.createRadialGradient(64,64,2,64,64,64);g.addColorStop(0,c0);g.addColorStop(.4,c1);g.addColorStop(1,c2);x.fillStyle=g;x.fillRect(0,0,128,128);return new THREE.CanvasTexture(c)}
+
+const earthFn=(u,v)=>{const la=Math.abs(.5-v)*2,e=fb(u*6,v*3,6,5,42)+(fb(u*20,v*10,20,3,9)-.5)*.12-la*la*.06;
+ if(la>.86+(fb(u*12,v*6,12,2,5)-.5)*.1)return[225,242,255];
+ if(e>.56){const q=fb(u*11,v*7,11,4,21),k=Math.max(0,Math.min(1,(q-.38)*4));
+  return[128+k*112,184+k*42,42+(1-k)*10]}
+ const d=Math.min(1,(.56-e)*5);return[70*(1-d)+22*d,164*(1-d)+110*d,250*(1-d)+214*d]};
+const cloudFn=(u,v)=>[250,252,255,Math.max(0,Math.min(1,(fb(u*9,v*5,9,4,515)-.52)*3.2))*200];
+const CR=[];for(let i=0;i<60;i++)CR.push([hs(i,1,9),.1+hs(i,2,9)*.8,.012+hs(i,3,9)*.05]);
+const moonFn=(u,v)=>{const m=fb(u*5,v*3,5,4,313),g=fb(u*26,v*13,26,3,617);let s=170+(m-.5)*90+(g-.5)*30;
+ for(const c of CR){let du=Math.abs(u-c[0]);if(du>.5)du=1-du;const q=Math.hypot(du,(v-c[1])*.55)/c[2];if(q<1.25)s+=q<.85?-26*(1-q*q/.72):20*Math.sin((q-.85)/.4*PI)}
+ s=Math.max(60,Math.min(245,s));return[s,s,s]};
+const sunFn=(u,v)=>{const w=fb(u*8,v*8,8,4,811),n=fb(u*14+w,v*14-w,14,4,823);return[255,Math.min(255,162+n*100),Math.min(255,8+n*n*120)]};
+
+/* ---------- ظل واقعي: نسبة ظهور قرص الشمس لكل نقطة (تداخل قرصين) ---------- */
+const GL=`uniform vec3 eS,eO,eT;uniform float eR;varying vec3 vWP;
+float ovl(float a,float b,float d){if(d>=a+b)return 0.;if(d<=abs(a-b)){float m=min(a,b);return 3.14159265*m*m;}float x=(d*d+a*a-b*b)/(2.*d*a),y=(d*d+b*b-a*a)/(2.*d*b);return a*a*acos(clamp(x,-1.,1.))+b*b*acos(clamp(y,-1.,1.))-.5*sqrt(max(0.,(-d+a+b)*(d+a-b)*(d-a+b)*(d+a+b)));}
+float sunVis(vec3 p){vec3 s=eS-p,o=eO-p;float ls=length(s),lo=length(o);if(lo<1e-3||lo>ls)return 1.;float a=asin(clamp(${RS}./ls,0.,1.)),b=asin(clamp(eR/lo,0.,1.)),d=acos(clamp(dot(s,o)/(ls*lo),-1.,1.));return 1.-ovl(a,b,d)/(3.14159265*a*a);}`;
+function shade(m,oc,rad,tint){m.onBeforeCompile=sh=>{sh.uniforms.eS={value:SUN};sh.uniforms.eO={value:oc};sh.uniforms.eR={value:rad};sh.uniforms.eT={value:tint};
+ sh.vertexShader=sh.vertexShader.replace('void main() {','varying vec3 vWP;\nvoid main() {').replace('#include <begin_vertex>','#include <begin_vertex>\nvWP=(modelMatrix*vec4(transformed,1.)).xyz;');
+ sh.fragmentShader=sh.fragmentShader.replace('void main() {',GL+'void main() {').replace('#include <lights_fragment_end>','#include <lights_fragment_end>\n{float vs=sunVis(vWP);vec3 k=vec3(vs)+(1.-vs)*eT;reflectedLight.directDiffuse*=k;reflectedLight.directSpecular*=k;}')}}
+
+/* ---------- المشهد ---------- */
+const scene=new THREE.Scene(),cam=new THREE.PerspectiveCamera(40,W/H,.1,700);
+const ren=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
+ren.setPixelRatio(Math.min(devicePixelRatio,2));ren.setSize(W,H);ren.outputEncoding=THREE.sRGBEncoding;ren.toneMapping=THREE.ACESFilmicToneMapping;ren.toneMappingExposure=1.1;
+$('#stage').appendChild(ren.domElement);
+const ctl=new THREE.OrbitControls(cam,ren.domElement);ctl.enableDamping=true;ctl.dampingFactor=.07;ctl.minDistance=5;ctl.maxDistance=230;
+let goal=null;ctl.addEventListener('start',()=>goal=null);
+
+const light=new THREE.PointLight(0xfff1d6,2.7,0,0);light.position.copy(SUN);
+scene.add(new THREE.AmbientLight(0x6a7fa8,.13),light);
+
+/* نجوم */
+{const sg=new Float32Array(5400);for(let i=0;i<1800;i++){const r=240+Math.random()*120,t=Math.random()*2*PI,p=Math.acos(2*Math.random()-1);sg[i*3]=r*Math.sin(p)*Math.cos(t);sg[i*3+1]=r*Math.cos(p);sg[i*3+2]=r*Math.sin(p)*Math.sin(t)}
+ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(sg,3));
+ scene.add(new THREE.Points(g,new THREE.PointsMaterial({size:1.6,map:glow('#fff','rgba(190,215,255,.5)','rgba(0,0,0,0)'),transparent:true,depthWrite:false,blending:THREE.AdditiveBlending})))}
+
+/* الشمس (كروية — تدور حول محورها) */
+const sunM=new THREE.Mesh(new THREE.SphereGeometry(RS,64,48),new THREE.MeshBasicMaterial({map:tex(512,256,sunFn),toneMapped:false}));
+sunM.position.copy(SUN);sunM.rotation.z=.12;scene.add(sunM);
+[[22,.9,'rgba(255,240,150,1)','rgba(255,130,0,.5)'],[40,.35,'rgba(235,50,0,.75)','rgba(150,10,0,.25)']].forEach(c=>{
+ const s=new THREE.Sprite(new THREE.SpriteMaterial({map:glow(c[2],c[3],'rgba(90,0,0,0)'),blending:THREE.AdditiveBlending,transparent:true,depthWrite:false,opacity:c[1]}));s.scale.set(c[0],c[0],1);s.position.copy(SUN);scene.add(s)});
+
+/* الأرض: كروية، ميل المحور 23.4°، تدور كل 23.93 ساعة */
+const moon=new THREE.Group();scene.add(moon);
+const tilt=new THREE.Group();tilt.rotation.z=TILT;scene.add(tilt);
+const eMat=new THREE.MeshStandardMaterial({map:tex(512,256,earthFn),roughness:.8,metalness:0});shade(eMat,moon.position,RM,new V(0,0,0));
+const earth=new THREE.Mesh(new THREE.SphereGeometry(RE,64,48),eMat);tilt.add(earth);
+const cMat=new THREE.MeshStandardMaterial({map:tex(512,256,cloudFn),transparent:true,depthWrite:false,roughness:1});shade(cMat,moon.position,RM,new V(0,0,0));
+const clouds=new THREE.Mesh(new THREE.SphereGeometry(RE*1.014,48,36),cMat);tilt.add(clouds);
+tilt.add(new THREE.Mesh(new THREE.SphereGeometry(RE*1.08,48,36),new THREE.ShaderMaterial({transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,
+ vertexShader:'varying vec3 n,v,w;void main(){vec4 m=modelViewMatrix*vec4(position,1.);n=normalize(normalMatrix*normal);v=normalize(-m.xyz);w=normalize(mat3(modelMatrix)*normal);gl_Position=projectionMatrix*m;}',
+ fragmentShader:'varying vec3 n,v,w;void main(){float f=pow(1.-max(0.,dot(n,v)),3.)*smoothstep(-.35,.5,w.x);gl_FragColor=vec4(.3,.62,1.,f*.85);}'})));
+
+/* القمر: كروي، وجه واحد نحو الأرض (دورانه = دورانه حول الأرض 27.32 يوماً) */
+const mt=tex(512,256,moonFn);
+const mMat=new THREE.MeshStandardMaterial({map:mt,bumpMap:mt,bumpScale:.8,roughness:.95,metalness:0});shade(mMat,new V(0,0,0),RE,new V(.3,.05,.012));
+const moonM=new THREE.Mesh(new THREE.SphereGeometry(RM,48,36),mMat);moon.add(moonM);
+
+/* مدار القمر + مخاريط الظل */
+const pathL=new THREE.Line(new THREE.BufferGeometry(),new THREE.LineDashedMaterial({color:0x1e8cff,dashSize:.35,gapSize:.22,transparent:true,opacity:.95}));scene.add(pathL);
+const cones=new THREE.Group();scene.add(cones);
+const mk=(c,o)=>new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:o,side:THREE.DoubleSide,depthWrite:false});
+const mU=mk(0x03101f,.82),mP=mk(0x0a5fc4,.22),mA=mk(0x7f93ad,.32);
+/* حزمة ضوء الشمس الزرقاء ومدار الأرض (كما في الرسم التخطيطي) */
+const beam=new THREE.Group();scene.add(beam);
+{const g=new THREE.CylinderGeometry(RE,RS,D,64,1,true),o=new THREE.Mesh(g,mk(0x0a6ad8,.13));o.position.set(D/2,0,0);o.rotation.z=PI/2;beam.add(o);
+ const p=[];for(let i=-60;i<=60;i++){const t=i/60*.42;p.push(new V(D-D*Math.cos(t),0,D*Math.sin(t)))}
+ const l=new THREE.Line(new THREE.BufferGeometry().setFromPoints(p),new THREE.LineDashedMaterial({color:0x1e8cff,dashSize:.6,gapSize:.4,transparent:true,opacity:.8}));l.computeLineDistances();scene.add(l);scene.userData.eo=l}
+
+/* فوتونات الضوء المنطلقة من سطح الشمس (تُحجب فعلياً بالأرض والقمر) */
+const NP=1600,pa=new Float32Array(NP*3),pd=new Float32Array(NP*3),SP=16;
+function sp(i,init){const n=new V(-Math.random(),Math.random()*2-1,Math.random()*2-1).normalize(),o=n.multiplyScalar(RS).add(SUN),
+ r=8.5*Math.sqrt(Math.random()),a=Math.random()*2*PI,d=new V((Math.random()-.5)*4,r*Math.cos(a),r*Math.sin(a)).sub(o).normalize(),k=init?Math.random()*58:0;
+ pa[i*3]=o.x+d.x*k;pa[i*3+1]=o.y+d.y*k;pa[i*3+2]=o.z+d.z*k;pd[i*3]=d.x;pd[i*3+1]=d.y;pd[i*3+2]=d.z}
+for(let i=0;i<NP;i++)sp(i,true);
+const pg=new THREE.BufferGeometry();pg.setAttribute('position',new THREE.BufferAttribute(pa,3));
+const pts=new THREE.Points(pg,new THREE.PointsMaterial({size:.2,map:glow('rgba(255,240,190,1)','rgba(255,200,90,.5)','rgba(255,150,0,0)'),transparent:true,opacity:.9,depthWrite:false,blending:THREE.AdditiveBlending}));
+pts.frustumCulled=false;scene.add(pts);
+function photons(dt){const m=moon.position,mx=m.x,my=m.y,mz=m.z,rm=(RM*1.03)**2,re=(RE*1.03)**2,s=SP*dt;
+ for(let i=0;i<NP;i++){const j=i*3;pa[j]+=pd[j]*s;pa[j+1]+=pd[j+1]*s;pa[j+2]+=pd[j+2]*s;const x=pa[j],y=pa[j+1],z=pa[j+2];
+  if(x<-16||x*x+y*y+z*z<re||(x-mx)**2+(y-my)**2+(z-mz)**2<rm)sp(i,false)}
+ pg.attributes.position.needsUpdate=true}
+
+/* ---------- حساب موضع القمر (مدار إهليلجي مائل) ---------- */
+function mp(l,o){const r=A*(1-EC*EC)/(1+EC*Math.cos(l-st.peri)),b=INC*Math.sin(l-st.node),c=r*Math.cos(b);return(o||new V).set(c*Math.cos(l),r*Math.sin(b),-c*Math.sin(l))}
+function pathBuild(){const p=[];for(let i=0;i<=180;i++)p.push(mp(i/180*2*PI));pathL.geometry.dispose();pathL.geometry=new THREE.BufferGeometry().setFromPoints(p);pathL.computeLineDistances()}
+
+function frus(p0,dir,len,r0,r1,m){const g=new THREE.CylinderGeometry(Math.max(r1,.005),r0,len,40,1,true),o=new THREE.Mesh(g,m);
+ o.position.copy(p0).addScaledVector(dir,len/2);o.quaternion.setFromUnitVectors(new V(0,1,0),dir);cones.add(o)}
+const an={um:new V,pe:new V,an:new V};
+function coneBuild(){while(cones.children.length){const c=cones.children[0];c.geometry.dispose();cones.remove(c)}
+ const M=moon.position;
+ if(SC[st.sc].k==='s'){const ax=M.clone().sub(SUN),dsm=ax.length();ax.normalize();const L=dsm*RM/(RS-RM),Lp=M.length()+3;
+  frus(M,ax,L,RM,0,mU);frus(M,ax,Lp,RM,RM+Lp*(RS+RM)/dsm,mP);
+  st.annular=L<M.length()-RE;
+  if(st.annular)frus(M.clone().addScaledVector(ax,L),ax,Lp-L,0,(Lp-L)*(RS-RM)/dsm,mA);
+  an.um.copy(M).addScaledVector(ax,L*.5);
+  an.pe.copy(M).addScaledVector(ax,Lp*.85);an.pe.y-=RM+Lp*.85*(RS+RM)/dsm;
+  an.an.copy(M).addScaledVector(ax,L+(Lp-L)*.55)
+ }else{const ax=new V(-1,0,0),O=new V(0,0,0);st.annular=false;
+  frus(O,ax,15,RE,RE-15*(RS-RE)/D,mU);frus(O,ax,15,RE,RE+15*(RS+RE)/D,mP);
+  an.um.set(-8,0,0);an.pe.set(-10,-(RE+10*(RS+RE)/D),0)}}
+
+/* ---------- تصنيف الظاهرة فيزيائياً ---------- */
+function ov(a,b,d){if(d>=a+b)return 0;if(d<=Math.abs(a-b)){const m=Math.min(a,b);return PI*m*m}const x=(d*d+a*a-b*b)/(2*d*a),y=(d*d+b*b-a*a)/(2*d*b);
+ return a*a*Math.acos(Math.max(-1,Math.min(1,x)))+b*b*Math.acos(Math.max(-1,Math.min(1,y)))-.5*Math.sqrt(Math.max(0,(-d+a+b)*(d+a-b)*(d-a+b)*(d+a+b)))}
+function classify(){const M=moon.position;
+ if(M.x>0){const ax=M.clone().sub(SUN).normalize(),Q=SUN.clone().addScaledVector(ax,-SUN.dot(ax)),b=Q.length();
+  const P=b>=RE?Q.clone().normalize().multiplyScalar(RE):Q.clone().addScaledVector(ax,-Math.sqrt(RE*RE-b*b));
+  const s=SUN.clone().sub(P),o=M.clone().sub(P),a=Math.asin(RS/s.length()),bb=Math.asin(RM/o.length()),d=s.angleTo(o);let t='none';
+  if(d<a+bb)t=d<=bb-a?'total':d<=a-bb?'annular':'partial';
+  return{k:'s',t,ob:ov(a,bb,d)/(PI*a*a),a,b:bb,d,sg:M.y>=0?1:-1}}
+ const t=-M.x,d=Math.hypot(M.y,M.z),ru=RE-t*(RS-RE)/D,rp=RE+t*(RS+RE)/D,cov=ru>0?ov(ru,RM,d)/(PI*RM*RM):0;
+ let tt='none';if(cov>.999)tt='ltotal';else if(cov>.002)tt='lpartial';else if(d-RM<rp)tt='pen';
+ return{k:'l',t:tt,ob:cov,ru,rp,d,sg:M.y>=0?1:-1}}
+
+let dirty=1,pend=null,lh=0;
+function moonUpd(){mp(st.lam,moon.position);moonM.rotation.y=st.lam;coneBuild();pend=classify()}
+
+/* ---------- لوحة البيانات ---------- */
+const TT={total:'☀️ كسوف كلي للشمس',partial:'🌗 كسوف جزئي للشمس',annular:'💍 كسوف حلقي للشمس',ltotal:'🔴 خسوف كلي للقمر',lpartial:'🌓 خسوف جزئي للقمر',pen:'🌕 خسوف شبه ظلي للقمر'};
+const ZZ={total:'الراصد داخل منطقة الظل التام (Umbra)',partial:'الراصد داخل منطقة شبه الظل (Penumbra)',annular:'الراصد في امتداد الظل (Antumbra) — الظل التام لا يصل للأرض',ltotal:'القمر بالكامل داخل ظل الأرض التام',lpartial:'جزء من القمر داخل ظل الأرض التام',pen:'القمر داخل شبه ظل الأرض فقط',none:'الأجرام غير مصطفة على استقامة واحدة'};
+const PH=[[10,'المحاق 🌑'],[80,'هلال متزايد 🌒'],[100,'التربيع الأول 🌓'],[170,'أحدب متزايد 🌔'],[190,'البدر 🌕'],[260,'أحدب متناقص 🌖'],[280,'التربيع الأخير 🌗'],[350,'هلال متناقص 🌘'],[361,'المحاق 🌑']];
+function hud(r){const sol=r.k==='s',none=r.t==='none',rr=moon.position.length(),deg=((st.lam*180/PI)%360+360)%360;
+ $('#res').innerHTML=none?'<span class="dim">لا توجد ظاهرة في هذا الوضع</span>':`<span class="${sol?'am':'rs'}">${TT[r.t]}</span>`;
+ $('#zone').textContent=ZZ[r.t];
+ const f=$('#sf');if(sol){f.textContent='⚠️ لا تنظر للشمس دون نظارات كسوف معتمدة';f.style.cssText='background:#ff4d5a30;color:#ffb3b8'}else{f.textContent='✅ مشاهدة الخسوف آمنة بالعين المجردة';f.style.cssText='background:#2ee59d25;color:#9ff5cf'}
+ $('#skyt').textContent=sol?'المنظر من الأرض':'منظر القمر من الأرض';
+ const rows=[['ترتيب الأجرام',none?'غير مصطفة':sol?'الشمس ← القمر ← الأرض':'الشمس ← الأرض ← القمر'],
+ ['طور القمر',PH.find(p=>deg<p[0])[1]],['عمر القمر',(st.lam/(2*PI)*SYN).toFixed(1)+' يوم'],
+ ['بُعد القمر عن الأرض',Math.round(356500+(rr-5.6)/1.2*50200).toLocaleString('en')+' كم'],
+ [sol?'احتجاب قرص الشمس':'دخول القمر في الظل التام',(r.ob*100).toFixed(0)+'%'],
+ ['دوران الأرض حول محورها','23.93 ساعة'],['دوران القمر حول محوره','27.32 يوماً'],['دوران الشمس (الاستواء)','≈ 25.4 يوماً'],['سرعة المحاكاة',st.speed+' يوم/ث']];
+ $('#tb').innerHTML=rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('')}
+function sky(r){const c=$('#sky'),x=c.getContext('2d'),S=140,R=36,cx=70,cy=70;x.clearRect(0,0,S,S);x.save();x.beginPath();x.arc(70,70,68,0,2*PI);x.clip();
+ if(r.k==='s'){const tot=r.t==='total';x.fillStyle=tot?'#05081a':r.ob>.5?'#12306a':'#1d5fa8';x.fillRect(0,0,S,S);const a=r.a||1;
+  if(tot){const g=x.createRadialGradient(cx,cy,R*.9,cx,cy,R*2.1);g.addColorStop(0,'rgba(255,255,255,.95)');g.addColorStop(.4,'rgba(170,215,255,.4)');g.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=g;x.beginPath();x.arc(cx,cy,R*2.1,0,2*PI);x.fill()}
+  x.fillStyle='#ffd24a';x.shadowColor='#ff9d2e';x.shadowBlur=18;x.beginPath();x.arc(cx,cy,R,0,2*PI);x.fill();x.shadowBlur=0;
+  if(r.t!=='none'){x.fillStyle='#03050d';x.beginPath();x.arc(cx+r.sg*(r.d/a)*R,cy,R*r.b/a,0,2*PI);x.fill()}
+ }else{x.fillStyle='#030616';x.fillRect(0,0,S,S);x.fillStyle='rgba(255,255,255,.6)';for(let i=0;i<14;i++)x.fillRect((i*47)%140,(i*83)%140,1.4,1.4);
+  const g=x.createRadialGradient(cx-8,cy-8,3,cx,cy,R);g.addColorStop(0,'#f4f6fa');g.addColorStop(1,'#a9b2c3');x.fillStyle=g;x.beginPath();x.arc(cx,cy,R,0,2*PI);x.fill();
+  x.save();x.beginPath();x.arc(cx,cy,R,0,2*PI);x.clip();const s=R/RM,ys=cy+r.sg*r.d*s;
+  if(r.t!=='none'){x.fillStyle='rgba(30,20,40,.3)';x.beginPath();x.arc(cx,ys,r.rp*s,0,2*PI);x.fill()}
+  if(r.ru>0&&r.ob>0){x.fillStyle=r.ob>.999?'rgba(165,34,12,.93)':'rgba(110,20,10,.9)';x.beginPath();x.arc(cx,ys,r.ru*s,0,2*PI);x.fill()}
+  x.restore()}
+ x.restore()}
+
+/* ---------- التسميات ---------- */
+const LB=$('#labels');
+function lab(c,t){const d=document.createElement('div');d.className='lb '+c;d.innerHTML=t;LB.appendChild(d);return d}
+const lbl={sun:lab('nm','☀️ الشمس'),earth:lab('nm','🌍 الأرض'),moon:lab('nm','🌙 القمر'),um:lab('um',''),pe:lab('pe',''),an:lab('an','<b>امتداد الظل (Antumbra)</b><small>= كسوف حلقي</small>')};
+function zoneText(){const s=SC[st.sc].k==='s';
+ lbl.um.innerHTML=s?'<b>منطقة ظل القمر التام</b><small>= كسوف كلي</small>':'<b>منطقة ظل الأرض التام</b><small>= خسوف كلي (جزئي إن دخل بعضه)</small>';
+ lbl.pe.innerHTML=s?'<b>منطقة شبه ظل القمر</b><small>= كسوف جزئي</small>':'<b>منطقة شبه ظل الأرض</b><small>= خسوف شبه ظلي</small>'}
+const tv=new V;
+function put(el,p,ox,oy,show){tv.copy(p).project(cam);const ok=show&&tv.z<1;el.style.opacity=ok?1:0;
+ if(ok)el.style.transform=`translate(${(tv.x*.5+.5)*W+ox}px,${(-tv.y*.5+.5)*H+oy}px) translate(-50%,-50%)`}
+const pS=new V,pE=new V,pM=new V;
+function labels(){const L=st.labels;
+ put(lbl.sun,pS.set(D,RS+1.4,0),0,0,L);put(lbl.earth,pE.set(0,RE+1.1,0),0,-6,L);put(lbl.moon,pM.copy(moon.position).setY(moon.position.y+RM+.9),0,-6,L);
+ put(lbl.um,an.um,0,-58,L&&st.cones);put(lbl.pe,an.pe,0,48,L&&st.cones);put(lbl.an,an.an,0,-108,L&&st.cones&&st.annular&&SC[st.sc].k==='s')}
+
+/* ---------- الكاميرا والتخطيط ---------- */
+function fit(){const aw=W-(W>900?(st.menu?282:0)+(st.data?282:0):0);return 35/(Math.tan(PI*40/360)*(aw/H))}
+function go(n,now){const k=SC[st.sc].k,f=fit();let t=new V(17.5,0,0),d=f,v=[0,.26,.97];
+ if(n==='em'){t=new V(k==='s'?3:-3,0,0);d=18;v=[0,.3,.95]}else if(n==='top'){d=f*.92;v=[0,1,.02]}else if(n==='side')v=[0,0,1];
+ const p=t.clone().add(new V(...v).normalize().multiplyScalar(d));
+ if(now){cam.position.copy(p);ctl.target.copy(t);goal=null}else goal={p,t}}
+function layout(){W=innerWidth;H=innerHeight;cam.aspect=W/H;ren.setSize(W,H);const sh=W>900?(st.menu?141:0)-(st.data?141:0):0;if(sh)cam.setViewOffset(W,H,sh,0,W,H);else cam.clearViewOffset();cam.updateProjectionMatrix()}
+
+/* ---------- الأحداث ---------- */
+const lamSync=()=>{const d=((st.lam*180/PI)%360+360)%360;$('#lam').value=d;$('#lamv').textContent=d.toFixed(0)+'°'};
+function apply(id){const s=SC[id];st.sc=id;st.lam=s.lam;st.peri=s.peri;st.node=s.node;st.moon=false;$('#tMoon').checked=false;
+ document.querySelectorAll('[data-sc]').forEach(b=>b.classList.toggle('on',b.dataset.sc===id));pathBuild();zoneText();lamSync();dirty=1}
+document.querySelectorAll('[data-sc]').forEach(b=>b.onclick=()=>apply(b.dataset.sc));
+document.querySelectorAll('[data-cam]').forEach(b=>b.onclick=()=>go(b.dataset.cam));
+document.querySelectorAll('#spd button').forEach(b=>b.onclick=()=>{st.speed=parseFloat(b.dataset.s);document.querySelectorAll('#spd button').forEach(x=>x.classList.toggle('on',x===b));dirty=1});
+$('#spd button:nth-child(2)').classList.add('on');
+$('#tMoon').onchange=e=>st.moon=e.target.checked;
+$('#lam').oninput=e=>{st.lam=e.target.value*PI/180;st.moon=false;$('#tMoon').checked=false;$('#lamv').textContent=(+e.target.value).toFixed(0)+'°';dirty=1};
+const tg=(id,k,fn)=>{const e=$('#'+id);e.checked=st[k];e.onchange=()=>{st[k]=e.checked;fn&&fn()}};
+tg('tEarth','earth');tg('tSun','sun');tg('tRays','rays',()=>pts.visible=st.rays);tg('tCones','cones',()=>cones.visible=st.cones);tg('tPath','path',()=>{pathL.visible=st.path;scene.userData.eo.visible=st.path});tg('tLbl','labels');tg('tBeam','beam',()=>beam.visible=st.beam);
+const showMenu=()=>{$('#menu').classList.toggle('h',!st.menu);layout();go('all')},showData=()=>{$('#data').classList.toggle('h',!st.data);layout();go('all')};
+$('#bm').onclick=()=>{st.menu=!st.menu;showMenu()};
+$('#bd').onclick=()=>{st.data=!st.data;showData()};
+$('#xd').onclick=()=>{st.data=false;showData()};
+addEventListener('resize',()=>{layout();go('all',true)});
+
+/* ---------- تحريك الشاشة والتكبير ---------- */
+ctl.enablePan=true;ctl.screenSpacePanning=true;
+function nav(n){if(n==='home'){go('all');return}
+ const p=(goal?goal.p:cam.position).clone(),t=(goal?goal.t:ctl.target).clone(),off=p.clone().sub(t),d=off.length();
+ if(n==='in'||n==='out'){off.setLength(Math.max(ctl.minDistance,Math.min(ctl.maxDistance,d*(n==='in'?.8:1.25))));p.copy(t).add(off)}
+ else{const horiz=n==='l'||n==='r',ax=new V().setFromMatrixColumn(cam.matrix,horiz?0:1).multiplyScalar(d*.1*(n==='l'||n==='d'?1:-1));p.add(ax);t.add(ax)}
+ goal={p,t}}
+document.querySelectorAll('[data-nav]').forEach(b=>b.onclick=()=>nav(b.dataset.nav));
+let panMode=false;
+$('#mv').onclick=()=>{panMode=!panMode;ctl.mouseButtons.LEFT=panMode?THREE.MOUSE.PAN:THREE.MOUSE.ROTATE;
+ ctl.touches.ONE=panMode?THREE.TOUCH.PAN:THREE.TOUCH.ROTATE;$('#mv').textContent=panMode?'✋ السحب: تحريك':'🔄 السحب: تدوير';$('#mv').classList.toggle('on',panMode)};
+
+/* ---------- الرسم التخطيطي (SVG) ---------- */
+const svg=$('#dgv');
+function diagram(){
+ const T=(x,y,t,s)=>`<text x="${x}" y="${y}"${s?` style="font-size:${s}px"`:''}>${t}</text>`;
+ const L=(p,dx,dy)=>`<polyline points="${p}" fill="none" stroke="#cfd8e6" stroke-width="1.6"/><circle cx="${dx}" cy="${dy}" r="4.5" fill="#fff"/>`;
+ const dash=d=>`<path d="${d}" fill="none" stroke="#1478d8" stroke-width="3" stroke-dasharray="9 8"/>`;
+ const sun=(x,y,r)=>{let p='';for(let i=0;i<120;i++){const a=i/120*2*PI,q=r*(i%2?1.0:1.07+.04*hs(i,r,3));p+=(x+q*Math.cos(a)).toFixed(1)+','+(y+q*Math.sin(a)).toFixed(1)+' '}
+  let g='';for(let i=0;i<260;i++){const a=hs(i,1,r)*2*PI,q=Math.sqrt(hs(i,2,r))*r*.9;g+=`<circle cx="${(x+q*Math.cos(a)).toFixed(1)}" cy="${(y+q*Math.sin(a)).toFixed(1)}" r="${(1+hs(i,3,r)*2.4).toFixed(1)}" fill="${i%2?'#fff9b0':'#ffb21c'}" opacity=".55"/>`}
+  return`<circle cx="${x}" cy="${y}" r="${r*1.65}" fill="url(#halo)"/><polygon points="${p}" fill="#ffb217"/><circle cx="${x}" cy="${y}" r="${r}" fill="url(#sun)"/>${g}`};
+ const earth=(x,y,r,id)=>`<clipPath id="${id}"><circle cx="${x}" cy="${y}" r="${r}"/></clipPath><circle cx="${x}" cy="${y}" r="${r}" fill="url(#sea)"/>
+ <g clip-path="url(#${id})"><g transform="translate(${x} ${y}) scale(${r/100})" fill="url(#land)">
+ <path d="M-56-24L-44-45-20-52-5-47 8-50 14-40 30-37 36-22 48-9 62-10 50 6 43 12 41 28 30 42 24 62 10 72 0 70-5 52-3 34-12 22-12 8-26 5-44 7-56-6Z"/>
+ <path d="M46 36L55 28 56 42 47 58 41 52Z"/>
+ <path d="M-52-56L-50-70-38-72-36-84-18-80-12-95 14-98 40-90 62-72 80-52 94-26 101 2 90-8 82-30 72-20 66-40 52-34 42-52 28-46 18-62 8-52-2-66-14-54-20-66-32-62-28-54-40-52Z"/></g>
+ <circle cx="${x}" cy="${y}" r="${r}" fill="url(#night)"/></g>`;
+ svg.innerHTML=`<defs>
+ <radialGradient id="halo"><stop offset=".5" stop-color="#ff5a00" stop-opacity=".95"/><stop offset=".72" stop-color="#9c1200" stop-opacity=".65"/><stop offset="1" stop-color="#400000" stop-opacity="0"/></radialGradient>
+ <radialGradient id="sun"><stop offset="0" stop-color="#ffff6a"/><stop offset=".55" stop-color="#ffdf3a"/><stop offset=".9" stop-color="#ffac22"/><stop offset="1" stop-color="#ffe777"/></radialGradient>
+ <radialGradient id="sea" cx=".3" cy=".45" r=".75"><stop offset="0" stop-color="#63b4ff"/><stop offset=".7" stop-color="#2b86e8"/><stop offset="1" stop-color="#0c4a94"/></radialGradient>
+ <linearGradient id="land" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#c9dc2c"/><stop offset=".45" stop-color="#f1e43a"/><stop offset="1" stop-color="#86a821"/></linearGradient>
+ <linearGradient id="night" x1="0" y1=".6" x2="1" y2=".35"><stop offset=".5" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000814" stop-opacity=".75"/></linearGradient>
+ <radialGradient id="moon" cx=".35" cy=".4"><stop offset="0" stop-color="#fff"/><stop offset=".7" stop-color="#bfc2c6"/><stop offset="1" stop-color="#55595f"/></radialGradient>
+ <linearGradient id="fade" gradientUnits="userSpaceOnUse" x1="835" y1="0" x2="1185" y2="0"><stop offset="0" stop-color="#0a5cb4"/><stop offset=".45" stop-color="#06488c"/><stop offset="1" stop-color="#02162c" stop-opacity="0"/></linearGradient>
+ </defs><rect x="-3000" y="-3000" width="7300" height="7400" fill="#000"/>
+ <!-- الكسوف -->
+ ${sun(210,358,122)}
+ <polygon points="238,239 962,199 962,522 238,478" fill="#0765cc" opacity=".6"/>
+ <polygon points="262,247 872,452 872,520 262,470" fill="#0a72e0" opacity=".28"/>
+ <polygon points="262,470 872,284 872,200 262,247" fill="#0a72e0" opacity=".28"/>
+ ${dash('M920 72Q958 190 975 360Q962 540 918 648')}
+ ${earth(975,360,162,'e1')}
+ ${dash('M730 359a245 245 0 1 0 490 0a245 245 0 1 0 -490 0')}
+ <polygon points="730,326 875,284 875,436 730,394" fill="#06182e" opacity=".55"/>
+ <ellipse cx="874" cy="360" rx="49" ry="76" fill="#101820" opacity=".58"/>
+ <polygon points="730,326 867,350 867,364 730,394" fill="#02070f" opacity=".85"/>
+ <ellipse cx="867" cy="357" rx="8" ry="11" fill="#050505"/>
+ <circle cx="729" cy="360" r="35" fill="url(#moon)"/><circle cx="718" cy="350" r="7" fill="#8d9298" opacity=".5"/><circle cx="731" cy="373" r="5" fill="#8d9298" opacity=".5"/>
+ ${T(750,91,'مدار الأرض')}${L('828,88 926,88',926,88)}
+ ${T(527,109,'أقل ظلمة')}${L('590,110 804,322',804,322)}
+ ${T(551,156,'ظلمة')}${L('590,150 784,342',784,342)}
+ ${T(642,446,'القمر')}${L('665,424 712,378',712,378)}
+ ${T(578,576,'كسوف كلي')}${L('664,566 868,366',868,366)}
+ ${T(578,624,'كسوف جزئي')}${L('664,610 868,407',868,407)}
+ ${T(1008,557,'الأرض')}${T(1180,601,'مدار القمر')}${L('1128,582 1110,565',1110,565)}
+ ${T(189,544,'الشمس',34)}
+ <rect x="0" y="702" width="1268" height="6" fill="#3d8ee6"/>
+ <!-- الخسوف -->
+ <polygon points="835,919 1185,737 1185,945" fill="url(#fade)"/>
+ <polygon points="835,1142 1185,1118 1185,1325" fill="url(#fade)"/>
+ ${sun(266,1031,160)}
+ <polygon points="350,882 835,919 835,1142 350,1181" fill="#0765cc" opacity=".6"/>
+ <polygon points="408,924 603,1031 408,1138" fill="#0a72e0" opacity=".35"/>
+ <polygon points="603,1031 835,919 835,1142" fill="#0a72e0" opacity=".6"/>
+ ${dash('M780 760Q826 862 844 1031Q826 1200 778 1305')}
+ ${earth(846,1031,112,'e2')}
+ ${dash('M609 1031a236 236 0 1 0 472 0a236 236 0 1 0 -472 0')}
+ <circle cx="1081" cy="1031" r="34" fill="#44474b"/><circle cx="1072" cy="1022" r="9" fill="#2d3034"/><circle cx="1090" cy="1043" r="6" fill="#2d3034"/>
+ ${T(630,773,'مدار الأرض')}${L('705,765 781,765',781,765)}
+ ${T(948,759,'ظلمة')}${L('977,766 977,962',977,962)}
+ ${T(1161,1041,'القمر')}${T(855,1204,'الأرض')}
+ ${T(672,1289,'مدار القمر')}${L('706,1255 726,1235',726,1235)}
+ ${T(960,1337,'أقل ظلمة')}${L('977,1298 977,1178',977,1178)}
+ ${T(232,1293,'الشمس',34)}`}
+let vb={x:0,y:0,w:1268,h:1408};
+const VIEWS=[[0,0,1268,1408],[0,40,1268,630],[0,718,1268,630]];
+const setVB=()=>svg.setAttribute('viewBox',`${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
+function view(i){const v=VIEWS[i];vb={x:v[0],y:v[1],w:v[2],h:v[3]};setVB();document.querySelectorAll('[data-v]').forEach(b=>b.classList.toggle('on',+b.dataset.v===i))}
+const toSvg=(cx,cy)=>{const p=svg.createSVGPoint();p.x=cx;p.y=cy;return p.matrixTransform(svg.getScreenCTM().inverse())};
+function zoom(f,cx,cy){const r=svg.getBoundingClientRect();if(cx===undefined){cx=r.left+r.width/2;cy=r.top+r.height/2}
+ const w=Math.max(150,Math.min(3200,vb.w/f)),k=w/vb.w,p=toSvg(cx,cy);vb={x:p.x-(p.x-vb.x)*k,y:p.y-(p.y-vb.y)*k,w,h:vb.h*k};setVB()}
+function move(x0,y0,x1,y1){const a=toSvg(x0,y0),b=toSvg(x1,y1);vb.x=Math.max(-vb.w*.8,Math.min(1268-vb.w*.2,vb.x+a.x-b.x));vb.y=Math.max(-vb.h*.8,Math.min(1408-vb.h*.2,vb.y+a.y-b.y));setVB()}
+const ptr=new Map();
+svg.addEventListener('pointerdown',e=>{svg.setPointerCapture(e.pointerId);ptr.set(e.pointerId,{x:e.clientX,y:e.clientY})});
+svg.addEventListener('pointermove',e=>{const o=ptr.get(e.pointerId);if(!o)return;const n={x:e.clientX,y:e.clientY};
+ if(ptr.size===1)move(o.x,o.y,n.x,n.y);
+ else if(ptr.size===2){const q=[...ptr].find(v=>v[0]!==e.pointerId)[1],d0=Math.hypot(o.x-q.x,o.y-q.y),d1=Math.hypot(n.x-q.x,n.y-q.y);
+  move((o.x+q.x)/2,(o.y+q.y)/2,(n.x+q.x)/2,(n.y+q.y)/2);if(d0>0&&d1>0)zoom(d1/d0,(n.x+q.x)/2,(n.y+q.y)/2)}
+ ptr.set(e.pointerId,n)});
+['pointerup','pointercancel'].forEach(t=>svg.addEventListener(t,e=>ptr.delete(e.pointerId)));
+svg.addEventListener('wheel',e=>{e.preventDefault();zoom(Math.exp(-e.deltaY*.0015),e.clientX,e.clientY)},{passive:false});
+svg.addEventListener('dblclick',e=>zoom(1.6,e.clientX,e.clientY));
+document.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>view(+b.dataset.v));
+document.querySelectorAll('[data-z]').forEach(b=>b.onclick=()=>zoom(b.dataset.z==='in'?1.3:1/1.3));
+
+/* ---------- كاميرا سكان الأرض ---------- */
+/* m: نسبة قطر القمر الظاهري إلى قطر الشمس ، off: أقل بُعد بين المركزين (بنصف قطر الشمس) */
+const OB={
+ total:{m:1.05,off:0,n:'منطقة ظل القمر (الظلمة)',s:'كسوف كلي',t:'يغطي القمر قرص الشمس بالكامل، فتظلم السماء وتظهر النجوم، ولا يُرى حول القمر الأسود إلا الإكليل الشمسي.'},
+ partial:{m:1,off:.75,n:'منطقة شبه الظل (أقل ظلمة)',s:'كسوف جزئي',t:'يحجب القمر جزءاً من قرص الشمس فقط، فتبدو الشمس على شكل هلال، ويقل ضوء النهار بدرجة محدودة.'},
+ annular:{m:.9,off:0,n:'منطقة امتداد الظل',s:'كسوف حلقي',t:'القمر في موضع بعيد عن الأرض فيبدو أصغر من الشمس، ولا يغطيها كلها، فتبقى حلقة مضيئة حوله.'}};
+const obc=$('#obc'),ox=obc.getContext('2d');
+const os={mode:'total',p:.5,play:false,raf:0,last:0};
+const sepAt=(o,p)=>{const x=(p-.5)*4.6;return{x,y:o.off,d:Math.hypot(x,o.off)}};
+const cover=(o,p)=>ov(1,o.m,sepAt(o,p).d)/PI;
+const mix=(a,b,k)=>`rgb(${a.map((v,i)=>Math.round(v+(b[i]-v)*k)).join(',')})`;
+function scene2d(key,X,Y,w,h){const o=OB[key],s=sepAt(o,os.p),cv=cover(o,os.p),tot=s.d<=o.m-1,
+ dk=tot?1:Math.pow(cv,3)*.7,small=h<300,R=Math.min(w*.17,h*(small?.15:.17)),cx=X+w/2,cy=Y+h*(small?.56:.42),gy=Y+h*.82,c=ox;
+ c.save();c.beginPath();c.rect(X,Y,w,h);c.clip();
+ const sk=c.createLinearGradient(0,Y,0,gy);sk.addColorStop(0,mix([22,96,180],[1,3,10],dk));sk.addColorStop(1,mix([120,190,245],tot?[70,38,30]:[14,24,48],dk));c.fillStyle=sk;c.fillRect(X,Y,w,h);
+ if(dk>.8){c.fillStyle='#fff';for(let i=0;i<50;i++)c.fillRect(X+hs(i,1,77)*w,Y+hs(i,2,77)*h*.65,1.6,1.6)}
+ const glowR=(r0,r1,col)=>{const g=c.createRadialGradient(cx,cy,r0,cx,cy,r1);col.forEach((q,i)=>g.addColorStop(i/(col.length-1),q));c.fillStyle=g;c.beginPath();c.arc(cx,cy,r1,0,2*PI);c.fill()};
+ if(tot){glowR(R*.95,R*2.6,['rgba(255,255,255,.95)','rgba(180,215,255,.35)','rgba(120,170,255,0)']);
+  c.strokeStyle='rgba(225,238,255,.22)';c.lineWidth=Math.max(1,R*.03);for(let i=0;i<46;i++){const a=i/46*2*PI,l=R*(1.35+hs(i,4,5)*1.15);c.beginPath();c.moveTo(cx+R*Math.cos(a),cy+R*Math.sin(a));c.lineTo(cx+l*Math.cos(a),cy+l*Math.sin(a));c.stroke()}}
+ else{glowR(R*.9,R*1.9,[`rgba(255,200,40,${.7*(1-cv*.6)})`,'rgba(255,90,0,0)']);
+  const g=c.createRadialGradient(cx,cy,0,cx,cy,R);g.addColorStop(0,'#ffff6a');g.addColorStop(.6,'#ffdf3a');g.addColorStop(1,'#ff9d14');c.fillStyle=g;c.beginPath();c.arc(cx,cy,R,0,2*PI);c.fill()}
+ /* قرص القمر: خارج الشمس يختفي في وهج السماء */
+ const mx=cx+s.x*R,my=cy+s.y*R;c.save();
+ if(!tot){c.beginPath();c.arc(cx,cy,R+.8,0,2*PI);c.clip()}
+ c.fillStyle='#02040a';c.beginPath();c.arc(mx,my,o.m*R,0,2*PI);c.fill();c.restore();
+ /* الأرض والراصدون */
+ c.fillStyle=mix([62,104,38],[4,8,6],Math.min(1,dk*1.1));c.beginPath();c.moveTo(X,gy+h*.03);c.quadraticCurveTo(X+w*.3,gy-h*.04,X+w*.6,gy+h*.015);c.quadraticCurveTo(X+w*.85,gy+h*.05,X+w,gy);c.lineTo(X+w,Y+h);c.lineTo(X,Y+h);c.fill();
+ const man=(px,py,k)=>{c.fillStyle=c.strokeStyle='#05070a';c.lineCap='round';c.beginPath();c.arc(px,py-k*.86,k*.12,0,2*PI);c.fill();c.lineWidth=k*.2;c.beginPath();c.moveTo(px,py-k*.66);c.lineTo(px,py-k*.34);c.stroke();c.lineWidth=k*.09;c.beginPath();c.moveTo(px-k*.15,py);c.lineTo(px,py-k*.34);c.lineTo(px+k*.15,py);c.moveTo(px,py-k*.62);c.lineTo(px+k*.2,py-k*.78);c.lineTo(px+k*.07,py-k*.86);c.stroke()};
+ const k=Math.min(h*.12,w*.2);man(X+w*.24,gy+h*.04,k);man(X+w*.36,gy+h*.045,k*.72);man(X+w*.73,gy+h*.06,k*.9);
+ const f=Math.max(10,Math.min(19,w*.045,h*.058));c.textAlign='center';c.direction='rtl';c.fillStyle='#fff';c.shadowColor='#000';c.shadowBlur=6;
+ c.font=`900 ${f*1.15}px Cairo,sans-serif`;c.fillText(o.s,cx,Y+f*1.9);c.font=`700 ${f*.9}px Cairo,sans-serif`;c.fillText(o.n,cx,Y+f*3.6);
+ c.fillStyle='#ffe08a';c.fillText('المحجوب من قرص الشمس: '+Math.round(cv*100)+'%',cx,Y+h-f*.9);c.restore()}
+function obDraw(){const r=obc.getBoundingClientRect(),dpr=Math.min(devicePixelRatio,2),w=r.width,h=r.height;if(!w||!h)return;
+ if(obc.width!==Math.round(w*dpr)||obc.height!==Math.round(h*dpr)){obc.width=Math.round(w*dpr);obc.height=Math.round(h*dpr)}
+ ox.setTransform(dpr,0,0,dpr,0,0);ox.clearRect(0,0,w,h);
+ if(os.mode==='all'){const v=w<h;['total','partial','annular'].forEach((k,i)=>v?scene2d(k,0,i*h/3,w,h/3-3):scene2d(k,(2-i)*w/3,0,w/3-3,h))}else scene2d(os.mode,0,0,w,h)}
+function obLoop(t){os.raf=requestAnimationFrame(obLoop);const dt=Math.min(.05,(t-os.last)/1000||0);os.last=t;
+ if(os.play){os.p=(os.p+dt/12)%1;$('#obr').value=os.p}obDraw()}
+const obPlay=v=>{os.play=v;$('#obp').textContent=v?'⏸':'▶'};
+function obMode(m){os.mode=m;document.querySelectorAll('[data-ob]').forEach(b=>b.classList.toggle('on',b.dataset.ob===m));
+ $('#obt').innerHTML=m==='all'?'قارن بين شكل قرص الشمس كما يراه الراصدون في كل منطقة.':`<b class="am">${OB[m].s}:</b> ${OB[m].t}`}
+document.querySelectorAll('[data-ob]').forEach(b=>b.onclick=()=>obMode(b.dataset.ob));
+$('#obr').oninput=e=>{os.p=+e.target.value;obPlay(false)};
+$('#obp').onclick=()=>obPlay(!os.play);
+$('#obm').onclick=()=>{os.p=.5;$('#obr').value=.5;obPlay(false)};
+
+/* ---------- فتح وإغلاق النوافذ ---------- */
+let modal=null;
+function closeOv(){document.querySelectorAll('.ov').forEach(o=>o.classList.remove('on'));$('#sci-home').style.display='';cancelAnimationFrame(os.raf);ptr.clear();modal=null}
+function openOv(id){closeOv();modal=id;$('#'+id).classList.add('on');$('#sci-home').style.display='none';
+ if(id==='dg')view(0);
+ else{obMode({aS:'annular',pS:'partial'}[st.sc]||'total');os.p=0;$('#obr').value=0;obPlay(true);os.last=performance.now();os.raf=requestAnimationFrame(obLoop)}}
+document.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>openOv(b.dataset.open));
+document.querySelectorAll('[data-close]').forEach(b=>b.onclick=closeOv);
+addEventListener('keydown',e=>{if(e.key==='Escape')return closeOv();if(e.target.tagName==='INPUT')return;
+ const k={ArrowLeft:'l',ArrowRight:'r',ArrowUp:'u',ArrowDown:'d','+':'in','=':'in','-':'out'}[e.key];if(!k)return;e.preventDefault();
+ if(!modal)nav(k);else if(modal==='dg'){if(k==='in'||k==='out')zoom(k==='in'?1.2:1/1.2);else{const s=vb.w*.08;if(k==='l')vb.x+=s;if(k==='r')vb.x-=s;if(k==='u')vb.y+=s;if(k==='d')vb.y-=s;setVB()}}});
+diagram();
+
+/* ---------- حلقة التحريك ---------- */
+const clock=new THREE.Clock();
+function frame(){requestAnimationFrame(frame);const dt=Math.min(clock.getDelta(),.05),dd=dt*st.speed,now=performance.now();
+ if(st.earth){earth.rotation.y+=2*PI*dd/PE;clouds.rotation.y+=2*PI*dd/PE*1.04}
+ if(st.sun)sunM.rotation.y+=2*PI*dd/PS;
+ if(st.moon){st.lam=(st.lam+2*PI*dd/SYN)%(2*PI);lamSync();dirty=1}
+ if(dirty){dirty=0;moonUpd()}
+ if(pend&&now-lh>90){lh=now;hud(pend);sky(pend);pend=null}
+ if(st.rays)photons(dt);
+ if(goal){const k=1-Math.exp(-5*dt);cam.position.lerp(goal.p,k);ctl.target.lerp(goal.t,k);if(cam.position.distanceTo(goal.p)<.05&&ctl.target.distanceTo(goal.t)<.05)goal=null}
+ ctl.update();if(!modal){ren.render(scene,cam);labels()}}
+
+layout();apply('tS');cones.visible=st.cones;
+$('#menu').classList.toggle('h',!st.menu);showData();go('all',true);frame();
 })();
 </script>
 </body>
